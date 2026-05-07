@@ -1,0 +1,200 @@
+/**
+ * CMS Theme System
+ * Organization: Variables -> Global Base -> Component Overrides -> Special Effects
+ */
+
+:root {
+  /* --- Light Theme Colors --- */
+  --vp-c-brand-1: #10b981;
+  --vp-c-brand-2: #059669;
+  --vp-c-brand-3: #047857;
+  --vp-c-brand-soft: rgba(16, 185, 129, 0.1);
+  
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-soft: #ffffff;
+  --vp-c-bg-mute: #ffffff;
+  --vp-c-bg-alt: #f6f6f7;
+  
+  --vp-c-divider: #e5e7eb;
+  
+  --vp-c-text-1: #1f2937;
+  --vp-c-text-2: #4b5563;
+  --vp-c-text-3: #9ca3af;
+  
+  --vp-card-bg: #ffffff;
+  --vp-card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] {
+  /* --- Dark Theme Colors --- */
+  --vp-c-brand-1: #10b981;
+  --vp-c-brand-2: #34d399;
+  --vp-c-brand-3: #6ee7b7;
+  --vp-c-brand-soft: rgba(16, 185, 129, 0.15);
+  
+  --vp-c-bg: #0f172a;
+  --vp-c-bg-soft: #1e293b;
+  --vp-c-bg-mute: #1e293b;
+  --vp-c-bg-alt: #020617;
+  
+  --vp-c-divider: #334155;
+  
+  --vp-c-text-1: #f8fafc;
+  --vp-c-text-2: #cbd5e1;
+  --vp-c-text-3: #94a3b8;
+  
+  --vp-card-bg: #1e293b;
+  --vp-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+
+  /* Element Plus Dark Variable Overrides */
+  --el-bg-color: var(--vp-c-bg);
+  --el-bg-color-overlay: var(--vp-c-bg-soft);
+  --el-text-color-primary: var(--vp-c-text-1);
+  --el-text-color-regular: var(--vp-c-text-2);
+  --el-text-color-secondary: var(--vp-c-text-3);
+  --el-border-color: var(--vp-c-divider);
+  --el-border-color-light: var(--vp-c-divider);
+  --el-border-color-lighter: var(--vp-c-divider);
+  --el-fill-color-blank: var(--vp-c-bg-mute);
+}
+
+/* --- Global Base Styles --- */
+.tech-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--vp-c-bg);
+}
+
+/* --- Element Plus Component Overrides --- */
+
+/* 1. Cards */
+.el-card {
+  --el-card-bg-color: var(--vp-card-bg);
+  --el-card-border-color: var(--vp-c-divider);
+  background-color: var(--vp-card-bg) !important;
+  border-color: var(--vp-c-divider) !important;
+  color: var(--vp-c-text-1) !important;
+  box-shadow: var(--vp-card-shadow) !important;
+}
+
+.el-card:hover {
+  border-color: var(--vp-c-brand-1) !important;
+}
+
+/* 2. Inputs & Selects */
+.el-input__wrapper, .el-textarea__inner, .el-select__wrapper {
+  background-color: var(--vp-c-bg-mute) !important;
+  box-shadow: 0 0 0 1px var(--vp-c-divider) inset !important;
+}
+
+/* 3. Tables */
+.el-table {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: var(--vp-c-bg-mute) !important;
+  background-color: transparent !important;
+}
+
+.el-table th.el-table__cell {
+  background-color: var(--vp-c-bg-mute) !important;
+  color: var(--vp-c-text-1) !important;
+}
+
+.el-table td.el-table__cell {
+  color: var(--vp-c-text-2) !important;
+  background-color: transparent !important;
+}
+
+.el-table--striped .el-table__row--striped td.el-table__cell {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme='dark'] .el-table--striped .el-table__row--striped td.el-table__cell {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 4. Pagination */
+.el-pagination {
+  --el-pagination-bg-color: transparent !important;
+  --el-pagination-button-bg-color: var(--vp-c-bg-mute) !important;
+  --el-pagination-hover-color: var(--vp-c-brand-1) !important;
+  padding: 16px 24px !important;
+}
+
+.el-pagination button {
+  background-color: var(--vp-c-bg-mute) !important;
+  color: var(--vp-c-text-1) !important;
+  border: 1px solid var(--vp-c-divider) !important;
+}
+
+.el-pagination button:disabled {
+  background-color: var(--vp-c-bg-alt) !important;
+  color: var(--vp-c-text-3) !important;
+  opacity: 0.6;
+}
+
+.el-pagination button:disabled .el-icon {
+  color: var(--vp-c-text-3) !important;
+}
+
+.el-pager li {
+  background-color: var(--vp-c-bg-mute) !important;
+  color: var(--vp-c-text-1) !important;
+  border: 1px solid var(--vp-c-divider) !important;
+}
+
+.el-pager li.is-active {
+  background-color: var(--vp-c-brand-1) !important;
+  color: #ffffff !important;
+  border-color: var(--vp-c-brand-1) !important;
+}
+
+.el-pagination .el-select__wrapper {
+  background-color: var(--vp-c-bg-mute) !important;
+}
+
+.el-select__popper.el-popper {
+  background-color: var(--vp-c-bg-soft) !important;
+  border-color: var(--vp-c-divider) !important;
+}
+
+.el-select-dropdown__item.is-hovering {
+  background-color: var(--vp-c-brand-soft) !important;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: bold;
+}
+
+.pagination-wrap {
+  margin-top: 16px !important;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 5. Others */
+.el-dialog {
+  --el-dialog-bg-color: var(--vp-c-bg-soft) !important;
+  background-color: var(--vp-c-bg-soft) !important;
+}
+
+/* --- View Transitions API --- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}

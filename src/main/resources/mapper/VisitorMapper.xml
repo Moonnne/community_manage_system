@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.VisitorMapper">
+
+    <update id="updateById">
+        UPDATE visitor
+        <set>
+            <if test="visitorName != null and visitorName != ''">visitor_name = #{visitorName},</if>
+            <if test="visitorPhone != null and visitorPhone != ''">visitor_phone = #{visitorPhone},</if>
+            <if test="visitorType != null">visitor_type = #{visitorType},</if>
+            <if test="visitorStatus != null and visitorStatus != ''">visitor_status = #{visitorStatus},</if>
+            <if test="visitorFinishTime != null">visitor_finish_time = #{visitorFinishTime},</if>
+            <if test="visitorRemark != null">visitor_remark = #{visitorRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.vo.VisitorVO">
+        SELECT v.*,
+               u1.user_name AS owner_name,
+               u2.user_name AS creater_name,
+               vt.visitor_type_name
+        FROM visitor v
+        LEFT JOIN user u1 ON v.owner_id = u1.id
+        LEFT JOIN user u2 ON v.visitor_creater = u2.id
+        LEFT JOIN visitor_type vt ON v.visitor_type = vt.visitor_type_id
+        <where>
+            <if test="ownerId != null">
+                AND v.owner_id = #{ownerId}
+            </if>
+            <if test="visitorType != null">
+                AND v.visitor_type = #{visitorType}
+            </if>
+            <if test="visitorStatus != null and visitorStatus != ''">
+                AND v.visitor_status = #{visitorStatus}
+            </if>
+            <if test="visitorName != null and visitorName != ''">
+                AND v.visitor_name LIKE CONCAT('%', #{visitorName}, '%')
+            </if>
+        </where>
+        ORDER BY v.visitor_create_time DESC
+    </select>
+
+</mapper>

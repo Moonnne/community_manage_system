@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.BillDetailMapper">
+
+    <update id="updateById">
+        UPDATE bill_detail
+        <set>
+            <if test="billDetailName != null and billDetailName != ''">bill_detail_name = #{billDetailName},</if>
+            <if test="billDetailType != null">bill_detail_type = #{billDetailType},</if>
+            <if test="billDetailQuantity != null">bill_detail_quantity = #{billDetailQuantity},</if>
+            <if test="billDetailUnitPrice != null">bill_detail_unit_price = #{billDetailUnitPrice},</if>
+            <if test="billDetailTotal != null">bill_detail_total = #{billDetailTotal},</if>
+            <if test="billDetailRemark != null">bill_detail_remark = #{billDetailRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByBillId" resultType="edu.tut.cms.pojo.vo.BillDetailVO">
+        SELECT bd.*,
+               bt.bill_type_name AS bill_detail_type_name
+        FROM bill_detail bd
+        LEFT JOIN bill_type bt ON bd.bill_detail_type = bt.bill_type_id
+        WHERE bd.bill_id = #{billId}
+    </select>
+
+</mapper>

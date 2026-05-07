@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.CarMapper">
+
+    <update id="updateById">
+        UPDATE car
+        <set>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="assetId != null">asset_id = #{assetId},</if>
+            <if test="visitorId != null">visitor_id = #{visitorId},</if>
+            <if test="carNumber != null">car_number = #{carNumber},</if>
+            <if test="carType != null">car_type = #{carType},</if>
+            <if test="carStatus != null">car_status = #{carStatus},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.vo.CarVO">
+        SELECT c.*,
+               u.user_name AS owner_name,
+               ct.car_type_name
+        FROM car c
+        LEFT JOIN user u ON c.owner_id = u.id
+        LEFT JOIN car_type ct ON c.car_type = ct.car_type_id
+        <where>
+            <if test="ownerId != null">
+                AND c.owner_id = #{ownerId}
+            </if>
+            <if test="carType != null">
+                AND c.car_type = #{carType}
+            </if>
+            <if test="carStatus != null">
+                AND c.car_status = #{carStatus}
+            </if>
+        </where>
+        ORDER BY c.id DESC
+    </select>
+
+</mapper>

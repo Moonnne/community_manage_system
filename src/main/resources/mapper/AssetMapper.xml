@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.AssetMapper">
+
+    <update id="updateById">
+        UPDATE asset
+        <set>
+            <if test="assetOwnerId != null">asset_owner_id = #{assetOwnerId},</if>
+            <if test="assetName != null and assetName != ''">asset_name = #{assetName},</if>
+            <if test="assetType != null">asset_type = #{assetType},</if>
+            <if test="assetDueTime != null">asset_due_time = #{assetDueTime},</if>
+            <if test="assetStatus != null">asset_status = #{assetStatus},</if>
+            <if test="assetArea != null">asset_area = #{assetArea},</if>
+            <if test="assetBuilding != null and assetBuilding != ''">asset_building = #{assetBuilding},</if>
+            <if test="assetFloor != null and assetFloor != ''">asset_floor = #{assetFloor},</if>
+            <if test="assetPosition != null and assetPosition != ''">asset_position = #{assetPosition},</if>
+            <if test="assetRemark != null">asset_remark = #{assetRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.vo.AssetVO">
+        SELECT a.*,
+               u.user_name AS owner_name,
+               at2.asset_type_name
+        FROM asset a
+        LEFT JOIN user u ON a.asset_owner_id = u.id
+        LEFT JOIN asset_type at2 ON a.asset_type = at2.asset_type_id
+        <where>
+            <if test="assetOwnerId != null">
+                AND a.asset_owner_id = #{assetOwnerId}
+            </if>
+            <if test="assetType != null">
+                AND a.asset_type = #{assetType}
+            </if>
+            <if test="assetStatus != null">
+                AND a.asset_status = #{assetStatus}
+            </if>
+            <if test="assetBuilding != null and assetBuilding != ''">
+                AND a.asset_building LIKE CONCAT('%', #{assetBuilding}, '%')
+            </if>
+        </where>
+        ORDER BY a.asset_reg_time DESC
+    </select>
+
+    <select id="selectAll" resultType="edu.tut.cms.pojo.vo.AssetVO">
+        SELECT a.*,
+               u.user_name AS owner_name,
+               at2.asset_type_name
+        FROM asset a
+        LEFT JOIN user u ON a.asset_owner_id = u.id
+        LEFT JOIN asset_type at2 ON a.asset_type = at2.asset_type_id
+        <where>
+            <if test="assetOwnerId != null">
+                AND a.asset_owner_id = #{assetOwnerId}
+            </if>
+        </where>
+        ORDER BY a.asset_reg_time DESC
+    </select>
+
+</mapper>

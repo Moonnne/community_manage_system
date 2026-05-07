@@ -4,11 +4,25 @@ server:
 spring:
   application:
     name: CommunityManageSystem
+  config:
+    import: optional:classpath:env.yaml
+  datasource:
+    url: ${datasource.url}
+    username: ${datasource.username}
+    password: ${datasource.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
 
 mybatis:
-  # Mapper 配置文件
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: edu.tut.cms.pojo.entity
   configuration:
-    # 启用驼峰命名
     map-underscore-to-camel-case: true
+
+jwt:
+  secret: ${jwt.secret}
+  expiration: ${jwt.expiration}
+
+logging:
+  level:
+    edu.tut.cms: debug

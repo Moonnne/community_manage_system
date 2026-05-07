@@ -1,0 +1,29 @@
+package edu.tut.cms.pojo.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserAddDTO {
+    @NotBlank
+    private String uid;
+    @NotBlank
+    private String userName;
+    @NotBlank
+    private String userPassword;
+    private LocalDate userBirthday;
+    private Integer userGender;
+    private String userPhone;
+    private String userEmail;
+    @NotNull
+    private Integer userRole;
+    @NotNull
+    private Integer userStatus;
+}

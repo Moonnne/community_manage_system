@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.BillMapper">
+
+    <update id="updateById">
+        UPDATE bill
+        <set>
+            <if test="billCode != null and billCode != ''">bill_code = #{billCode},</if>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="assetId != null">asset_id = #{assetId},</if>
+            <if test="billStartTime != null">bill_start_time = #{billStartTime},</if>
+            <if test="billEndTime != null">bill_end_time = #{billEndTime},</if>
+            <if test="billFinishTime != null">bill_finish_time = #{billFinishTime},</if>
+            <if test="billStatus != null">bill_status = #{billStatus},</if>
+            <if test="billTotal != null">bill_total = #{billTotal},</if>
+            <if test="billPaid != null">bill_paid = #{billPaid},</if>
+            <if test="billRemark != null">bill_remark = #{billRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.vo.BillVO">
+        SELECT b.*,
+               u1.user_name AS owner_name,
+               u2.user_name AS creater_name,
+               a.asset_name
+        FROM bill b
+        LEFT JOIN user u1 ON b.owner_id = u1.id
+        LEFT JOIN user u2 ON b.creater_id = u2.id
+        LEFT JOIN asset a ON b.asset_id = a.id
+        <where>
+            <if test="ownerId != null">
+                AND b.owner_id = #{ownerId}
+            </if>
+            <if test="billStatus != null">
+                AND b.bill_status = #{billStatus}
+            </if>
+            <if test="billCode != null and billCode != ''">
+                AND b.bill_code LIKE CONCAT('%', #{billCode}, '%')
+            </if>
+        </where>
+        ORDER BY b.bill_create_time DESC
+    </select>
+
+</mapper>

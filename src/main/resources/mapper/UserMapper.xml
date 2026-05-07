@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.UserMapper">
+
+    <update id="updateById">
+        UPDATE user
+        <set>
+            <if test="userName != null and userName != ''">user_name = #{userName},</if>
+            <if test="userBirthday != null">user_birthday = #{userBirthday},</if>
+            <if test="userGender != null">user_gender = #{userGender},</if>
+            <if test="userPhone != null and userPhone != ''">user_phone = #{userPhone},</if>
+            <if test="userEmail != null and userEmail != ''">user_email = #{userEmail},</if>
+            <if test="userPassword != null and userPassword != ''">user_password = #{userPassword},</if>
+            <if test="userRole != null">user_role = #{userRole},</if>
+            <if test="userStatus != null">user_status = #{userStatus},</if>
+            <if test="userAvata != null and userAvata != ''">user_avata = #{userAvata},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.entity.User">
+        SELECT u.*, ur.role_name
+        FROM user u
+        LEFT JOIN user_role ur ON u.user_role = ur.role_id
+        <where>
+            <if test="uid != null and uid != ''">
+                AND u.uid LIKE CONCAT('%', #{uid}, '%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND u.user_name LIKE CONCAT('%', #{userName}, '%')
+            </if>
+            <if test="userPhone != null and userPhone != ''">
+                AND u.user_phone LIKE CONCAT('%', #{userPhone}, '%')
+            </if>
+            <if test="userEmail != null and userEmail != ''">
+                AND u.user_email LIKE CONCAT('%', #{userEmail}, '%')
+            </if>
+            <if test="userRole != null">
+                AND u.user_role = #{userRole}
+            </if>
+            <if test="userStatus != null">
+                AND u.user_status = #{userStatus}
+            </if>
+        </where>
+        ORDER BY u.user_create_time DESC
+    </select>
+
+</mapper>
