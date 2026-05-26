@@ -18,7 +18,7 @@ service.interceptors.request.use(
     const isWriteRequest = !['get', 'head', 'options'].includes(method)
     const isAllowedFrozenRequest = config.url === '/api/user/login' || config.url === '/api/user/register'
     if (userStore.isFrozen && isWriteRequest && !isAllowedFrozenRequest) {
-      ElMessage({ message: '账号已冻结，无法执行操作', type: 'error', duration: 1000 })
+      ElMessage.error('账号已冻结，无法执行操作')
       return Promise.reject(new Error('账号已冻结，无法执行操作'))
     }
     return config
@@ -32,7 +32,7 @@ service.interceptors.response.use(
   response => {
     const res = response.data
     if (res.code !== 200) {
-      ElMessage({ message: res.message || '请求失败', type: 'error', duration: 1000 })
+      ElMessage.error(res.message || '请求失败')
       if (res.code === 401) {
         const userStore = useUserStore()
         userStore.logout()
@@ -49,17 +49,17 @@ service.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       if (status === 401) {
-        ElMessage({ message: '登录已过期，请重新登录', type: 'error', duration: 1000 })
+        ElMessage.error('登录已过期，请重新登录')
         const userStore = useUserStore()
         userStore.logout()
         router.push('/login')
       } else if (status === 403) {
-        ElMessage({ message: '无权限访问', type: 'error', duration: 1000 })
+        ElMessage.error('无权限访问')
       } else {
-        ElMessage({ message: error.response.data?.message || '服务器错误', type: 'error', duration: 1000 })
+        ElMessage.error(error.response.data?.message || '服务器错误')
       }
     } else {
-      ElMessage({ message: '网络连接失败', type: 'error', duration: 1000 })
+      ElMessage.error('网络连接失败')
     }
     return Promise.reject(error)
   }
