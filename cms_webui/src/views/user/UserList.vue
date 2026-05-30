@@ -55,40 +55,40 @@
         style="width: 100%"
         height="410"
       >
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="id" label="用户ID" width="80" sortable />
         <el-table-column label="头像" width="90">
           <template #default="{ row }">
             <el-avatar v-if="userAvatar(row)" :size="32" shape="circle" :src="userAvatar(row)" />
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="uid" label="账户" width="120" />
-        <el-table-column prop="userName" label="用户名" width="120" />
-        <el-table-column prop="roleName" label="角色" width="120">
+        <el-table-column prop="uid" label="账户" width="140" sortable />
+        <el-table-column prop="userName" label="用户名" width="140" />
+        <el-table-column prop="roleName" label="角色" width="100">
           <template #default="{ row }">
             <el-tag effect="plain" type="success">{{ row.roleName }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="年龄" width="90">
+        <el-table-column label="年龄" width="80" sortable>
           <template #default="{ row }">
             {{ userAge(row.userBirthday) }}
           </template>
         </el-table-column>
         <el-table-column prop="userPhone" label="电话" width="140" />
         <el-table-column prop="userEmail" label="邮箱" min-width="180" />
-        <el-table-column prop="userGender" label="性别" width="80">
+        <el-table-column prop="userGender" label="性别" width="60">
           <template #default="{ row }">
             {{ row.userGender === 1 ? '男' : row.userGender === 2 ? '女' : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="userStatus" label="状态" width="80">
+        <el-table-column prop="userStatus" label="状态" width="60">
           <template #default="{ row }">
             <el-tag :type="userStatusType(row.userStatus)" effect="plain">
               {{ userStatusText(row.userStatus) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="userCreateTime" label="创建时间" width="180" />
+        <el-table-column prop="userCreateTime" label="创建时间" width="160" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)" v-if="userStore.canOperate">编辑</el-button>
