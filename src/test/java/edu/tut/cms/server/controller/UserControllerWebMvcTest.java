@@ -22,6 +22,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -56,6 +57,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "jwt.expiration=86400000"
 })
 class UserControllerWebMvcTest {
+
+    private static final String CAPTCHA_SESSION_KEY = "LOGIN_REGISTER_CAPTCHA";
 
     @Autowired
     private MockMvc mockMvc;
@@ -133,11 +136,15 @@ class UserControllerWebMvcTest {
         UserVO vo = UserVO.builder().id(1L).uid("u1").userName("n").token("t").build();
         when(userService.login(any(UserLoginDTO.class))).thenReturn(vo);
 
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CAPTCHA_SESSION_KEY, "a1b2");
         UserLoginDTO dto = new UserLoginDTO();
         dto.setUid("u1");
         dto.setUserPassword("secret12");
+        dto.setCaptchaCode("A1B2");
 
         mockMvc.perform(post("/api/user/login")
+                        .session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(JSON.toJSONString(dto)))
                 .andExpect(status().isOk())
@@ -153,8 +160,12 @@ class UserControllerWebMvcTest {
         UserLoginDTO dto = new UserLoginDTO();
         dto.setUid("u1");
         dto.setUserPassword("wrong");
+        dto.setCaptchaCode("a1b2");
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CAPTCHA_SESSION_KEY, "a1b2");
 
         mockMvc.perform(post("/api/user/login")
+                        .session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(JSON.toJSONString(dto)))
                 .andExpect(status().isOk())
@@ -165,13 +176,23 @@ class UserControllerWebMvcTest {
     void register_success_returns200() throws Exception {
         doNothing().when(userService).register(any(UserRegisterDTO.class));
 
-        UserRegisterDTO dto = new UserRegisterDTO("u-new", "昵称", "123456");
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CAPTCHA_SESSION_KEY, "a1b2");
+        UserRegisterDTO dto = new UserRegisterDTO("u-new", "昵称", "123456", "a1b2");
 
         mockMvc.perform(post("/api/user/register")
+                        .session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(JSON.toJSONString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
+    }
+
+    @Test
+    void captcha_returnsImage() throws Exception {
+        mockMvc.perform(get("/api/user/captcha"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG));
     }
 
     @Test

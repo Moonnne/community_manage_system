@@ -14,4 +14,6 @@ public class UserLoginDTO {
     private String uid;
     @NotBlank
     private String userPassword;
+    @NotBlank
+    private String captchaCode;
 }

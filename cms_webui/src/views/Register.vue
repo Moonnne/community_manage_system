@@ -21,6 +21,12 @@
         <el-form-item prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" placeholder="请确认密码" :prefix-icon="Lock" size="large" show-password />
         </el-form-item>
+        <el-form-item prop="captchaCode">
+          <div class="captcha-row">
+            <el-input v-model="form.captchaCode" placeholder="请输入验证码" :prefix-icon="Key" size="large" maxlength="4" />
+            <img class="captcha-img" :src="captchaUrl" alt="验证码" @click="refreshCaptcha" />
+          </div>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" size="large" class="auth-btn" :loading="loading" @click="handleRegister">
             注册
@@ -38,7 +44,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, UserFilled, Lock } from '@element-plus/icons-vue'
+import { User, UserFilled, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
@@ -50,8 +56,11 @@ const form = ref({
   uid: '',
   userName: '',
   userPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  captchaCode: ''
 })
+
+const captchaUrl = ref('')
 
 const validatePassword = (rule, value, callback) => {
   const reg = /^(?=.*[a-zA-Z])(?=.*\d).{8,20}$/
@@ -81,7 +90,12 @@ const rules = {
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
-  ]
+  ],
+  captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+}
+
+const refreshCaptcha = () => {
+  captchaUrl.value = `/api/user/captcha?t=${Date.now()}`
 }
 
 const handleRegister = async () => {
@@ -91,16 +105,21 @@ const handleRegister = async () => {
     await request.post('/api/user/register', {
       uid: form.value.uid,
       userName: form.value.userName,
-      userPassword: form.value.userPassword
+      userPassword: form.value.userPassword,
+      captchaCode: form.value.captchaCode
     })
     ElMessage.success('注册成功，请登录')
     router.push('/login')
   } catch (e) {
+    refreshCaptcha()
+    form.value.captchaCode = ''
     // handled by interceptor
   } finally {
     loading.value = false
   }
 }
+
+refreshCaptcha()
 </script>
 
 <style scoped>
@@ -154,6 +173,24 @@ const handleRegister = async () => {
   font-size: 15px;
   font-weight: 600;
   border-radius: 8px;
+}
+
+.captcha-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+  align-items: center;
+}
+
+.captcha-img {
+  width: 120px;
+  height: 40px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #fff;
+  object-fit: cover;
 }
 
 .auth-footer {

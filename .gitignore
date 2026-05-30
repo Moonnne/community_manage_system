@@ -36,4 +36,6 @@ build/
 /cms.sql
 /src/main/resources/env.yaml
 /cms_webui/README.md
+/.codex-local-skills/
+/.codex-local-sources/
 /小区物业管理系统设计.md

@@ -1,27 +1,46 @@
 package edu.tut.cms.server.controller;
 
+import cn.hutool.captcha.CaptchaUtil;
+import cn.hutool.captcha.LineCaptcha;
 import edu.tut.cms.common.aop.RequirePermission;
 import edu.tut.cms.common.aop.RequireRole;
 import edu.tut.cms.common.context.CurrentUser;
 import edu.tut.cms.common.context.UserContext;
+import edu.tut.cms.common.exception.BusinessException;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.common.result.Result;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.UserRoleVO;
 import edu.tut.cms.pojo.vo.UserVO;
 import edu.tut.cms.server.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 
+    private static final String CAPTCHA_SESSION_KEY = "LOGIN_REGISTER_CAPTCHA";
+
     private final UserService userService;
+
+    @GetMapping("/captcha")
+    public void captcha(HttpSession session, HttpServletResponse response) throws IOException {
+        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(120, 40, 4, 20);
+        session.setAttribute(CAPTCHA_SESSION_KEY, captcha.getCode().toLowerCase(Locale.ROOT));
+        response.setContentType("image/png");
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        captcha.write(response.getOutputStream());
+    }
 
     /**
      * 用户登录
@@ -29,14 +48,25 @@ public class UserController {
      * @return 用户数据JSON
      */
     @PostMapping("/login")
-    public Result<UserVO> login(@Valid @RequestBody UserLoginDTO dto) {
+    public Result<UserVO> login(@Valid @RequestBody UserLoginDTO dto, HttpSession session) {
+        validateCaptcha(dto.getCaptchaCode(), session);
         return Result.success(userService.login(dto));
     }
 
     @PostMapping("/register")
-    public Result<Void> register(@Valid @RequestBody UserRegisterDTO dto) {
+    public Result<Void> register(@Valid @RequestBody UserRegisterDTO dto, HttpSession session) {
+        validateCaptcha(dto.getCaptchaCode(), session);
         userService.register(dto);
         return Result.success();
+    }
+
+    private void validateCaptcha(String captchaCode, HttpSession session) {
+        Object expected = session.getAttribute(CAPTCHA_SESSION_KEY);
+        session.removeAttribute(CAPTCHA_SESSION_KEY);
+        if (expected == null || captchaCode == null
+                || !expected.toString().equalsIgnoreCase(captchaCode.trim())) {
+            throw new BusinessException("验证码错误或已过期");
+        }
     }
 
     @GetMapping("/info")

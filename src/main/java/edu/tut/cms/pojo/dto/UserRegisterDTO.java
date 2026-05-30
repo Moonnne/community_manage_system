@@ -17,4 +17,6 @@ public class UserRegisterDTO {
     @NotBlank
     @Size(min = 6, message = "密码长度不能少于6位")
     private String userPassword;
+    @NotBlank
+    private String captchaCode;
 }

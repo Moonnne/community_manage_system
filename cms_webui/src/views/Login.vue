@@ -15,6 +15,12 @@
         <el-form-item prop="userPassword">
           <el-input v-model="form.userPassword" type="password" placeholder="请输入密码" :prefix-icon="Lock" size="large" show-password />
         </el-form-item>
+        <el-form-item prop="captchaCode">
+          <div class="captcha-row">
+            <el-input v-model="form.captchaCode" placeholder="请输入验证码" :prefix-icon="Key" size="large" maxlength="4" />
+            <img class="captcha-img" :src="captchaUrl" alt="验证码" @click="refreshCaptcha" />
+          </div>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" size="large" class="auth-btn" :loading="loading" @click="handleLogin">
             登录
@@ -30,9 +36,9 @@
 </template>
 
 <script setup>
-import { ref, shallowRef } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
@@ -44,12 +50,20 @@ const loading = ref(false)
 
 const form = ref({
   uid: '',
-  userPassword: ''
+  userPassword: '',
+  captchaCode: ''
 })
+
+const captchaUrl = ref('')
 
 const rules = {
   uid: [{ required: true, message: '请输入账户', trigger: 'blur' }],
-  userPassword: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  userPassword: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+}
+
+const refreshCaptcha = () => {
+  captchaUrl.value = `/api/user/captcha?t=${Date.now()}`
 }
 
 const handleLogin = async () => {
@@ -61,11 +75,15 @@ const handleLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/welcome')
   } catch (e) {
+    refreshCaptcha()
+    form.value.captchaCode = ''
     // handled by interceptor
   } finally {
     loading.value = false
   }
 }
+
+refreshCaptcha()
 </script>
 
 <style scoped>
@@ -120,6 +138,24 @@ const handleLogin = async () => {
   font-size: 15px;
   font-weight: 600;
   border-radius: 8px;
+}
+
+.captcha-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+  align-items: center;
+}
+
+.captcha-img {
+  width: 120px;
+  height: 40px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #fff;
+  object-fit: cover;
 }
 
 .auth-footer {
