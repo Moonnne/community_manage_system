@@ -4,12 +4,15 @@
     <header class="nav-bar">
       <div class="nav-bar-inner">
         <div class="nav-bar-left">
-          <router-link to="/welcome" class="nav-logo">
+          <button type="button" class="mobile-menu-button" @click="mobileMenuVisible = true">
+            <el-icon :size="22"><Menu /></el-icon>
+          </button>
+          <router-link to="/welcome" class="nav-logo desktop-logo">
             <el-icon :size="24" color="var(--vp-c-brand-1)"><OfficeBuilding /></el-icon>
             <span class="nav-logo-text">翻斗花园物业管理系统</span>
           </router-link>
         </div>
-        <nav class="nav-bar-center">
+        <nav class="nav-bar-center desktop-nav">
           <router-link
             v-for="item in visibleNavItems"
             :key="item.path"
@@ -52,6 +55,62 @@
       </div>
     </header>
 
+    <el-drawer v-model="mobileMenuVisible" direction="ltr" size="280px" class="mobile-nav-drawer" :with-header="false">
+      <div class="mobile-drawer-header">
+        <router-link to="/welcome" class="mobile-drawer-logo" @click="closeMobileMenu">
+          <el-icon :size="26" color="var(--vp-c-brand-1)"><OfficeBuilding /></el-icon>
+          <span>翻斗花园物业管理系统</span>
+        </router-link>
+      </div>
+
+      <div class="mobile-drawer-section">
+        <router-link
+          to="/welcome"
+          :class="['mobile-drawer-item', { 'mobile-drawer-item-active': $route.path === '/welcome' }]"
+          @click="closeMobileMenu"
+        >
+          <el-icon :size="18"><House /></el-icon>
+          <span>首页</span>
+        </router-link>
+
+        <div v-for="item in visibleNavItems" :key="item.path" class="mobile-drawer-nav-block">
+          <router-link
+            :to="item.path"
+            :class="['mobile-drawer-item', { 'mobile-drawer-item-active': isNavActive(item.path) }]"
+            @click="closeMobileMenu"
+          >
+            <el-icon :size="18"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div v-if="isNavActive(item.path) && sidebarItems.length > 0" class="mobile-drawer-subnav">
+            <div class="mobile-drawer-group" v-for="group in sidebarItems" :key="group.title">
+              <router-link
+                v-for="child in group.children"
+                :key="child.path"
+                :to="child.path"
+                :class="['mobile-drawer-subitem', { 'mobile-drawer-subitem-active': $route.path === child.path }]"
+                @click="closeMobileMenu"
+              >
+                {{ child.label }}
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-drawer-footer">
+        <router-link
+          to="/settings"
+          :class="['mobile-drawer-item', { 'mobile-drawer-item-active': $route.path === '/settings' }]"
+          @click="closeMobileMenu"
+        >
+          <el-icon :size="18"><Setting /></el-icon>
+          <span>个人设置</span>
+        </router-link>
+      </div>
+    </el-drawer>
+
     <!-- Content -->
     <div class="layout-content">
       <!-- SideBar -->
@@ -90,6 +149,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const theme = ref(localStorage.getItem('cms_theme') || 'light')
+const mobileMenuVisible = ref(false)
 
 const toggleTheme = (event) => {
   const x = event.clientX
@@ -260,6 +320,10 @@ function handleCommand(command) {
     }).catch(() => {})
   }
 }
+
+function closeMobileMenu() {
+  mobileMenuVisible.value = false
+}
 </script>
 
 <style scoped>
@@ -305,11 +369,30 @@ function handleCommand(command) {
   color: var(--vp-c-text-1);
 }
 
+.mobile-menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--vp-c-text-1);
+}
+
 .nav-bar-center {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0 40px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-bar-center::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
@@ -460,5 +543,197 @@ function handleCommand(command) {
 .main-content.no-sidebar {
   margin-left: 0;
   max-width: 100%;
+}
+
+.mobile-drawer-header {
+  padding: 6px 0 18px;
+  border-bottom: 1px solid var(--vp-c-divider);
+  margin-bottom: 14px;
+}
+
+:deep(.mobile-nav-drawer .el-drawer__body) {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-drawer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--vp-c-text-1);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mobile-drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  margin-bottom: 18px;
+}
+
+.mobile-drawer-nav-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-drawer-item,
+.mobile-drawer-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mobile-drawer-item-active,
+.mobile-drawer-subitem-active {
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.mobile-drawer-subnav {
+  margin: 8px 0 12px 31px;
+  padding-left: 18px;
+  border-left: 2px solid var(--vp-c-divider);
+}
+
+.mobile-drawer-group {
+  margin-bottom: 6px;
+}
+
+.mobile-drawer-subitem {
+  min-height: 36px;
+  padding-left: 14px;
+  font-size: 13px;
+}
+
+.mobile-drawer-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+@media (max-width: 1180px) {
+  .nav-bar {
+    padding: 0 16px;
+  }
+
+  .nav-bar-center {
+    margin: 0 20px;
+  }
+
+  .nav-item {
+    padding: 0 12px;
+  }
+
+  .main-content {
+    padding: 20px 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .nav-username {
+    display: none;
+  }
+
+  .nav-bar-center {
+    margin: 0 12px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    margin-left: 200px;
+    max-width: calc(100% - 200px);
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    height: var(--vp-nav-height-mobile);
+    padding: 8px 12px;
+  }
+
+  .nav-bar-inner {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .nav-bar-left,
+  .nav-bar-right {
+    height: 40px;
+  }
+
+  .nav-bar-right {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .desktop-logo,
+  .desktop-nav {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    display: flex;
+  }
+
+  .nav-avatar {
+    display: flex !important;
+    padding: 0;
+    background: transparent;
+  }
+
+  .nav-avatar .el-icon {
+    display: none;
+  }
+
+  .layout-content {
+    padding-top: var(--vp-nav-height-mobile);
+    display: block;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    max-width: 100%;
+    padding: 20px 14px;
+  }
+
+  .main-content.no-sidebar {
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-item span {
+    display: none;
+  }
+
+  .nav-item {
+    width: 38px;
+    justify-content: center;
+  }
+
+  .theme-toggle,
+  .nav-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nav-avatar {
+    justify-content: center;
+  }
 }
 </style>

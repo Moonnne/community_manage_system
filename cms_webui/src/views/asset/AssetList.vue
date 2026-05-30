@@ -3,16 +3,16 @@
     <div class="page-header"><h2 class="page-title">{{ title }}</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5"><el-input v-model="query.assetOwnerId" placeholder="业主ID" clearable /></el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.assetOwnerId" placeholder="业主ID" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.assetStatus" placeholder="状态" clearable>
             <el-option label="空闲" :value="0" />
             <el-option label="使用中" :value="1" />
             <el-option label="维修中" :value="2" />
           </el-select>
         </el-col>
-        <el-col :span="5"><el-input v-model="query.assetBuilding" placeholder="楼栋" clearable /></el-col>
-        <el-col :span="6">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.assetBuilding" placeholder="楼栋" clearable /></el-col>
+        <el-col :span="6" :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
           <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>

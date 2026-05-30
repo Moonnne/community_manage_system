@@ -5,13 +5,13 @@
     </div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-input v-model="query.billCode" placeholder="账单编号" clearable />
         </el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-input v-model="query.ownerId" placeholder="业主ID" clearable />
         </el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.billStatus" placeholder="账单状态" clearable>
             <el-option label="未完成" :value="1" />
             <el-option label="已完成" :value="0" />
@@ -21,7 +21,7 @@
             <el-option label="已取消" :value="5" />
           </el-select>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
           <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>

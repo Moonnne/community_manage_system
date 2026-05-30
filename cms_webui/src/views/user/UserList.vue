@@ -7,28 +7,28 @@
     <!-- Search -->
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-input v-model="query.uid" placeholder="账户" clearable />
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-input v-model="query.userName" placeholder="用户名" clearable />
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-input v-model="query.userPhone" placeholder="电话" clearable />
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-select v-model="query.userRole" placeholder="角色" clearable>
             <el-option v-for="r in roles" :key="r.roleId" :label="r.roleName" :value="r.roleId" />
           </el-select>
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-select v-model="query.userStatus" placeholder="状态" clearable>
             <el-option label="正常" :value="0" />
             <el-option label="冻结" :value="1" />
             <el-option label="禁用" :value="2" />
           </el-select>
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-button type="primary" @click="fetchData">
             <el-icon><Search /></el-icon> 搜索
           </el-button>
@@ -48,7 +48,13 @@
 
     <!-- Table -->
     <el-card shadow="never" class="table-card">
-      <el-table :data="tableData" stripe v-loading="loading" style="width: 100%" height="410">
+      <el-table
+        :data="tableData"
+        stripe
+        v-loading="loading"
+        style="width: 100%"
+        height="410"
+      >
         <el-table-column prop="uid" label="账户" width="120" />
         <el-table-column prop="userName" label="用户名" width="120" />
         <el-table-column prop="roleName" label="角色" width="120">

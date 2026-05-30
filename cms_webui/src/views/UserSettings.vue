@@ -3,7 +3,7 @@
     <div class="page-header"><h2 class="page-title">个人设置</h2></div>
 
     <el-row :gutter="24">
-      <el-col :span="14">
+      <el-col :xs="24" :sm="24" :md="14" :lg="14">
         <el-card shadow="never" class="settings-card">
           <template #header>
             <span class="card-title">基本信息</span>
@@ -36,7 +36,7 @@
           </el-form>
         </el-card>
       </el-col>
-      <el-col :span="10">
+      <el-col :xs="24" :sm="24" :md="10" :lg="10">
         <el-card shadow="never" class="settings-card">
           <template #header>
             <span class="card-title">修改密码</span>

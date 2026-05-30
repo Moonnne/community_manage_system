@@ -83,7 +83,7 @@
 }
 
 .el-card:hover {
-  border-color: var(--vp-c-brand-1) !important;
+  border-color: var(--vp-c-divider) !important;
 }
 
 /* 2. Inputs & Selects */
@@ -176,6 +176,122 @@
   margin-top: 16px !important;
   display: flex;
   justify-content: flex-end;
+}
+
+.page-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.search-card,
+.table-card,
+.settings-card {
+  border-radius: 8px !important;
+  border: 1px solid var(--vp-c-divider) !important;
+}
+
+.search-card {
+  margin-bottom: 16px !important;
+}
+
+.search-card .el-row {
+  row-gap: 12px;
+}
+
+.search-card .el-input,
+.search-card .el-select,
+.search-card .el-button {
+  width: 100%;
+}
+
+.search-card .el-col:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.search-card .el-col:last-child .el-button {
+  flex: 1;
+}
+
+.table-card .el-card__body {
+  overflow-x: hidden;
+}
+
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px !important;
+}
+
+.table-card .el-table {
+  min-width: 760px;
+}
+
+.mobile-table-action-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: transparent;
+}
+
+.mobile-table-action-menu {
+  position: fixed;
+  min-width: 128px;
+  max-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-card-bg);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
+
+.mobile-table-action-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vp-c-text-1);
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.mobile-table-action-item:active {
+  background: var(--vp-c-brand-soft);
+}
+
+.mobile-table-action-item.warning {
+  color: #d97706;
+}
+
+.mobile-table-action-item.danger {
+  color: #dc2626;
+}
+
+.el-dialog {
+  max-width: calc(100vw - 32px);
+}
+
+@media (max-width: 768px) {
+  .search-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 14px !important;
+  }
+
+  .pagination-wrap {
+    justify-content: flex-start !important;
+    overflow-x: auto;
+  }
+
+  .el-pagination {
+    padding: 12px 0 !important;
+    min-width: max-content;
+  }
 }
 
 /* 5. Others */

@@ -3,9 +3,9 @@
     <div class="page-header"><h2 class="page-title">通行记录</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5"><el-input v-model="query.carId" placeholder="车辆ID" clearable /></el-col>
-        <el-col :span="5"><el-input v-model="query.gateId" placeholder="门岗ID" clearable /></el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.carId" placeholder="车辆ID" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.gateId" placeholder="门岗ID" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.carHistoryType" placeholder="类型" clearable>
             <el-option label="入场" :value="0" />
             <el-option label="离场" :value="1" />
@@ -13,7 +13,7 @@
             <el-option label="访客离场" :value="3" />
           </el-select>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
           <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>

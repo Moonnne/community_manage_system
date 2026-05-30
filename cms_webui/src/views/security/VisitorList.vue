@@ -3,14 +3,14 @@
     <div class="page-header"><h2 class="page-title">访客管理</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5"><el-input v-model="query.visitorName" placeholder="访客姓名" clearable /></el-col>
-        <el-col :span="5"><el-input v-model="query.ownerId" placeholder="业主ID" clearable /></el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.visitorName" placeholder="访客姓名" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.ownerId" placeholder="业主ID" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.visitorType" placeholder="访客类型" clearable>
             <el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" />
           </el-select>
         </el-col>
-        <el-col :span="5">
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.visitorStatus" placeholder="状态" clearable>
             <el-option label="待批准" value="1" />
             <el-option label="访问中" value="2" />
@@ -18,7 +18,7 @@
             <el-option label="已驳回" value="3" />
           </el-select>
         </el-col>
-        <el-col :span="4">
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>
