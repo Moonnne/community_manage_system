@@ -110,12 +110,42 @@
   background-color: transparent !important;
 }
 
+.el-table td.el-table__cell .cell:empty::before {
+  content: '-';
+  color: var(--vp-c-text-2);
+}
+
+.el-table th.el-table__cell.el-table-fixed-column--right,
+.el-table th.el-table__cell.el-table-fixed-column--left {
+  background-color: var(--vp-c-bg-mute) !important;
+}
+
+.el-table td.el-table__cell.el-table-fixed-column--right,
+.el-table td.el-table__cell.el-table-fixed-column--left {
+  background-color: var(--vp-card-bg) !important;
+}
+
 .el-table--striped .el-table__row--striped td.el-table__cell {
   background-color: rgba(0, 0, 0, 0.02) !important;
 }
 
+.el-table--striped .el-table__row--striped td.el-table__cell.el-table-fixed-column--right,
+.el-table--striped .el-table__row--striped td.el-table__cell.el-table-fixed-column--left {
+  background-color: #fafafa !important;
+}
+
 [data-theme='dark'] .el-table--striped .el-table__row--striped td.el-table__cell {
   background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .el-table td.el-table__cell.el-table-fixed-column--right,
+[data-theme='dark'] .el-table td.el-table__cell.el-table-fixed-column--left {
+  background-color: var(--vp-card-bg) !important;
+}
+
+[data-theme='dark'] .el-table--striped .el-table__row--striped td.el-table__cell.el-table-fixed-column--right,
+[data-theme='dark'] .el-table--striped .el-table__row--striped td.el-table__cell.el-table-fixed-column--left {
+  background-color: #263449 !important;
 }
 
 /* 4. Pagination */

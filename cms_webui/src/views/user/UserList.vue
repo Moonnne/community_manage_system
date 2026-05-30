@@ -55,11 +55,23 @@
         style="width: 100%"
         height="410"
       >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="头像" width="90">
+          <template #default="{ row }">
+            <el-avatar v-if="userAvatar(row)" :size="32" shape="circle" :src="userAvatar(row)" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="uid" label="账户" width="120" />
         <el-table-column prop="userName" label="用户名" width="120" />
         <el-table-column prop="roleName" label="角色" width="120">
           <template #default="{ row }">
             <el-tag effect="plain" type="success">{{ row.roleName }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="年龄" width="90">
+          <template #default="{ row }">
+            {{ userAge(row.userBirthday) }}
           </template>
         </el-table-column>
         <el-table-column prop="userPhone" label="电话" width="140" />
@@ -80,14 +92,27 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)" v-if="userStore.canOperate">编辑</el-button>
-            <el-button link type="primary" size="small" @click="setStatus(row, 0)" v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate && row.userStatus !== 0">
+            <el-button link type="primary" size="small" @click="setStatus(row, 0)" v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate && row.userStatus === 1">
               恢复
             </el-button>
-            <el-button link type="warning" size="small" @click="setStatus(row, 1)" v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate && row.userStatus !== 1">
+            <el-button
+              link
+              type="warning"
+              size="small"
+              :disabled="row.userStatus === 2"
+              @click="setStatus(row, 1)"
+              v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate && row.userStatus !== 1"
+            >
               冻结
             </el-button>
-            <el-button link type="danger" size="small" @click="setStatus(row, 2)" v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate && row.userStatus !== 2">
-              禁用
+            <el-button
+              link
+              :type="row.userStatus === 2 ? 'primary' : 'danger'"
+              size="small"
+              @click="setStatus(row, row.userStatus === 2 ? 0 : 2)"
+              v-if="[0, 1].includes(userStore.userRole) && userStore.canOperate"
+            >
+              {{ row.userStatus === 2 ? '恢复' : '禁用' }}
             </el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)" v-if="userStore.userRole === 0 && userStore.canOperate">
               删除
@@ -263,6 +288,28 @@ function userStatusText(status) {
 
 function userStatusType(status) {
   return ['success', 'warning', 'danger'][status] || 'info'
+}
+
+function userAvatar(row) {
+  return row.userAvata || row.userAvatar || ''
+}
+
+function userAge(birthday) {
+  if (!birthday) return '-'
+
+  const birthDate = new Date(`${birthday}T00:00:00`)
+  if (Number.isNaN(birthDate.getTime())) return '-'
+
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const dayDiff = today.getDate() - birthDate.getDate()
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age -= 1
+  }
+
+  return age >= 0 ? age : '-'
 }
 
 onMounted(() => {
