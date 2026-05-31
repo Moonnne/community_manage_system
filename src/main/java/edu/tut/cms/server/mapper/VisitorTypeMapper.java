@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface VisitorTypeMapper {
 
-    @Select("SELECT * FROM visitor_type")
+    @Select("SELECT * FROM visitor_type ORDER BY id ASC")
     List<VisitorType> selectAll();
 
     @Select("SELECT * FROM visitor_type WHERE visitor_type_id = #{visitorTypeId}")

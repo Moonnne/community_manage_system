@@ -18,6 +18,7 @@
                u.user_name AS chief_name
         FROM gate g
         LEFT JOIN user u ON g.gate_chief_id = u.id
+        ORDER BY g.id ASC
     </select>
 
 </mapper>

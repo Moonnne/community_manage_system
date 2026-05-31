@@ -43,7 +43,7 @@
                 AND u.user_status = #{userStatus}
             </if>
         </where>
-        ORDER BY u.user_create_time DESC
+        ORDER BY u.id ASC
     </select>
 
 </mapper>

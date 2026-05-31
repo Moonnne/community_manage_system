@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper
 public interface AssetTypeMapper {
 
-    @Select("SELECT * FROM asset_type")
+    @Select("SELECT * FROM asset_type ORDER BY id ASC")
     List<AssetType> selectAll();
 
     @Select("SELECT * FROM asset_type WHERE asset_type_id = #{assetTypeId}")

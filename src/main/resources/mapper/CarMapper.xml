@@ -34,7 +34,7 @@
                 AND c.car_status = #{carStatus}
             </if>
         </where>
-        ORDER BY c.id DESC
+        ORDER BY c.id ASC
     </select>
 
 </mapper>

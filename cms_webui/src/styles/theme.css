@@ -103,11 +103,17 @@
 .el-table th.el-table__cell {
   background-color: var(--vp-c-bg-mute) !important;
   color: var(--vp-c-text-1) !important;
+  text-align: center !important;
 }
 
 .el-table td.el-table__cell {
   color: var(--vp-c-text-2) !important;
   background-color: transparent !important;
+  text-align: center !important;
+}
+
+.el-table .cell {
+  text-align: center !important;
 }
 
 .el-table td.el-table__cell .cell:empty::before {

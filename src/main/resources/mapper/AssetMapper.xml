@@ -41,7 +41,7 @@
                 AND a.asset_building LIKE CONCAT('%', #{assetBuilding}, '%')
             </if>
         </where>
-        ORDER BY a.asset_reg_time DESC
+        ORDER BY a.id ASC
     </select>
 
     <select id="selectAll" resultType="edu.tut.cms.pojo.vo.AssetVO">
@@ -56,7 +56,7 @@
                 AND a.asset_owner_id = #{assetOwnerId}
             </if>
         </where>
-        ORDER BY a.asset_reg_time DESC
+        ORDER BY a.id ASC
     </select>
 
 </mapper>

@@ -23,7 +23,7 @@
                 AND ch.car_history_type = #{carHistoryType}
             </if>
         </where>
-        ORDER BY ch.car_history_time DESC
+        ORDER BY ch.id ASC
     </select>
 
 </mapper>

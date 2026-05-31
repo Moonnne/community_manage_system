@@ -39,7 +39,7 @@
                 AND v.visitor_name LIKE CONCAT('%', #{visitorName}, '%')
             </if>
         </where>
-        ORDER BY v.visitor_create_time DESC
+        ORDER BY v.id ASC
     </select>
 
 </mapper>

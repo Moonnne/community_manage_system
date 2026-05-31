@@ -39,7 +39,7 @@
                 AND f.facility_name LIKE CONCAT('%', #{facilityName}, '%')
             </if>
         </where>
-        ORDER BY f.id DESC
+        ORDER BY f.id ASC
     </select>
 
     <select id="selectNearExpiration" resultType="edu.tut.cms.pojo.vo.FacilityVO">

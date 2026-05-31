@@ -11,7 +11,7 @@ public interface UserRoleMapper {
     @Select("SELECT * FROM user_role WHERE role_id = #{roleId}")
     UserRole selectById(Integer roleId);
 
-    @Select("SELECT * FROM user_role")
+    @Select("SELECT * FROM user_role ORDER BY role_id ASC")
     List<UserRole> selectAll();
 
     @Insert("INSERT INTO user_role(role_id, role_name, role_promission) VALUES(#{roleId}, #{roleName}, #{rolePromission})")

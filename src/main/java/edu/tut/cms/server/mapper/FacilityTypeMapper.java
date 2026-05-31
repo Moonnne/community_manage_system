@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface FacilityTypeMapper {
 
-    @Select("SELECT * FROM facility_type")
+    @Select("SELECT * FROM facility_type ORDER BY id ASC")
     List<FacilityType> selectAll();
 
     @Select("SELECT * FROM facility_type WHERE facility_type_id = #{facilityTypeId}")

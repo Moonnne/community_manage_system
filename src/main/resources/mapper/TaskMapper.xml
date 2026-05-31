@@ -41,7 +41,7 @@
                 AND t.task_type = #{taskType}
             </if>
         </where>
-        ORDER BY t.task_create_time DESC
+        ORDER BY t.id ASC
     </select>
 
 </mapper>

@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface TaskTypeMapper {
 
-    @Select("SELECT * FROM task_type")
+    @Select("SELECT * FROM task_type ORDER BY id ASC")
     List<TaskType> selectAll();
 
     @Select("SELECT * FROM task_type WHERE task_type_id = #{taskTypeId}")

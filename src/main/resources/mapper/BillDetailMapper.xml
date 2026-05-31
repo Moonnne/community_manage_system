@@ -22,6 +22,7 @@
         FROM bill_detail bd
         LEFT JOIN bill_type bt ON bd.bill_detail_type = bt.bill_type_id
         WHERE bd.bill_id = #{billId}
+        ORDER BY bd.id ASC
     </select>
 
 </mapper>
