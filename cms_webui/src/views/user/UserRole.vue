@@ -10,16 +10,16 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="roleId" label="角色ID" width="120" />
-        <el-table-column prop="roleName" label="角色名称" min-width="250" />
-        <el-table-column label="权限等级" width="180">
+        <el-table-column prop="roleId" label="角色ID" width="160" />
+        <el-table-column prop="roleName" label="角色名称" min-width="300" />
+        <el-table-column label="权限等级" width="400">
           <template #default="{ row }">
             <el-tag effect="plain" :type="permissionTagType(row.rolePromission)">
               {{ permissionText(row.rolePromission) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" v-if="canEdit">
+        <el-table-column label="操作" width="200" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
