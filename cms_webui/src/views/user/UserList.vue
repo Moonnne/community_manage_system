@@ -55,8 +55,8 @@
         style="width: 100%"
         height="410"
       >
-        <el-table-column prop="id" label="用户ID" width="80" sortable />
-        <el-table-column label="头像" width="90">
+        <el-table-column prop="id" label="ID" width="100" sortable />
+        <el-table-column label="头像" width="60">
           <template #default="{ row }">
             <el-avatar :size="32" shape="circle" :src="userAvatar(row)">
               {{ avatarInitial(row) }}
@@ -65,7 +65,7 @@
         </el-table-column>
         <el-table-column prop="uid" label="账户" width="140" sortable />
         <el-table-column prop="userName" label="用户名" width="140" />
-        <el-table-column prop="roleName" label="角色" width="100">
+        <el-table-column prop="roleName" label="角色" width="120">
           <template #default="{ row }">
             <el-tag effect="plain" type="success">{{ row.roleName }}</el-tag>
           </template>
@@ -75,14 +75,14 @@
             {{ userAge(row.userBirthday) }}
           </template>
         </el-table-column>
-        <el-table-column prop="userPhone" label="电话" width="140" />
-        <el-table-column prop="userEmail" label="邮箱" min-width="180" />
+        <el-table-column prop="userPhone" label="电话" width="160" />
+        <el-table-column prop="userEmail" label="邮箱" min-width="200" />
         <el-table-column prop="userGender" label="性别" width="60">
           <template #default="{ row }">
             {{ row.userGender === 1 ? '男' : row.userGender === 2 ? '女' : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="userStatus" label="状态" width="60">
+        <el-table-column prop="userStatus" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="userStatusType(row.userStatus)" effect="plain">
               {{ userStatusText(row.userStatus) }}
