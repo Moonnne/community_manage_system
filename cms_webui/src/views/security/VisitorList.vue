@@ -118,21 +118,21 @@ const formRules = {
   visitorType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
 
-async function fetchData() {
+async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
     const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] })
-    const res = await getVisitorPage(p); tableData.value = res.data.records; total.value = res.data.total
+    const res = await getVisitorPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total
   } finally { loading.value = false }
 }
 async function fetchTypes() { const res = await getVisitorTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData() }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }
 function visitorStatusType(status) { return ({ '0': 'success', '1': 'warning', '2': 'primary', '3': 'danger' })[String(status)] || 'info' }
 onMounted(() => { fetchData(); fetchTypes() })

@@ -11,6 +11,7 @@ import edu.tut.cms.pojo.entity.Bill;
 import edu.tut.cms.pojo.entity.BillDetail;
 import edu.tut.cms.pojo.entity.BillType;
 import edu.tut.cms.pojo.vo.BillDetailVO;
+import edu.tut.cms.pojo.vo.BillSummaryVO;
 import edu.tut.cms.pojo.vo.BillTypeVO;
 import edu.tut.cms.pojo.vo.BillVO;
 import edu.tut.cms.server.mapper.BillDetailMapper;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,7 +49,7 @@ public class BillServiceImpl implements BillService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addBill(BillAddDTO dto) {
-        CurrentUser currentUser = UserContext.getCurrentUser();
+        CurrentUser currentUser = requireCurrentUser();
         Bill bill = Bill.builder()
                 .billCode(dto.getBillCode())
                 .ownerId(dto.getOwnerId())
@@ -69,6 +71,17 @@ public class BillServiceImpl implements BillService {
     public void deleteBill(Long id) {
         billDetailMapper.deleteByBillId(id);
         billMapper.deleteById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDeleteBills(BillBatchDeleteDTO dto) {
+        if (dto.getIds() == null || dto.getIds().isEmpty()) {
+            throw new BusinessException("请选择要删除的账单");
+        }
+        for (Long id : dto.getIds()) {
+            deleteBill(id);
+        }
     }
 
     @Override
@@ -102,11 +115,35 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void payBill(BillPayDTO dto) {
+        Bill bill = billMapper.selectById(dto.getId());
+        if (bill == null) {
+            throw new BusinessException("账单不存在");
+        }
+        ensureBillVisibleToCurrentUser(bill);
+        if (bill.getBillStatus() != null && bill.getBillStatus() == 0) {
+            throw new BusinessException("账单已结清");
+        }
+        if (bill.getBillStatus() != null && bill.getBillStatus() == 5) {
+            throw new BusinessException("已取消的账单无法付款");
+        }
+        Bill update = Bill.builder()
+                .id(bill.getId())
+                .billStatus(0)
+                .billPaid(bill.getBillTotal())
+                .billFinishTime(LocalDateTime.now())
+                .build();
+        billMapper.updateById(update);
+    }
+
+    @Override
     public BillVO getBill(Long id) {
         Bill bill = billMapper.selectById(id);
         if (bill == null) {
             throw new BusinessException("账单不存在");
         }
+        ensureBillVisibleToCurrentUser(bill);
         List<BillDetailVO> details = billDetailMapper.selectByBillId(id);
 
         List<BillVO> voList = billMapper.selectPage(bill.getOwnerId(), null, bill.getBillCode());
@@ -135,7 +172,7 @@ public class BillServiceImpl implements BillService {
     @Override
     public PageResult<BillVO> pageBills(Integer pageNum, Integer pageSize,
                                         Long ownerId, Integer billStatus, String billCode) {
-        CurrentUser currentUser = UserContext.getCurrentUser();
+        CurrentUser currentUser = requireCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
@@ -151,6 +188,32 @@ public class BillServiceImpl implements BillService {
         result.setPages(pageInfo.getPages());
         result.setRecords(pageInfo.getList());
         return result;
+    }
+
+    @Override
+    public BillSummaryVO getMyBillSummary() {
+        CurrentUser currentUser = requireCurrentUser();
+        BillSummaryVO summary = billMapper.selectSummary(currentUser.getId());
+        if (summary == null) {
+            return BillSummaryVO.builder()
+                    .unpaidCount(0L)
+                    .unpaidAmount(BigDecimal.ZERO)
+                    .overdueCount(0L)
+                    .partiallyPaidCount(0L)
+                    .build();
+        }
+        if (summary.getUnpaidAmount() == null) {
+            summary.setUnpaidAmount(BigDecimal.ZERO);
+        }
+        return summary;
+    }
+
+    @Override
+    public PageResult<BillVO> pageMyUnpaidBills(Integer pageNum, Integer pageSize) {
+        CurrentUser currentUser = requireCurrentUser();
+        PageHelper.startPage(pageNum, pageSize);
+        List<BillVO> list = billMapper.selectUnpaidPage(currentUser.getId());
+        return PageResult.of(list);
     }
 
     @Override
@@ -191,13 +254,18 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public List<BillDetailVO> getBillDetails(Long billId) {
+        Bill bill = billMapper.selectById(billId);
+        if (bill == null) {
+            return Collections.emptyList();
+        }
+        ensureBillVisibleToCurrentUser(bill);
         return billDetailMapper.selectByBillId(billId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] exportBillsToExcel(Long ownerId, Integer billStatus) {
-        CurrentUser currentUser = UserContext.getCurrentUser();
+        CurrentUser currentUser = requireCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
@@ -242,7 +310,10 @@ public class BillServiceImpl implements BillService {
         return switch (status) {
             case 0 -> "已完成";
             case 1 -> "未完成";
-            case 2 -> "已逾期";
+            case 2 -> "部分完成";
+            case 3 -> "已逾期";
+            case 4 -> "已补缴";
+            case 5 -> "已取消";
             default -> String.valueOf(status);
         };
     }
@@ -274,5 +345,22 @@ public class BillServiceImpl implements BillService {
             throw new BusinessException("该账单类型已被账单明细使用，无法删除");
         }
         billTypeMapper.deleteById(id);
+    }
+
+    private CurrentUser requireCurrentUser() {
+        CurrentUser currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException("用户未登录");
+        }
+        return currentUser;
+    }
+
+    private void ensureBillVisibleToCurrentUser(Bill bill) {
+        CurrentUser currentUser = requireCurrentUser();
+        if (currentUser.getUserRole() != null
+                && currentUser.getUserRole() >= 4
+                && !currentUser.getId().equals(bill.getOwnerId())) {
+            throw new BusinessException("无权访问该账单");
+        }
     }
 }

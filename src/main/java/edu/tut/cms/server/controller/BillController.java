@@ -6,6 +6,7 @@ import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.common.result.Result;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.BillDetailVO;
+import edu.tut.cms.pojo.vo.BillSummaryVO;
 import edu.tut.cms.pojo.vo.BillTypeVO;
 import edu.tut.cms.pojo.vo.BillVO;
 import edu.tut.cms.server.service.BillService;
@@ -42,6 +43,14 @@ public class BillController {
         return Result.success();
     }
 
+    @PostMapping("/delete/batch")
+    @RequirePermission(minLevel = 1)
+    @RequireRole({0, 1, 2})
+    public Result<Void> batchDelete(@Valid @RequestBody BillBatchDeleteDTO dto) {
+        billService.batchDeleteBills(dto);
+        return Result.success();
+    }
+
     @PostMapping("/update")
     @RequirePermission(minLevel = 1)
     @RequireRole({0, 1, 2})
@@ -58,6 +67,13 @@ public class BillController {
         return Result.success();
     }
 
+    @PostMapping("/pay")
+    @RequirePermission(minLevel = 0)
+    public Result<Void> pay(@Valid @RequestBody BillPayDTO dto) {
+        billService.payBill(dto);
+        return Result.success();
+    }
+
     @GetMapping("/{id}")
     public Result<BillVO> get(@PathVariable Long id) {
         return Result.success(billService.getBill(id));
@@ -70,6 +86,19 @@ public class BillController {
                                            @RequestParam(required = false) Integer billStatus,
                                            @RequestParam(required = false) String billCode) {
         return Result.success(billService.pageBills(pageNum, pageSize, ownerId, billStatus, billCode));
+    }
+
+    @GetMapping("/my/summary")
+    @RequirePermission(minLevel = 0)
+    public Result<BillSummaryVO> mySummary() {
+        return Result.success(billService.getMyBillSummary());
+    }
+
+    @GetMapping("/my/unpaid")
+    @RequirePermission(minLevel = 0)
+    public Result<PageResult<BillVO>> myUnpaid(@RequestParam(defaultValue = "1") Integer pageNum,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return Result.success(billService.pageMyUnpaidBills(pageNum, pageSize));
     }
 
     @PostMapping("/detail/add")

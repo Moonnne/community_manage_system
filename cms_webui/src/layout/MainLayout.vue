@@ -202,7 +202,7 @@ const avatarText = computed(() => {
 
 const allNavItems = [
   { path: '/user', label: '用户管理', icon: 'User', roles: [0, 1] },
-  { path: '/finance', label: '财务管理', icon: 'Wallet', roles: [0, 1, 2, 4] },
+  { path: '/finance', label: '财务管理', icon: 'Wallet', roles: [0, 1, 2, 3, 4, 5] },
   { path: '/security', label: '社区安全', icon: 'Lock', roles: [0, 1, 3] },
   { path: '/facility', label: '公共设施', icon: 'OfficeBuilding', roles: [0, 1, 2] },
   { path: '/asset', label: '资产管理', icon: 'House', roles: [0, 1, 2, 4] },
@@ -234,8 +234,13 @@ const sidebarConfig = {
   '/finance': [
     {
       title: '信息管理',
+      children: [{ path: '/finance/dashboard', label: '财务面板' }],
+      roles: [0, 1, 2, 3, 4, 5]
+    },
+    {
+      title: '账单管理',
       children: [{ path: '/finance/bill', label: '账单管理' }],
-      roles: [0, 1, 2, 4]
+      roles: [0, 1, 2]
     },
     {
       title: '类型管理',

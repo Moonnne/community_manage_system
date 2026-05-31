@@ -135,18 +135,18 @@ const formRules = {
 function taskStatusText(s) { return ({ 0: '已完成', 1: '待处理', 2: '受理中', 3: '已驳回', 4: '已取消' })[s] || '未知' }
 function taskStatusType(s) { return ({ 0: 'success', 1: 'warning', 2: 'primary', 3: 'danger', 4: 'info' })[s] || 'info' }
 
-async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getTaskTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData() }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
 function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: row.taskOperatorId || '', remark: row.taskRemark || '' }; processVisible.value = true }
 
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData() } finally { processLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteTask(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>
 

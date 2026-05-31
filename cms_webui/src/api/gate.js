@@ -12,6 +12,6 @@ export function deleteGate(id) {
   return request.post('/api/gate/delete', null, { params: { id } })
 }
 
-export function getGateList() {
-  return request.get('/api/gate/list')
+export function getGateList(options = {}) {
+  return request.get('/api/gate/list', options)
 }

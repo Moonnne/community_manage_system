@@ -48,8 +48,14 @@ const routes = [
       {
         path: 'finance',
         name: 'FinanceManage',
-        redirect: '/finance/bill',
+        redirect: '/finance/dashboard',
         children: [
+          {
+            path: 'dashboard',
+            name: 'FinanceDashboard',
+            component: () => import('@/views/finance/FinanceDashboard.vue'),
+            meta: { title: '财务面板' }
+          },
           {
             path: 'bill',
             name: 'BillList',

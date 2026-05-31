@@ -58,13 +58,13 @@ const wizardSteps = [
 ]
 const formRules = { gateName: [{ required: true, message: '请输入名称', trigger: 'blur' }] }
 
-async function fetchData() { loading.value = true; try { const res = await getGateList(); tableData.value = res.data } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getGateList({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { gateName: '', gateChiefId: '', gateRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, gateName: row.gateName, gateChiefId: row.gateChiefId, gateRemark: row.gateRemark } }
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateGate(form.value); ElMessage.success('更新成功') } else { await addGate(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteGate(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateGate(form.value); ElMessage.success('更新成功') } else { await addGate(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteGate(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(fetchData)
 </script>
 

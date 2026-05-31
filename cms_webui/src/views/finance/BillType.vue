@@ -59,10 +59,10 @@ const formRules = {
   billTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
 }
 
-async function fetchData() {
+async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const res = await getBillTypes()
+    const res = await getBillTypes({ forceRefresh: !!forceRefresh })
     tableData.value = res.data
   } finally { loading.value = false }
 }
@@ -78,7 +78,7 @@ async function handleSubmit() {
     await addBillType(form.value)
     ElMessage.success('添加成功')
     dialogVisible.value = false
-    fetchData()
+    fetchData(true)
   } finally {
     submitLoading.value = false
   }
@@ -88,7 +88,7 @@ async function handleDelete(row) {
   await ElMessageBox.confirm(`确定删除账单类型 ${row.billTypeName} 吗？`, '提示', { type: 'warning' })
   await deleteBillType(row.billTypeId)
   ElMessage.success('删除成功')
-  fetchData()
+  fetchData(true)
 }
 onMounted(fetchData)
 </script>

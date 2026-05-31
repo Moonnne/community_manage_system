@@ -96,10 +96,10 @@ function carHistoryTypeText(type) {
   return ['入场', '离场', '访客入场', '访客离场'][type] || '未知'
 }
 
-async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarHistoryPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined }; fetchData() }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarHistoryPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined }; fetchData(true) }
 function openAdd() { form.value = { carId: '', gateId: '', carHistoryType: undefined, carHistoryRemark: '' }; dialogVisible.value = true }
-async function handleSubmit() { submitLoading.value = true; try { await addCarHistory(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+async function handleSubmit() { submitLoading.value = true; try { await addCarHistory(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 onMounted(fetchData)
 </script>
 

@@ -12,16 +12,16 @@ export function deleteFacility(id) {
   return request.post('/api/facility/delete', null, { params: { id } })
 }
 
-export function getFacilityPage(params) {
-  return request.get('/api/facility/page', { params })
+export function getFacilityPage(params, options = {}) {
+  return request.get('/api/facility/page', { params, ...options })
 }
 
-export function getNearExpirationFacilities(months) {
-  return request.get('/api/facility/near-expiration', { params: { months } })
+export function getNearExpirationFacilities(months, options = {}) {
+  return request.get('/api/facility/near-expiration', { params: { months }, ...options })
 }
 
-export function getFacilityTypes() {
-  return request.get('/api/facility/types')
+export function getFacilityTypes(options = {}) {
+  return request.get('/api/facility/types', options)
 }
 
 export function addFacilityType(data) {

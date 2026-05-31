@@ -130,12 +130,12 @@ const formRules = {
   assetStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
-async function fetchData() {
+async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
     const p = { ...query.value, assetType: props.assetType }
     Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] })
-    const res = await getAssetPage(p)
+    const res = await getAssetPage(p, { forceRefresh: !!forceRefresh })
     tableData.value = res.data.records
     total.value = res.data.total
   } finally {
@@ -145,7 +145,7 @@ async function fetchData() {
 
 function resetQuery() {
   query.value = { pageNum: 1, pageSize: 10, assetOwnerId: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: '' }
-  fetchData()
+  fetchData(true)
 }
 
 function openAdd() {
@@ -179,7 +179,7 @@ async function handleSubmit() {
       ElMessage.success('添加成功')
     }
     dialogVisible.value = false
-    fetchData()
+    fetchData(true)
   } finally {
     submitLoading.value = false
   }
@@ -189,7 +189,7 @@ async function handleDelete(row) {
   await ElMessageBox.confirm('确定删除该资产吗？', '提示', { type: 'warning' })
   await deleteAsset(row.id)
   ElMessage.success('删除成功')
-  fetchData()
+  fetchData(true)
 }
 
 function assetStatusText(status) {

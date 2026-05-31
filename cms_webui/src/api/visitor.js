@@ -12,12 +12,12 @@ export function deleteVisitor(id) {
   return request.post('/api/visitor/delete', null, { params: { id } })
 }
 
-export function getVisitorPage(params) {
-  return request.get('/api/visitor/page', { params })
+export function getVisitorPage(params, options = {}) {
+  return request.get('/api/visitor/page', { params, ...options })
 }
 
-export function getVisitorTypes() {
-  return request.get('/api/visitor/types')
+export function getVisitorTypes(options = {}) {
+  return request.get('/api/visitor/types', options)
 }
 
 export function addVisitorType(data) {

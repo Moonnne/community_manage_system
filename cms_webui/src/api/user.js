@@ -8,8 +8,8 @@ export function register(data) {
   return request.post('/api/user/register', data)
 }
 
-export function getUserInfo() {
-  return request.get('/api/user/info')
+export function getUserInfo(options = {}) {
+  return request.get('/api/user/info', options)
 }
 
 export function updateUser(data) {
@@ -40,12 +40,12 @@ export function uploadUserAvatar(file) {
   })
 }
 
-export function getUserPage(params) {
-  return request.get('/api/user/list', { params })
+export function getUserPage(params, options = {}) {
+  return request.get('/api/user/list', { params, ...options })
 }
 
-export function getUserRoles() {
-  return request.get('/api/user/roles')
+export function getUserRoles(options = {}) {
+  return request.get('/api/user/roles', options)
 }
 
 export function addUserRole(data) {

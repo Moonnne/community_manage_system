@@ -12,16 +12,16 @@ export function deleteTask(id) {
   return request.post('/api/task/delete', null, { params: { id } })
 }
 
-export function getTaskPage(params) {
-  return request.get('/api/task/page', { params })
+export function getTaskPage(params, options = {}) {
+  return request.get('/api/task/page', { params, ...options })
 }
 
 export function processTask(params) {
   return request.post('/api/task/process', null, { params })
 }
 
-export function getTaskTypes() {
-  return request.get('/api/task/types')
+export function getTaskTypes(options = {}) {
+  return request.get('/api/task/types', options)
 }
 
 export function addTaskType(data) {

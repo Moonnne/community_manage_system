@@ -120,15 +120,15 @@ const formRules = {
   facilityType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
 
-async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getFacilityPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getFacilityPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getFacilityTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined }; fetchData() }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 1, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, facilityName: row.facilityName, facilityType: row.facilityType, facilityChiefId: row.facilityChiefId, facilityStatus: row.facilityStatus, facilityBuilding: row.facilityBuilding, facilityFloor: row.facilityFloor, facilityPosition: row.facilityPosition, facilityExpirationDate: row.facilityExpirationDate, facilityRemark: row.facilityRemark } }
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>
 

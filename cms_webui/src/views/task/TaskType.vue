@@ -61,7 +61,7 @@ const formRules = {
   taskTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
 }
 
-async function fetchData() { loading.value = true; try { const res = await getTaskTypes(); tableData.value = res.data } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getTaskTypes({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { taskTypeName: '', taskTypeRemark: '' }; dialogVisible.value = true }
 async function handleSubmit() {
   submitLoading.value = true
@@ -69,7 +69,7 @@ async function handleSubmit() {
     await addTaskType(form.value)
     ElMessage.success('添加成功')
     dialogVisible.value = false
-    fetchData()
+    fetchData(true)
   } finally {
     submitLoading.value = false
   }
@@ -78,7 +78,7 @@ async function handleDelete(row) {
   await ElMessageBox.confirm(`确定删除工单类型 ${row.taskTypeName} 吗？`, '提示', { type: 'warning' })
   await deleteTaskType(row.taskTypeId)
   ElMessage.success('删除成功')
-  fetchData()
+  fetchData(true)
 }
 onMounted(fetchData)
 </script>

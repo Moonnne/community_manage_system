@@ -108,15 +108,15 @@ const formRules = {
   carStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
-async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData() }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { carCode: '', carNumber: null, ownerId: '', carType: undefined, carStatus: 1, assetId: '' } }
 function mapRowToForm(row) { return { id: row.id, carNumber: row.carNumber, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateCar(form.value); ElMessage.success('更新成功') } else { await addCar(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteCar(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateCar(form.value); ElMessage.success('更新成功') } else { await addCar(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteCar(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>
 

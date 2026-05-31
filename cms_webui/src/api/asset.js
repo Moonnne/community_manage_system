@@ -12,10 +12,10 @@ export function deleteAsset(id) {
   return request.post('/api/asset/delete', null, { params: { id } })
 }
 
-export function getAssetPage(params) {
-  return request.get('/api/asset/page', { params })
+export function getAssetPage(params, options = {}) {
+  return request.get('/api/asset/page', { params, ...options })
 }
 
-export function getAssetTypes() {
-  return request.get('/api/asset/types')
+export function getAssetTypes(options = {}) {
+  return request.get('/api/asset/types', options)
 }

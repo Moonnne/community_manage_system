@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { usePageCacheStore } from '@/stores/pageCache'
 import router from '@/router'
 
 const service = axios.create({
@@ -14,18 +15,48 @@ service.interceptors.request.use(
     if (userStore.token) {
       config.headers['Authorization'] = `Bearer ${userStore.token}`
     }
+
     const method = (config.method || 'get').toLowerCase()
     const isWriteRequest = !['get', 'head', 'options'].includes(method)
     const isAllowedFrozenRequest = config.url === '/api/user/login' || config.url === '/api/user/register'
+
     if (userStore.isFrozen && isWriteRequest && !isAllowedFrozenRequest) {
       ElMessage.error('账号已冻结，无法执行操作')
       return Promise.reject(new Error('账号已冻结，无法执行操作'))
     }
+
+    const pageCacheStore = usePageCacheStore()
+    const isCacheableGet = method === 'get'
+      && config.url?.startsWith('/api/')
+      && config.cache !== false
+      && !config.responseType
+
+    if (isCacheableGet) {
+      const cacheKey = pageCacheStore.makeKey(config, userStore.userInfo?.id)
+      config.__cacheKey = cacheKey
+      if (!config.forceRefresh) {
+        const cachedData = pageCacheStore.get(cacheKey)
+        if (cachedData) {
+          config.__fromCache = true
+          config.adapter = () => Promise.resolve({
+            data: cachedData,
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config,
+            request: null
+          })
+        }
+      }
+    }
+
+    if (isWriteRequest) {
+      config.__invalidatePageCache = true
+    }
+
     return config
   },
-  error => {
-    return Promise.reject(error)
-  }
+  error => Promise.reject(error)
 )
 
 service.interceptors.response.use(
@@ -42,6 +73,13 @@ service.interceptors.response.use(
         userStore.updateUserInfo({ userStatus: 1 })
       }
       return Promise.reject(new Error(res.message || '请求失败'))
+    }
+
+    const pageCacheStore = usePageCacheStore()
+    if (response.config.__invalidatePageCache) {
+      pageCacheStore.clearAll()
+    } else if (response.config.__cacheKey && !response.config.__fromCache) {
+      pageCacheStore.set(response.config.__cacheKey, res)
     }
     return res
   },

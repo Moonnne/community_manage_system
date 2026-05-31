@@ -12,18 +12,18 @@ export function deleteCar(id) {
   return request.post('/api/car/delete', null, { params: { id } })
 }
 
-export function getCarPage(params) {
-  return request.get('/api/car/page', { params })
+export function getCarPage(params, options = {}) {
+  return request.get('/api/car/page', { params, ...options })
 }
 
-export function getCarTypes() {
-  return request.get('/api/car/types')
+export function getCarTypes(options = {}) {
+  return request.get('/api/car/types', options)
 }
 
 export function addCarHistory(data) {
   return request.post('/api/car-history/add', data)
 }
 
-export function getCarHistoryPage(params) {
-  return request.get('/api/car-history/page', { params })
+export function getCarHistoryPage(params, options = {}) {
+  return request.get('/api/car-history/page', { params, ...options })
 }

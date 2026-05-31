@@ -3,6 +3,7 @@ package edu.tut.cms.server.service;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.BillDetailVO;
+import edu.tut.cms.pojo.vo.BillSummaryVO;
 import edu.tut.cms.pojo.vo.BillTypeVO;
 import edu.tut.cms.pojo.vo.BillVO;
 
@@ -24,6 +25,8 @@ public interface BillService {
      */
     void deleteBill(Long id);
 
+    void batchDeleteBills(BillBatchDeleteDTO dto);
+
     /**
      * 更新账单信息
      *
@@ -37,6 +40,8 @@ public interface BillService {
      * @param dto 账单ID和目标状态
      */
     void updateBillStatus(BillStatusDTO dto);
+
+    void payBill(BillPayDTO dto);
 
     /**
      * 获取账单详情（含明细列表）
@@ -58,6 +63,10 @@ public interface BillService {
      */
     PageResult<BillVO> pageBills(Integer pageNum, Integer pageSize,
                                  Long ownerId, Integer billStatus, String billCode);
+
+    BillSummaryVO getMyBillSummary();
+
+    PageResult<BillVO> pageMyUnpaidBills(Integer pageNum, Integer pageSize);
 
     /**
      * 新增账单明细

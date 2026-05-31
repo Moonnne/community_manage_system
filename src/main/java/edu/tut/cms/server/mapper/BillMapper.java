@@ -1,6 +1,7 @@
 package edu.tut.cms.server.mapper;
 
 import edu.tut.cms.pojo.entity.Bill;
+import edu.tut.cms.pojo.vo.BillSummaryVO;
 import edu.tut.cms.pojo.vo.BillVO;
 import org.apache.ibatis.annotations.*;
 
@@ -27,4 +28,8 @@ public interface BillMapper {
     List<BillVO> selectPage(@Param("ownerId") Long ownerId,
                             @Param("billStatus") Integer billStatus,
                             @Param("billCode") String billCode);
+
+    List<BillVO> selectUnpaidPage(@Param("ownerId") Long ownerId);
+
+    BillSummaryVO selectSummary(@Param("ownerId") Long ownerId);
 }

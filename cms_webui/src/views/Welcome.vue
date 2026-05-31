@@ -34,7 +34,7 @@ const role = computed(() => userStore.userRole)
 
 const allFeatures = [
   { title: '用户管理', desc: '管理系统用户、权限分配', icon: 'User', path: '/user/list', roles: [0, 1] },
-  { title: '财务管理', desc: '账单管理、费用缴纳', icon: 'Wallet', path: '/finance/bill', roles: [0, 1, 2, 4] },
+  { title: '财务管理', desc: '账单管理、费用缴纳', icon: 'Wallet', path: '/finance/dashboard', roles: [0, 1, 2, 3, 4, 5] },
   { title: '社区安全', desc: '访客登记、车辆通行管理', icon: 'Lock', path: '/security/visitor', roles: [0, 1, 3] },
   { title: '公共设施', desc: '设施维护、巡检管理', icon: 'OfficeBuilding', path: '/facility/list', roles: [0, 1, 2] },
   { title: '资产管理', desc: '房屋资产、产权登记', icon: 'House', path: '/asset/property', roles: [0, 1, 2, 4] },

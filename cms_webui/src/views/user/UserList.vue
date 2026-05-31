@@ -322,12 +322,12 @@ const formRules = {
   userStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
-async function fetchData() {
+async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
     const params = { ...query.value }
     Object.keys(params).forEach(k => { if (params[k] === '' || params[k] === undefined) delete params[k] })
-    const res = await getUserPage(params)
+    const res = await getUserPage(params, { forceRefresh: !!forceRefresh })
     tableData.value = res.data.records
     total.value = res.data.total
   } finally {
@@ -342,7 +342,7 @@ async function fetchRoles() {
 
 function resetQuery() {
   query.value = { pageNum: 1, pageSize: 10, uid: '', userName: '', userPhone: '', userRole: undefined, userStatus: undefined }
-  fetchData()
+  fetchData(true)
 }
 
 function openAdd() {
@@ -408,7 +408,7 @@ async function handleSubmit() {
       ElMessage.success('添加成功')
     }
     dialogVisible.value = false
-    fetchData()
+    fetchData(true)
   } finally {
     submitLoading.value = false
   }
@@ -418,13 +418,13 @@ async function handleDelete(row) {
   await ElMessageBox.confirm(`确定删除用户 ${row.userName} ?`, '提示', { type: 'warning' })
   await deleteUser(row.id)
   ElMessage.success('删除成功')
-  fetchData()
+  fetchData(true)
 }
 
 async function setStatus(row, userStatus) {
   await updateUserStatus({ id: row.id, userStatus })
   ElMessage.success('操作成功')
-  fetchData()
+  fetchData(true)
 }
 
 function avatarInitial(row) {
@@ -470,7 +470,7 @@ function userAge(birthday) {
 }
 
 onMounted(() => {
-  fetchData()
+  fetchData(true)
   fetchRoles()
 })
 </script>

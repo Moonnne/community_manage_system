@@ -75,10 +75,10 @@ const formRules = {
   rolePromission: [{ required: true, message: '请选择权限等级', trigger: 'change' }]
 }
 
-async function fetchData() {
+async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const res = await getUserRoles()
+    const res = await getUserRoles({ forceRefresh: !!forceRefresh })
     tableData.value = res.data
   } finally {
     loading.value = false
@@ -97,7 +97,7 @@ async function handleSubmit() {
     await addUserRole(form.value)
     ElMessage.success('添加成功')
     dialogVisible.value = false
-    fetchData()
+    fetchData(true)
   } finally {
     submitLoading.value = false
   }
@@ -107,7 +107,7 @@ async function handleDelete(row) {
   await ElMessageBox.confirm(`确定删除角色组 ${row.roleName} 吗？`, '提示', { type: 'warning' })
   await deleteUserRole(row.roleId)
   ElMessage.success('删除成功')
-  fetchData()
+  fetchData(true)
 }
 
 function permissionText(level) {

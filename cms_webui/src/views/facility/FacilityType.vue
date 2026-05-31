@@ -53,10 +53,10 @@ const wizardSteps = [
 ]
 const formRules = { facilityTypeName: [{ required: true, message: '请输入名称', trigger: 'blur' }] }
 
-async function fetchData() { loading.value = true; try { const res = await getFacilityTypes(); tableData.value = res.data } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getFacilityTypes({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { facilityTypeName: '', facilityTypeRemark: '' }; dialogVisible.value = true }
-async function handleSubmit() { submitLoading.value = true; try { await addFacilityType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacilityType(row.id); ElMessage.success('删除成功'); fetchData() }
+async function handleSubmit() { submitLoading.value = true; try { await addFacilityType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacilityType(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(fetchData)
 </script>
 
