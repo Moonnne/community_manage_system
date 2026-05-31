@@ -20,17 +20,20 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增账单类型" width="420" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      title="新增账单类型"
+      mode="add"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="类型名称" prop="billTypeName">
           <el-input v-model="form.billTypeName" />
         </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -39,6 +42,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getBillTypes, addBillType, deleteBillType } from '@/api/bill'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -46,8 +50,11 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const formRef = ref(null)
 const form = ref({ billTypeName: '' })
+const wizardSteps = [
+  { title: '基础信息', fields: ['billTypeName'] },
+  { title: '确认提交', fields: [] }
+]
 const formRules = {
   billTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
 }
@@ -66,7 +73,6 @@ function openAdd() {
 }
 
 async function handleSubmit() {
-  await formRef.value.validate()
   submitLoading.value = true
   try {
     await addBillType(form.value)

@@ -51,8 +51,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑车辆' : '登记车辆'" width="480" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑车辆' : '登记车辆'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="车辆编号" prop="carCode" v-if="!isEdit"><el-input v-model="form.carCode" /></el-form-item>
         <el-form-item label="车牌号" prop="carNumber"><el-input v-model.number="form.carNumber" /></el-form-item>
         <el-form-item label="业主ID"><el-input v-model.number="form.ownerId" /></el-form-item>
@@ -66,12 +74,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="资产ID"><el-input v-model.number="form.assetId" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -80,6 +83,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getCarPage, getCarTypes, addCar, updateCar, deleteCar } from '@/api/car'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -90,9 +94,13 @@ const total = ref(0)
 const types = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined })
 const form = ref({})
+const wizardSteps = [
+  { title: '车辆信息', fields: ['carCode', 'carNumber'] },
+  { title: '归属状态', fields: ['carType', 'carStatus'] },
+  { title: '资产确认', fields: [] }
+]
 const formRules = {
   carCode: [{ required: true, message: '请输入车辆编号', trigger: 'blur' }],
   carNumber: [{ required: true, message: '请输入车牌号', trigger: 'blur' }],
@@ -103,9 +111,11 @@ const formRules = {
 async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData() }
-function openAdd() { isEdit.value = false; form.value = { carCode: '', carNumber: null, ownerId: '', carType: undefined, carStatus: 1, assetId: '' }; dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = { id: row.id, carNumber: row.carNumber, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId }; dialogVisible.value = true }
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { if (isEdit.value) { await updateCar(form.value); ElMessage.success('更新成功') } else { await addCar(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function getDefaultForm() { return { carCode: '', carNumber: null, ownerId: '', carType: undefined, carStatus: 1, assetId: '' } }
+function mapRowToForm(row) { return { id: row.id, carNumber: row.carNumber, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateCar(form.value); ElMessage.success('更新成功') } else { await addCar(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteCar(row.id); ElMessage.success('删除成功'); fetchData() }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>

@@ -173,6 +173,7 @@ public class UserServiceImpl implements UserService {
                 .userGender(dto.getUserGender())
                 .userPhone(dto.getUserPhone())
                 .userEmail(dto.getUserEmail())
+                .userAvata(dto.getUserAvata())
                 .userRole(dto.getUserRole())
                 .userStatus(dto.getUserStatus())
                 .userCreateTime(LocalDateTime.now())

@@ -59,20 +59,23 @@
     </el-card>
 
     <!-- Add/Edit Dialog -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑工单' : '提交工单'" width="560" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑工单' : '提交工单'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="标题" prop="taskTitle"><el-input v-model="form.taskTitle" /></el-form-item>
         <el-form-item label="类型" prop="taskType">
           <el-select v-model="form.taskType" placeholder="请选择"><el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" /></el-select>
         </el-form-item>
         <el-form-item label="描述" prop="taskInfo"><el-input v-model="form.taskInfo" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.taskRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
 
     <!-- Process Dialog -->
     <el-dialog v-model="processVisible" title="处理工单" width="480" :close-on-click-modal="false">
@@ -101,6 +104,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getTaskPage, getTaskTypes, addTask, updateTask, deleteTask, processTask } from '@/api/task'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canManage = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -113,11 +117,15 @@ const types = ref([])
 const dialogVisible = ref(false)
 const processVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const processFormRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined })
 const form = ref({})
 const processForm = ref({})
+const wizardSteps = [
+  { title: '基础信息', fields: ['taskTitle', 'taskType'] },
+  { title: '描述信息', fields: ['taskInfo'] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   taskTitle: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   taskType: [{ required: true, message: '请选择类型', trigger: 'change' }],
@@ -130,11 +138,13 @@ function taskStatusType(s) { return ({ 0: 'success', 1: 'warning', 2: 'primary',
 async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getTaskTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData() }
-function openAdd() { isEdit.value = false; form.value = { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' }; dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark }; dialogVisible.value = true }
+function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
 function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: row.taskOperatorId || '', remark: row.taskRemark || '' }; processVisible.value = true }
 
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData() } finally { processLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteTask(row.id); ElMessage.success('删除成功'); fetchData() }
 onMounted(() => { fetchData(); fetchTypes() })

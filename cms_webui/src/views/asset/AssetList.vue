@@ -56,8 +56,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? `编辑${title}` : `新增${title}`" width="600" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? `编辑${title}` : `新增${title}`"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="资产编号" prop="assetCode" v-if="!isEdit"><el-input v-model="form.assetCode" /></el-form-item>
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="名称" prop="assetName"><el-input v-model="form.assetName" /></el-form-item></el-col>
@@ -84,12 +92,7 @@
           <el-col :span="8"><el-form-item label="位置"><el-input v-model="form.assetPosition" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="备注"><el-input v-model="form.assetRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -98,6 +101,7 @@ import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getAssetPage, addAsset, updateAsset, deleteAsset } from '@/api/asset'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const props = defineProps({
   assetType: { type: Number, required: true },
@@ -113,9 +117,13 @@ const tableData = ref([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, assetOwnerId: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: '' })
 const form = ref({})
+const wizardSteps = [
+  { title: '基础信息', fields: ['assetCode', 'assetName'] },
+  { title: '归属状态', fields: ['assetStatus'] },
+  { title: '位置备注', fields: [] }
+]
 const formRules = {
   assetCode: [{ required: true, message: '请输入资产编号', trigger: 'blur' }],
   assetName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
@@ -142,40 +150,25 @@ function resetQuery() {
 
 function openAdd() {
   isEdit.value = false
-  form.value = {
-    assetCode: '',
-    assetName: '',
-    assetType: props.assetType,
-    assetOwnerId: '',
-    assetStatus: 0,
-    assetArea: '',
-    assetBuilding: '',
-    assetFloor: '',
-    assetPosition: '',
-    assetRemark: ''
-  }
+  form.value = getDefaultForm()
   dialogVisible.value = true
 }
 
 function openEdit(row) {
   isEdit.value = true
-  form.value = {
-    id: row.id,
-    assetName: row.assetName,
-    assetType: props.assetType,
-    assetOwnerId: row.assetOwnerId,
-    assetStatus: row.assetStatus,
-    assetArea: row.assetArea,
-    assetBuilding: row.assetBuilding,
-    assetFloor: row.assetFloor,
-    assetPosition: row.assetPosition,
-    assetRemark: row.assetRemark
-  }
+  form.value = mapRowToForm(row)
   dialogVisible.value = true
 }
 
+function getDefaultForm() {
+  return { assetCode: '', assetName: '', assetType: props.assetType, assetOwnerId: '', assetStatus: 0, assetArea: '', assetBuilding: '', assetFloor: '', assetPosition: '', assetRemark: '' }
+}
+
+function mapRowToForm(row) {
+  return { id: row.id, assetName: row.assetName, assetType: props.assetType, assetOwnerId: row.assetOwnerId, assetStatus: row.assetStatus, assetArea: row.assetArea, assetBuilding: row.assetBuilding, assetFloor: row.assetFloor, assetPosition: row.assetPosition, assetRemark: row.assetRemark }
+}
+
 async function handleSubmit() {
-  await formRef.value.validate()
   submitLoading.value = true
   try {
     if (isEdit.value) {

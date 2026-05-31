@@ -58,8 +58,9 @@
         <el-table-column prop="id" label="用户ID" width="80" sortable />
         <el-table-column label="头像" width="90">
           <template #default="{ row }">
-            <el-avatar v-if="userAvatar(row)" :size="32" shape="circle" :src="userAvatar(row)" />
-            <span v-else>-</span>
+            <el-avatar :size="32" shape="circle" :src="userAvatar(row)">
+              {{ avatarInitial(row) }}
+            </el-avatar>
           </template>
         </el-table-column>
         <el-table-column prop="uid" label="账户" width="140" sortable />
@@ -135,47 +136,108 @@
     </el-card>
 
     <!-- Add/Edit Dialog -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '添加用户'" width="520" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
-        <el-form-item label="账户" prop="uid">
-          <el-input v-model="form.uid" :disabled="isEdit" />
-        </el-form-item>
-        <el-form-item label="用户名" prop="userName">
-          <el-input v-model="form.userName" />
-        </el-form-item>
-        <el-form-item label="密码" prop="userPassword" v-if="!isEdit">
-          <el-input v-model="form.userPassword" type="password" show-password />
-        </el-form-item>
-        <el-form-item label="角色" prop="userRole" v-if="!isEdit">
-          <el-select v-model="form.userRole" placeholder="请选择角色">
-            <el-option v-for="r in roles" :key="r.roleId" :label="r.roleName" :value="r.roleId" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="userStatus" v-if="!isEdit">
-          <el-select v-model="form.userStatus" placeholder="请选择状态">
-            <el-option label="正常" :value="0" />
-            <el-option label="冻结" :value="1" />
-            <el-option label="禁用" :value="2" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="电话" prop="userPhone">
-          <el-input v-model="form.userPhone" />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="userEmail">
-          <el-input v-model="form.userEmail" />
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-radio-group v-model="form.userGender">
-            <el-radio :value="1">男</el-radio>
-            <el-radio :value="2">女</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑用户' : '添加用户'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="isEdit ? editWizardSteps : addWizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
+      <template #default="{ activeStep }">
+        <section v-show="activeStep === 0" class="user-wizard-step">
+          <div class="avatar-editor">
+            <el-upload
+              class="avatar-uploader"
+              accept="image/*"
+              :show-file-list="false"
+              :http-request="uploadAvatarRequest"
+              :before-upload="beforeAvatarUpload"
+            >
+              <el-avatar :size="128" shape="circle" :src="form.userAvata || form.userAvatar">
+                {{ avatarInitial(form) }}
+              </el-avatar>
+              <div class="avatar-upload-mask">
+                <el-icon><UploadFilled /></el-icon>
+                <span>{{ avatarUploading ? '上传中' : '上传头像' }}</span>
+              </div>
+            </el-upload>
+            <div class="avatar-editor-text">
+              <h4>用户头像</h4>
+              <p>选择图片后会在前端居中裁剪为 128 x 128，再上传到 OSS。</p>
+            </div>
+          </div>
+
+          <el-form-item label="ID">
+            <el-input v-model="form.id" disabled placeholder="保存后自动生成" />
+          </el-form-item>
+          <el-form-item label="账户" prop="uid">
+            <el-input v-model="form.uid" :disabled="isEdit" />
+          </el-form-item>
+          <el-form-item label="用户名" prop="userName">
+            <el-input v-model="form.userName" />
+          </el-form-item>
+          <el-form-item label="性别">
+            <el-radio-group v-model="form.userGender">
+              <el-radio :value="1">男</el-radio>
+              <el-radio :value="2">女</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="电话" prop="userPhone">
+            <el-input v-model="form.userPhone" />
+          </el-form-item>
+          <el-form-item label="邮箱" prop="userEmail">
+            <el-input v-model="form.userEmail" />
+          </el-form-item>
+          <el-form-item label="年龄">
+            <el-date-picker
+              v-model="form.userBirthday"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="请选择生日"
+            />
+          </el-form-item>
+        </section>
+
+        <section v-show="activeStep === 1" class="user-wizard-step">
+          <el-form-item label="用户角色" prop="userRole">
+            <el-select v-model="form.userRole" placeholder="请选择角色" :disabled="isEdit">
+              <el-option v-for="r in roles" :key="r.roleId" :label="r.roleName" :value="r.roleId" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="状态设置" prop="userStatus">
+            <el-select v-model="form.userStatus" placeholder="请选择状态" :disabled="isEdit">
+              <el-option label="正常" :value="0" />
+              <el-option label="冻结" :value="1" />
+              <el-option label="禁用" :value="2" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="创建时间">
+            <el-input v-model="form.userCreateTime" disabled placeholder="保存后自动生成" />
+          </el-form-item>
+          <el-form-item label="用户密码" prop="userPassword">
+            <el-input
+              v-model="form.userPassword"
+              type="password"
+              show-password
+              :placeholder="isEdit ? '留空则不修改密码' : '请输入密码'"
+            />
+          </el-form-item>
+          <el-form-item v-if="form.userPassword" label="确认密码" prop="confirmPassword">
+            <el-input v-model="form.confirmPassword" type="password" show-password />
+          </el-form-item>
+        </section>
+
+        <section v-show="activeStep === 2" class="user-wizard-step">
+          <el-table :data="confirmRows" stripe style="width: 100%">
+            <el-table-column prop="label" label="字段" width="140" />
+            <el-table-column prop="value" label="内容" min-width="220" />
+          </el-table>
+        </section>
       </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -183,7 +245,8 @@
 import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { getUserPage, getUserRoles, addUser, updateUser, deleteUser, updateUserStatus } from '@/api/user'
+import { getUserPage, getUserRoles, addUser, updateUser, deleteUser, updateUserStatus, uploadUserAvatar } from '@/api/user'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEditSelf = computed(() => userStore.canOperate)
@@ -194,7 +257,7 @@ const total = ref(0)
 const roles = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
+const avatarUploading = ref(false)
 
 const query = ref({
   pageNum: 1,
@@ -207,12 +270,56 @@ const query = ref({
 })
 
 const form = ref({})
+const addWizardSteps = [
+  { title: '基本信息', fields: ['uid', 'userName'] },
+  { title: '用户配置', fields: ['userRole', 'userStatus', 'userPassword', 'confirmPassword'] },
+  { title: '确认信息', fields: [] }
+]
+const editWizardSteps = [
+  { title: '基本信息', fields: ['uid', 'userName'] },
+  { title: '用户配置', fields: ['userPassword', 'confirmPassword'] },
+  { title: '确认信息', fields: [] }
+]
+
+const confirmRows = computed(() => [
+  { label: 'ID', value: valueText(form.value.id) },
+  { label: '头像', value: valueText(form.value.userAvata || form.value.userAvatar) },
+  { label: '账户', value: valueText(form.value.uid) },
+  { label: '用户名', value: valueText(form.value.userName) },
+  { label: '性别', value: form.value.userGender === 1 ? '男' : form.value.userGender === 2 ? '女' : '-' },
+  { label: '电话', value: valueText(form.value.userPhone) },
+  { label: '邮箱', value: valueText(form.value.userEmail) },
+  { label: '生日', value: valueText(form.value.userBirthday) },
+  { label: '年龄', value: userAge(form.value.userBirthday) },
+  { label: '用户角色', value: roleNameText(form.value.userRole) },
+  { label: '状态设置', value: userStatusText(form.value.userStatus) },
+  { label: '创建时间', value: valueText(form.value.userCreateTime) },
+  { label: '用户密码', value: form.value.userPassword ? '已设置' : '未修改' }
+])
+
+function validatePassword(rule, value, callback) {
+  if (!isEdit.value && !value) {
+    callback(new Error('请输入密码'))
+    return
+  }
+  callback()
+}
+
+function validateConfirmPassword(rule, value, callback) {
+  if (form.value.userPassword && value !== form.value.userPassword) {
+    callback(new Error('两次输入的密码不一致'))
+    return
+  }
+  callback()
+}
 
 const formRules = {
   uid: [{ required: true, message: '请输入账户', trigger: 'blur' }],
   userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  userPassword: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  userRole: [{ required: true, message: '请选择角色', trigger: 'change' }]
+  userPassword: [{ validator: validatePassword, trigger: 'blur' }],
+  confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }],
+  userRole: [{ required: true, message: '请选择角色', trigger: 'change' }],
+  userStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
 async function fetchData() {
@@ -240,26 +347,64 @@ function resetQuery() {
 
 function openAdd() {
   isEdit.value = false
-  form.value = { uid: '', userName: '', userPassword: '', userRole: undefined, userStatus: 0, userPhone: '', userEmail: '', userGender: 1 }
+  form.value = getDefaultForm()
   dialogVisible.value = true
 }
 
 function openEdit(row) {
   isEdit.value = true
-  form.value = { id: row.id, userName: row.userName, userPhone: row.userPhone, userEmail: row.userEmail, userGender: row.userGender }
+  form.value = mapRowToForm(row)
   dialogVisible.value = true
+}
+
+function getDefaultForm() {
+  return {
+    id: '',
+    uid: '',
+    userName: '',
+    userAvata: '',
+    userBirthday: '',
+    userPassword: '',
+    confirmPassword: '',
+    userRole: undefined,
+    userStatus: 0,
+    userCreateTime: '',
+    userPhone: '',
+    userEmail: '',
+    userGender: 1
+  }
+}
+
+function mapRowToForm(row) {
+  return {
+    id: row.id,
+    uid: row.uid,
+    userName: row.userName,
+    userAvata: row.userAvata || row.userAvatar || '',
+    userBirthday: row.userBirthday || '',
+    userPassword: '',
+    confirmPassword: '',
+    userRole: row.userRole,
+    userStatus: row.userStatus,
+    userCreateTime: row.userCreateTime || '',
+    userPhone: row.userPhone,
+    userEmail: row.userEmail,
+    userGender: row.userGender
+  }
 }
 
 async function handleSubmit() {
   if (!canEditSelf.value) return
-  await formRef.value.validate()
   submitLoading.value = true
   try {
+    const submitForm = { ...form.value }
+    delete submitForm.confirmPassword
+    if (isEdit.value && !submitForm.userPassword) delete submitForm.userPassword
     if (isEdit.value) {
-      await updateUser(form.value)
+      await updateUser(submitForm)
       ElMessage.success('更新成功')
     } else {
-      await addUser(form.value)
+      await addUser(submitForm)
       ElMessage.success('添加成功')
     }
     dialogVisible.value = false
@@ -280,6 +425,18 @@ async function setStatus(row, userStatus) {
   await updateUserStatus({ id: row.id, userStatus })
   ElMessage.success('操作成功')
   fetchData()
+}
+
+function avatarInitial(row) {
+  return (row.userName || row.uid || 'U').charAt(0).toUpperCase()
+}
+
+function valueText(value) {
+  return value === '' || value === undefined || value === null ? '-' : value
+}
+
+function roleNameText(roleId) {
+  return roles.value.find(role => role.roleId === roleId)?.roleName || valueText(roleId)
 }
 
 function userStatusText(status) {
@@ -326,4 +483,27 @@ onMounted(() => {
 .table-toolbar { margin-bottom: 12px; }
 .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+.user-wizard-step {
+  min-height: 420px;
+}
+.avatar-editor {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.avatar-editor :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+@media (max-width: 640px) {
+  .avatar-editor {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .avatar-editor :deep(.el-form-item) {
+    width: 100%;
+  }
+}
 </style>

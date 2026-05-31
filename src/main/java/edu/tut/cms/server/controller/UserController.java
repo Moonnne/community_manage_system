@@ -9,6 +9,7 @@ import edu.tut.cms.common.context.UserContext;
 import edu.tut.cms.common.exception.BusinessException;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.common.result.Result;
+import edu.tut.cms.common.utils.OssUtils;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.UserRoleVO;
 import edu.tut.cms.pojo.vo.UserVO;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +33,7 @@ public class UserController {
     private static final String CAPTCHA_SESSION_KEY = "LOGIN_REGISTER_CAPTCHA";
 
     private final UserService userService;
+    private final OssUtils ossUtils;
 
     @GetMapping("/captcha")
     public void captcha(HttpSession session, HttpServletResponse response) throws IOException {
@@ -85,6 +88,11 @@ public class UserController {
     public Result<Void> changePassword(@Valid @RequestBody UserPasswordDTO dto) {
         userService.changePassword(dto);
         return Result.success();
+    }
+
+    @PostMapping("/avatar/upload")
+    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        return Result.success(ossUtils.uploadAvatar(file));
     }
 
     @PostMapping("/add")

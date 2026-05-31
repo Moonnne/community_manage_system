@@ -58,8 +58,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑账单' : '新增账单'" width="560" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑账单' : '新增账单'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="账单编号" prop="billCode" v-if="!isEdit"><el-input v-model="form.billCode" /></el-form-item>
         <el-form-item label="业主ID" prop="ownerId" v-if="!isEdit"><el-input v-model.number="form.ownerId" /></el-form-item>
         <el-form-item label="资产ID" prop="assetId" v-if="!isEdit"><el-input v-model.number="form.assetId" /></el-form-item>
@@ -76,12 +84,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.billRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
 
     <el-dialog v-model="detailVisible" title="账单明细" width="700">
       <el-table :data="details" stripe style="width: 100%">
@@ -99,6 +102,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getBillPage, addBill, updateBill, deleteBill, getBillDetails } from '@/api/bill'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2].includes(userStore.userRole) && userStore.canOperate)
@@ -109,11 +113,15 @@ const total = ref(0)
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const details = ref([])
 
 const query = ref({ pageNum: 1, pageSize: 10, billCode: '', ownerId: '', billStatus: undefined })
 const form = ref({})
+const wizardSteps = [
+  { title: '基础信息', fields: ['billCode', 'ownerId', 'assetId'] },
+  { title: '金额状态', fields: ['billTotal'] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   billCode: [{ required: true, message: '请输入账单编号', trigger: 'blur' }],
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],
@@ -136,11 +144,12 @@ async function fetchData() {
 }
 
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, billCode: '', ownerId: '', billStatus: undefined }; fetchData() }
-function openAdd() { isEdit.value = false; form.value = { billCode: '', ownerId: '', assetId: '', billTotal: null, billPaid: null, billRemark: '' }; dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = { id: row.id, billStatus: row.billStatus, billTotal: row.billTotal, billPaid: row.billPaid, billRemark: row.billRemark }; dialogVisible.value = true }
+function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function getDefaultForm() { return { billCode: '', ownerId: '', assetId: '', billTotal: null, billPaid: null, billRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, billStatus: row.billStatus, billTotal: row.billTotal, billPaid: row.billPaid, billRemark: row.billRemark } }
 
 async function handleSubmit() {
-  await formRef.value.validate()
   submitLoading.value = true
   try {
     if (isEdit.value) { await updateBill(form.value); ElMessage.success('更新成功') }

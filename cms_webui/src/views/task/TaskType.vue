@@ -19,20 +19,23 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增工单类型" width="420" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      title="新增工单类型"
+      mode="add"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="类型名称" prop="taskTypeName">
           <el-input v-model="form.taskTypeName" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.taskTypeRemark" type="textarea" :rows="2" />
         </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -41,6 +44,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getTaskTypes, addTaskType, deleteTaskType } from '@/api/task'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -48,8 +52,11 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const formRef = ref(null)
 const form = ref({ taskTypeName: '', taskTypeRemark: '' })
+const wizardSteps = [
+  { title: '基础信息', fields: ['taskTypeName'] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   taskTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
 }
@@ -57,7 +64,6 @@ const formRules = {
 async function fetchData() { loading.value = true; try { const res = await getTaskTypes(); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { taskTypeName: '', taskTypeRemark: '' }; dialogVisible.value = true }
 async function handleSubmit() {
-  await formRef.value.validate()
   submitLoading.value = true
   try {
     await addTaskType(form.value)

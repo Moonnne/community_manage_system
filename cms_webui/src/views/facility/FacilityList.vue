@@ -57,8 +57,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑设施' : '新增设施'" width="560" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑设施' : '新增设施'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="名称" prop="facilityName"><el-input v-model="form.facilityName" /></el-form-item></el-col>
           <el-col :span="12">
@@ -80,12 +88,7 @@
         </el-row>
         <el-form-item label="保质期"><el-input v-model.number="form.facilityExpirationDate" placeholder="月数" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.facilityRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -94,18 +97,24 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getFacilityPage, getFacilityTypes, addFacility, updateFacility, deleteFacility } from '@/api/facility'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2].includes(userStore.userRole) && userStore.canOperate)
 const loading = ref(false)
+const submitLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const types = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined })
 const form = ref({})
+const wizardSteps = [
+  { title: '基础信息', fields: ['facilityName', 'facilityType'] },
+  { title: '位置状态', fields: [] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   facilityName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   facilityType: [{ required: true, message: '请选择类型', trigger: 'change' }]
@@ -114,9 +123,11 @@ const formRules = {
 async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getFacilityPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getFacilityTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined }; fetchData() }
-function openAdd() { isEdit.value = false; form.value = { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 1, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' }; dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = { id: row.id, facilityName: row.facilityName, facilityType: row.facilityType, facilityChiefId: row.facilityChiefId, facilityStatus: row.facilityStatus, facilityBuilding: row.facilityBuilding, facilityFloor: row.facilityFloor, facilityPosition: row.facilityPosition, facilityExpirationDate: row.facilityExpirationDate, facilityRemark: row.facilityRemark }; dialogVisible.value = true }
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function getDefaultForm() { return { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 1, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, facilityName: row.facilityName, facilityType: row.facilityType, facilityChiefId: row.facilityChiefId, facilityStatus: row.facilityStatus, facilityBuilding: row.facilityBuilding, facilityFloor: row.facilityFloor, facilityPosition: row.facilityPosition, facilityExpirationDate: row.facilityExpirationDate, facilityRemark: row.facilityRemark } }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData() }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>

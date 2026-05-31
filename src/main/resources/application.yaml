@@ -23,6 +23,14 @@ jwt:
   secret: ${jwt.secret}
   expiration: ${jwt.expiration}
 
+minio:
+  endpoint: ${minio.endpoint}
+  access-key: ${minio.access-key}
+  secret-key: ${minio.secret-key}
+  bucket: ${minio.bucket:cms}
+  avatar-dir: ${minio.avatar-dir:avatas}
+  public-url: ${minio.public-url:}
+
 logging:
   level:
     edu.tut.cms: debug

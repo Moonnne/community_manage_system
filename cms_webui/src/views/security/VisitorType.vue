@@ -17,16 +17,19 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增访客类型" width="420" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      title="新增访客类型"
+      mode="add"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="名称" prop="visitorTypeName"><el-input v-model="form.visitorTypeName" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.visitorTypeRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -35,6 +38,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getVisitorTypes, addVisitorType, deleteVisitorType } from '@/api/visitor'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -42,13 +46,16 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const formRef = ref(null)
 const form = ref({})
+const wizardSteps = [
+  { title: '基础信息', fields: ['visitorTypeName'] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = { visitorTypeName: [{ required: true, message: '请输入名称', trigger: 'blur' }] }
 
 async function fetchData() { loading.value = true; try { const res = await getVisitorTypes(); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { visitorTypeName: '', visitorTypeRemark: '' }; dialogVisible.value = true }
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { await addVisitorType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+async function handleSubmit() { submitLoading.value = true; try { await addVisitorType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitorType(row.id); ElMessage.success('删除成功'); fetchData() }
 onMounted(fetchData)
 </script>

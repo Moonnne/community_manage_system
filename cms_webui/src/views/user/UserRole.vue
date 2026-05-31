@@ -27,8 +27,16 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增角色组" width="420" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      title="新增角色组"
+      mode="add"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" />
         </el-form-item>
@@ -40,12 +48,7 @@
             <el-option label="3 - 系统权限" value="3" />
           </el-select>
         </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -54,6 +57,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getUserRoles, addUserRole, deleteUserRole } from '@/api/user'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => userStore.userRole === 0 && userStore.canOperate)
@@ -61,8 +65,11 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const formRef = ref(null)
 const form = ref({ roleName: '', rolePromission: '1' })
+const wizardSteps = [
+  { title: '基础信息', fields: ['roleName', 'rolePromission'] },
+  { title: '确认提交', fields: [] }
+]
 const formRules = {
   roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   rolePromission: [{ required: true, message: '请选择权限等级', trigger: 'change' }]
@@ -85,7 +92,6 @@ function openAdd() {
 }
 
 async function handleSubmit() {
-  await formRef.value.validate()
   submitLoading.value = true
   try {
     await addUserRole(form.value)

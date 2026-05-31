@@ -55,8 +55,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑访客' : '登记访客'" width="520" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="isEdit ? {} : formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑访客' : '登记访客'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="isEdit ? editWizardSteps : addWizardSteps"
+      :model="form"
+      :rules="isEdit ? {} : formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="姓名" prop="visitorName" v-if="!isEdit"><el-input v-model="form.visitorName" /></el-form-item>
         <el-form-item label="电话" prop="visitorPhone" v-if="!isEdit"><el-input v-model="form.visitorPhone" /></el-form-item>
         <el-form-item label="业主ID" prop="ownerId" v-if="!isEdit"><el-input v-model.number="form.ownerId" /></el-form-item>
@@ -73,12 +81,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.visitorRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -87,6 +90,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getVisitorPage, getVisitorTypes, addVisitor, updateVisitor, deleteVisitor } from '@/api/visitor'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -97,9 +101,17 @@ const total = ref(0)
 const types = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' })
 const form = ref({})
+const addWizardSteps = [
+  { title: '访客信息', fields: ['visitorName'] },
+  { title: '被访信息', fields: ['ownerId', 'visitorType'] },
+  { title: '备注确认', fields: [] }
+]
+const editWizardSteps = [
+  { title: '状态信息', fields: [] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   visitorName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],
@@ -115,9 +127,11 @@ async function fetchData() {
 }
 async function fetchTypes() { const res = await getVisitorTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData() }
-function openAdd() { isEdit.value = false; form.value = { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorRemark: '' }; dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = { id: row.id, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark }; dialogVisible.value = true }
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
+async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData() }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }
 function visitorStatusType(status) { return ({ '0': 'success', '1': 'warning', '2': 'primary', '3': 'danger' })[String(status)] || 'info' }

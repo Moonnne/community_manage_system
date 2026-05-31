@@ -43,8 +43,16 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增通行记录" width="480" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      title="新增通行记录"
+      mode="add"
+      :steps="wizardSteps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
         <el-form-item label="车辆ID" prop="carId"><el-input v-model.number="form.carId" /></el-form-item>
         <el-form-item label="门岗ID" prop="gateId"><el-input v-model.number="form.gateId" /></el-form-item>
         <el-form-item label="类型" prop="carHistoryType">
@@ -56,12 +64,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.carHistoryRemark" type="textarea" :rows="2" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
@@ -69,15 +72,20 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCarHistoryPage, addCarHistory } from '@/api/car'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const dialogVisible = ref(false)
-const formRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined })
 const form = ref({})
+const wizardSteps = [
+  { title: '车辆门岗', fields: ['carId', 'gateId'] },
+  { title: '通行信息', fields: ['carHistoryType'] },
+  { title: '备注确认', fields: [] }
+]
 const formRules = {
   carId: [{ required: true, message: '请输入车辆ID', trigger: 'blur' }],
   gateId: [{ required: true, message: '请输入门岗ID', trigger: 'blur' }],
@@ -91,7 +99,7 @@ function carHistoryTypeText(type) {
 async function fetchData() { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarHistoryPage(p); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined }; fetchData() }
 function openAdd() { form.value = { carId: '', gateId: '', carHistoryType: undefined, carHistoryRemark: '' }; dialogVisible.value = true }
-async function handleSubmit() { await formRef.value.validate(); submitLoading.value = true; try { await addCarHistory(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
+async function handleSubmit() { submitLoading.value = true; try { await addCarHistory(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData() } finally { submitLoading.value = false } }
 onMounted(fetchData)
 </script>
 

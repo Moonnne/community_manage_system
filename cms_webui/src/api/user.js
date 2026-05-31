@@ -32,6 +32,14 @@ export function updateUserStatus(data) {
   return request.post('/api/user/status', data)
 }
 
+export function uploadUserAvatar(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/api/user/avatar/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export function getUserPage(params) {
   return request.get('/api/user/list', { params })
 }

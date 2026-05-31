@@ -22,6 +22,7 @@ public class UserAddDTO {
     private Integer userGender;
     private String userPhone;
     private String userEmail;
+    private String userAvata;
     @NotNull
     private Integer userRole;
     @NotNull
