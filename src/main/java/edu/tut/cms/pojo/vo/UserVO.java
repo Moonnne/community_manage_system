@@ -28,5 +28,7 @@ public class UserVO {
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime userCreateTime;
     private String userAvata;
+    private Integer userInitialized;
+    private Integer uidLocked;
     private String token;
 }

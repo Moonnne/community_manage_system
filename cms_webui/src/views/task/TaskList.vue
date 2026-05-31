@@ -101,12 +101,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getTaskPage, getTaskTypes, addTask, updateTask, deleteTask, processTask } from '@/api/task'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const userStore = useUserStore()
+const route = useRoute()
 const canManage = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -139,6 +141,17 @@ async function fetchData(forceRefresh = false) { loading.value = true; try { con
 async function fetchTypes() { const res = await getTaskTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
+function openForgotPasswordTask() {
+  isEdit.value = false
+  const accountType = types.value.find(type => type.taskTypeName === '账户') || types.value.find(type => type.taskTypeId === 5)
+  form.value = {
+    taskTitle: '忘记原密码申请',
+    taskType: accountType?.taskTypeId,
+    taskInfo: `用户ID：${userStore.userInfo?.id || '-'}\n账户：${userStore.userInfo?.uid || '-'}\n请协助处理原密码遗忘问题。`,
+    taskRemark: ''
+  }
+  dialogVisible.value = true
+}
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
@@ -147,7 +160,13 @@ function openProcess(row) { processForm.value = { id: row.id, status: row.taskSt
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
 async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
-onMounted(() => { fetchData(); fetchTypes() })
+onMounted(async () => {
+  fetchData()
+  await fetchTypes()
+  if (route.query.intent === 'forgot-password') {
+    openForgotPasswordTask()
+  }
+})
 </script>
 
 <style scoped>

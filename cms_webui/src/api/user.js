@@ -16,6 +16,10 @@ export function updateUser(data) {
   return request.post('/api/user/update', data)
 }
 
+export function initializeUser(data) {
+  return request.post('/api/user/initialize', data)
+}
+
 export function changePassword(data) {
   return request.post('/api/user/password', data)
 }

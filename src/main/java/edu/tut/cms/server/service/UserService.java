@@ -39,6 +39,8 @@ public interface UserService {
      */
     void updateUser(UserUpdateDTO dto);
 
+    void initializeUser(UserInitializeDTO dto);
+
     /**
      * 修改密码
      *

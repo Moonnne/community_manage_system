@@ -84,8 +84,15 @@ public class UserController {
         return Result.success();
     }
 
+    @PostMapping("/initialize")
+    public Result<Void> initialize(@Valid @RequestBody UserInitializeDTO dto) {
+        userService.initializeUser(dto);
+        return Result.success();
+    }
+
     @PostMapping("/password")
-    public Result<Void> changePassword(@Valid @RequestBody UserPasswordDTO dto) {
+    public Result<Void> changePassword(@Valid @RequestBody UserPasswordDTO dto, HttpSession session) {
+        validateCaptcha(dto.getCaptchaCode(), session);
         userService.changePassword(dto);
         return Result.success();
     }

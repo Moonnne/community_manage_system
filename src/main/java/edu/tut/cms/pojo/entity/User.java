@@ -25,4 +25,7 @@ public class User {
     private Integer userStatus;
     private LocalDateTime userCreateTime;
     private String userAvata;
+    private Integer userInitialized;
+    private Integer uidLocked;
+    private Boolean userGenderWritable;
 }

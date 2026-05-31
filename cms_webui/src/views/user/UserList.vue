@@ -58,7 +58,13 @@
         <el-table-column prop="id" label="ID" width="100" sortable />
         <el-table-column label="头像" width="60">
           <template #default="{ row }">
-            <el-avatar :size="32" shape="circle" :src="userAvatar(row)">
+            <el-avatar
+              :size="32"
+              shape="circle"
+              :src="userAvatar(row)"
+              class="user-avatar"
+              :style="{ backgroundColor: 'var(--vp-c-brand-1)' }"
+            >
               {{ avatarInitial(row) }}
             </el-avatar>
           </template>
@@ -149,24 +155,10 @@
       <template #default="{ activeStep }">
         <section v-show="activeStep === 0" class="user-wizard-step">
           <div class="avatar-editor">
-            <el-upload
-              class="avatar-uploader"
-              accept="image/*"
-              :show-file-list="false"
-              :http-request="uploadAvatarRequest"
-              :before-upload="beforeAvatarUpload"
-            >
-              <el-avatar :size="128" shape="circle" :src="form.userAvata || form.userAvatar">
-                {{ avatarInitial(form) }}
-              </el-avatar>
-              <div class="avatar-upload-mask">
-                <el-icon><UploadFilled /></el-icon>
-                <span>{{ avatarUploading ? '上传中' : '上传头像' }}</span>
-              </div>
-            </el-upload>
+            <AvatarEditor v-model="form.userAvata" :initial="avatarInitial(form)" :size="96" @uploaded="handleFormAvatarUploaded" />
             <div class="avatar-editor-text">
               <h4>用户头像</h4>
-              <p>选择图片后会在前端居中裁剪为 128 x 128，再上传到 OSS。</p>
+              <p>点击头像可预览大图，选择图片后可拖拽、滚轮缩放或双指缩放裁切，上传文件需小于 10MB。</p>
             </div>
           </div>
 
@@ -245,8 +237,9 @@
 import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { getUserPage, getUserRoles, addUser, updateUser, deleteUser, updateUserStatus, uploadUserAvatar } from '@/api/user'
+import { getUserPage, getUserRoles, addUser, updateUser, deleteUser, updateUserStatus } from '@/api/user'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import AvatarEditor from '@/components/AvatarEditor.vue'
 
 const userStore = useUserStore()
 const canEditSelf = computed(() => userStore.canOperate)
@@ -257,7 +250,6 @@ const total = ref(0)
 const roles = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const avatarUploading = ref(false)
 
 const query = ref({
   pageNum: 1,
@@ -393,6 +385,23 @@ function mapRowToForm(row) {
   }
 }
 
+async function handleFormAvatarUploaded(url) {
+  form.value.userAvata = url
+  if (!isEdit.value || !form.value.id) return
+  await updateUser({
+    id: form.value.id,
+    userName: form.value.userName,
+    userBirthday: form.value.userBirthday || null,
+    userGender: form.value.userGender,
+    userPhone: form.value.userPhone,
+    userEmail: form.value.userEmail,
+    userAvata: url
+  })
+  const row = tableData.value.find(item => item.id === form.value.id)
+  if (row) row.userAvata = url
+  ElMessage.success('头像已更新')
+}
+
 async function handleSubmit() {
   if (!canEditSelf.value) return
   submitLoading.value = true
@@ -488,13 +497,19 @@ onMounted(() => {
 }
 .avatar-editor {
   display: grid;
-  grid-template-columns: 128px 1fr;
+  grid-template-columns: 112px 1fr;
   gap: 18px;
   align-items: center;
   margin-bottom: 18px;
 }
-.avatar-editor :deep(.el-form-item) {
-  margin-bottom: 0;
+.avatar-editor-text h4 {
+  margin: 0 0 8px;
+  color: var(--vp-c-text-1);
+}
+.avatar-editor-text p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  line-height: 1.7;
 }
 @media (max-width: 640px) {
   .avatar-editor {

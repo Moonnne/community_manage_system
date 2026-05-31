@@ -34,7 +34,7 @@
 
           <el-dropdown trigger="click" @command="handleCommand">
             <div class="nav-avatar">
-              <el-avatar :size="32" :style="{ backgroundColor: 'var(--vp-c-brand-1)' }">
+              <el-avatar :size="32" :src="userStore.userInfo?.userAvata" :style="{ backgroundColor: 'var(--vp-c-brand-1)' }">
                 {{ avatarText }}
               </el-avatar>
               <span class="nav-username">{{ userStore.userInfo?.userName || '用户' }}</span>
@@ -135,6 +135,8 @@
         <router-view />
       </main>
     </div>
+
+    <AccountInitializationDialog />
   </div>
 </template>
 
@@ -143,6 +145,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
+import AccountInitializationDialog from '@/components/AccountInitializationDialog.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -17,9 +17,12 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE id = #{id}")
     User selectById(Long id);
 
-    @Insert("INSERT INTO user(uid, user_name, user_birthday, user_gender, user_phone, user_email, user_password, user_role, user_status, user_create_time, user_avata) VALUES(#{uid}, #{userName}, #{userBirthday}, #{userGender}, #{userPhone}, #{userEmail}, #{userPassword}, #{userRole}, #{userStatus}, #{userCreateTime}, #{userAvata})")
+    @Insert("INSERT INTO user(uid, user_name, user_birthday, user_gender, user_phone, user_email, user_password, user_role, user_status, user_create_time, user_avata, user_initialized, uid_locked) VALUES(#{uid}, #{userName}, #{userBirthday}, #{userGender}, #{userPhone}, #{userEmail}, #{userPassword}, #{userRole}, #{userStatus}, #{userCreateTime}, #{userAvata}, #{userInitialized}, #{uidLocked})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(User user);
+
+    @Select("SELECT COUNT(1) FROM user WHERE uid = #{uid} AND id <> #{id}")
+    int countByUidExcludeId(@Param("uid") String uid, @Param("id") Long id);
 
     int updateById(User user);
 

@@ -6,15 +6,18 @@
     <update id="updateById">
         UPDATE user
         <set>
+            <if test="uid != null and uid != ''">uid = #{uid},</if>
             <if test="userName != null and userName != ''">user_name = #{userName},</if>
             <if test="userBirthday != null">user_birthday = #{userBirthday},</if>
-            <if test="userGender != null">user_gender = #{userGender},</if>
-            <if test="userPhone != null and userPhone != ''">user_phone = #{userPhone},</if>
-            <if test="userEmail != null and userEmail != ''">user_email = #{userEmail},</if>
+            <if test="userGenderWritable != null and userGenderWritable">user_gender = #{userGender},</if>
+            <if test="userPhone != null">user_phone = #{userPhone},</if>
+            <if test="userEmail != null">user_email = #{userEmail},</if>
             <if test="userPassword != null and userPassword != ''">user_password = #{userPassword},</if>
             <if test="userRole != null">user_role = #{userRole},</if>
             <if test="userStatus != null">user_status = #{userStatus},</if>
-            <if test="userAvata != null and userAvata != ''">user_avata = #{userAvata},</if>
+            <if test="userAvata != null">user_avata = #{userAvata},</if>
+            <if test="userInitialized != null">user_initialized = #{userInitialized},</if>
+            <if test="uidLocked != null">uid_locked = #{uidLocked},</if>
         </set>
         WHERE id = #{id}
     </update>

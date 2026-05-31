@@ -57,21 +57,7 @@ public class UserServiceImpl implements UserService {
                 .build();
         String token = jwtUtils.generateToken(currentUser);
 
-        return UserVO.builder()
-                .id(user.getId())
-                .uid(user.getUid())
-                .userName(user.getUserName())
-                .userBirthday(user.getUserBirthday())
-                .userGender(user.getUserGender())
-                .userPhone(user.getUserPhone())
-                .userEmail(user.getUserEmail())
-                .userRole(user.getUserRole())
-                .roleName(role != null ? role.getRoleName() : null)
-                .userStatus(user.getUserStatus())
-                .userCreateTime(user.getUserCreateTime())
-                .userAvata(user.getUserAvata())
-                .token(token)
-                .build();
+        return toUserVO(user, role, token);
     }
 
     @Override
@@ -89,6 +75,8 @@ public class UserServiceImpl implements UserService {
                 .userRole(4)
                 .userStatus(0)
                 .userCreateTime(LocalDateTime.now())
+                .userInitialized(0)
+                .uidLocked(0)
                 .build();
         userMapper.insert(user);
     }
@@ -100,20 +88,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("用户不存在");
         }
         UserRole role = userRoleMapper.selectById(user.getUserRole());
-        return UserVO.builder()
-                .id(user.getId())
-                .uid(user.getUid())
-                .userName(user.getUserName())
-                .userBirthday(user.getUserBirthday())
-                .userGender(user.getUserGender())
-                .userPhone(user.getUserPhone())
-                .userEmail(user.getUserEmail())
-                .userRole(user.getUserRole())
-                .roleName(role != null ? role.getRoleName() : null)
-                .userStatus(user.getUserStatus())
-                .userCreateTime(user.getUserCreateTime())
-                .userAvata(user.getUserAvata())
-                .build();
+        return toUserVO(user, role, null);
     }
 
     @Override
@@ -132,6 +107,39 @@ public class UserServiceImpl implements UserService {
                 .userPhone(dto.getUserPhone())
                 .userEmail(dto.getUserEmail())
                 .userAvata(dto.getUserAvata())
+                .userGenderWritable(true)
+                .build();
+        userMapper.updateById(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void initializeUser(UserInitializeDTO dto) {
+        CurrentUser currentUser = UserContext.getCurrentUser();
+        User dbUser = userMapper.selectById(currentUser.getId());
+        if (dbUser == null) {
+            throw new BusinessException("用户不存在");
+        }
+        String nextUid = dto.getUid().trim();
+        if (dbUser.getUidLocked() != null && dbUser.getUidLocked() == 1 && !nextUid.equals(dbUser.getUid())) {
+            throw new BusinessException("账户已锁定，无法修改");
+        }
+        if (userMapper.countByUidExcludeId(nextUid, dbUser.getId()) > 0) {
+            throw new BusinessException("账户已存在");
+        }
+
+        User user = User.builder()
+                .id(dbUser.getId())
+                .uid(nextUid)
+                .userName(dto.getUserName())
+                .userBirthday(dto.getUserBirthday())
+                .userGender(dto.getUserGender())
+                .userPhone(dto.getUserPhone())
+                .userEmail(dto.getUserEmail())
+                .userAvata(dto.getUserAvata())
+                .userInitialized(1)
+                .uidLocked(1)
+                .userGenderWritable(true)
                 .build();
         userMapper.updateById(user);
     }
@@ -177,6 +185,8 @@ public class UserServiceImpl implements UserService {
                 .userRole(dto.getUserRole())
                 .userStatus(dto.getUserStatus())
                 .userCreateTime(LocalDateTime.now())
+                .userInitialized(1)
+                .uidLocked(1)
                 .build();
         userMapper.insert(user);
     }
@@ -203,20 +213,7 @@ public class UserServiceImpl implements UserService {
 
         List<UserVO> voList = list.stream().map(user -> {
             UserRole role = userRoleMapper.selectById(user.getUserRole());
-            return UserVO.builder()
-                    .id(user.getId())
-                    .uid(user.getUid())
-                    .userName(user.getUserName())
-                    .userBirthday(user.getUserBirthday())
-                    .userGender(user.getUserGender())
-                    .userPhone(user.getUserPhone())
-                    .userEmail(user.getUserEmail())
-                    .userRole(user.getUserRole())
-                    .roleName(role != null ? role.getRoleName() : null)
-                    .userStatus(user.getUserStatus())
-                    .userCreateTime(user.getUserCreateTime())
-                    .userAvata(user.getUserAvata())
-                    .build();
+            return toUserVO(user, role, null);
         }).collect(Collectors.toList());
 
         PageResult<UserVO> result = new PageResult<>();
@@ -260,5 +257,25 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("该角色组下仍有关联用户，无法删除");
         }
         userRoleMapper.deleteById(roleId);
+    }
+
+    private UserVO toUserVO(User user, UserRole role, String token) {
+        return UserVO.builder()
+                .id(user.getId())
+                .uid(user.getUid())
+                .userName(user.getUserName())
+                .userBirthday(user.getUserBirthday())
+                .userGender(user.getUserGender())
+                .userPhone(user.getUserPhone())
+                .userEmail(user.getUserEmail())
+                .userRole(user.getUserRole())
+                .roleName(role != null ? role.getRoleName() : null)
+                .userStatus(user.getUserStatus())
+                .userCreateTime(user.getUserCreateTime())
+                .userAvata(user.getUserAvata())
+                .userInitialized(user.getUserInitialized())
+                .uidLocked(user.getUidLocked())
+                .token(token)
+                .build();
     }
 }

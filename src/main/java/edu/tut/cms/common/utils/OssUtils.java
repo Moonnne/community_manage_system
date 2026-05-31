@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class OssUtils {
 
-    private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L;
+    private static final long MAX_AVATAR_SIZE = 10L * 1024L * 1024L;
     private static final String REGION = "us-east-1";
     private static final String SERVICE = "s3";
     private static final DateTimeFormatter AMZ_DATE_FORMATTER =
@@ -71,7 +71,7 @@ public class OssUtils {
             throw new BusinessException("头像文件不能为空");
         }
         if (file.getSize() > MAX_AVATAR_SIZE) {
-            throw new BusinessException("头像文件不能超过 5MB");
+            throw new BusinessException("头像文件不能超过 10MB");
         }
         String contentType = file.getContentType();
         if (!StringUtils.hasText(contentType) || !contentType.startsWith("image/")) {

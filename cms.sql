@@ -353,6 +353,8 @@ CREATE TABLE `user`  (
   `user_status` int NOT NULL COMMENT '用户状态\r\n0 - 正常\r\n1 - 冻结\r\n2 - 禁用',
   `user_create_time` datetime NULL DEFAULT NULL COMMENT '用户创建时间',
   `user_avata` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户头像',
+  `user_initialized` tinyint NOT NULL DEFAULT 0 COMMENT '是否完成账户初始化 0-否 1-是',
+  `uid_locked` tinyint NOT NULL DEFAULT 0 COMMENT '账户是否锁定 0-可修改 1-不可修改',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `USER_ROLE_FK`(`user_role` ASC) USING BTREE,
   CONSTRAINT `USER_ROLE_FK` FOREIGN KEY (`user_role`) REFERENCES `user_role` (`role_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -361,17 +363,17 @@ CREATE TABLE `user`  (
 -- ----------------------------
 -- Records of user
 -- ----------------------------
-INSERT INTO `user` VALUES (1, 'admin', 'TestAdmin', '2026-05-04', NULL, '', '', '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 0, 0, '2026-05-04 17:52:08', NULL);
-INSERT INTO `user` VALUES (2, 'user', 'TestUser', '2026-05-01', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 4, 0, '2026-05-05 09:52:27', NULL);
-INSERT INTO `user` VALUES (3, 'manager', 'TestManger', '2026-03-05', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 1, 0, '2026-05-05 09:54:11', NULL);
-INSERT INTO `user` VALUES (4, 'employee', 'TestEmployee', NULL, 1, '', '', '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 2, 0, '2026-05-06 15:11:19', NULL);
-INSERT INTO `user` VALUES (5, 't1', '测试1', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:30:20', NULL);
-INSERT INTO `user` VALUES (6, 't2', '测试2', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:31:14', NULL);
-INSERT INTO `user` VALUES (7, 't3', '测试3', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:31:41', NULL);
-INSERT INTO `user` VALUES (8, 't4', '测试4', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:01', NULL);
-INSERT INTO `user` VALUES (9, 't5', '测试5', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:22', NULL);
-INSERT INTO `user` VALUES (10, 't6', '测试6', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:39', NULL);
-INSERT INTO `user` VALUES (11, 't7', '测试7', '1990-05-30', 1, '123456', 'testuser@163.com', '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 1, '2026-05-06 17:33:03', NULL);
+INSERT INTO `user` VALUES (1, 'admin', 'TestAdmin', '2026-05-04', NULL, '', '', '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 0, 0, '2026-05-04 17:52:08', NULL, 1, 1);
+INSERT INTO `user` VALUES (2, 'user', 'TestUser', '2026-05-01', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 4, 0, '2026-05-05 09:52:27', NULL, 1, 1);
+INSERT INTO `user` VALUES (3, 'manager', 'TestManger', '2026-03-05', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 1, 0, '2026-05-05 09:54:11', NULL, 1, 1);
+INSERT INTO `user` VALUES (4, 'employee', 'TestEmployee', NULL, 1, '', '', '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 2, 0, '2026-05-06 15:11:19', NULL, 1, 1);
+INSERT INTO `user` VALUES (5, 't1', '测试1', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:30:20', NULL, 1, 1);
+INSERT INTO `user` VALUES (6, 't2', '测试2', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:31:14', NULL, 1, 1);
+INSERT INTO `user` VALUES (7, 't3', '测试3', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:31:41', NULL, 1, 1);
+INSERT INTO `user` VALUES (8, 't4', '测试4', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:01', NULL, 1, 1);
+INSERT INTO `user` VALUES (9, 't5', '测试5', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:22', NULL, 1, 1);
+INSERT INTO `user` VALUES (10, 't6', '测试6', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:32:39', NULL, 1, 1);
+INSERT INTO `user` VALUES (11, 't7', '测试7', '1990-05-30', 1, '123456', 'testuser@163.com', '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 1, '2026-05-06 17:33:03', NULL, 1, 1);
 
 -- ----------------------------
 -- Table structure for user_role
