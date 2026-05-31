@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper
 public interface CarTypeMapper {
 
-    @Select("SELECT * FROM car_type ORDER BY id ASC")
+    @Select("SELECT * FROM car_type ORDER BY car_type_id ASC")
     List<CarType> selectAll();
 
     @Select("SELECT * FROM car_type WHERE car_type_id = #{carTypeId}")
