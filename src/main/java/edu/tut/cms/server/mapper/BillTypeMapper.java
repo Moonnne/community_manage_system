@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface BillTypeMapper {
 
-    @Select("SELECT * FROM bill_type ORDER BY id ASC")
+    @Select("SELECT * FROM bill_type ORDER BY bill_type_id ASC")
     List<BillType> selectAll();
 
     @Select("SELECT * FROM bill_type WHERE bill_type_id = #{billTypeId}")
