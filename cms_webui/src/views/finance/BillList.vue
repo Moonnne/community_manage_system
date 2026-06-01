@@ -98,6 +98,8 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+      <template v-if="activeStep === 0">
       <el-form-item label="账单编号" prop="billCode" v-if="!isEdit">
         <el-input v-model="form.billCode" />
       </el-form-item>
@@ -113,6 +115,8 @@
       <el-form-item label="截止时间">
         <el-date-picker v-model="form.billEndTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="选择截止时间" />
       </el-form-item>
+      </template>
+      <template v-else-if="activeStep === 1">
       <el-form-item label="总金额" prop="billTotal">
         <el-input-number v-model="form.billTotal" :min="0" :precision="2" />
       </el-form-item>
@@ -132,6 +136,9 @@
       <el-form-item label="备注">
         <el-input v-model="form.billRemark" type="textarea" :rows="3" />
       </el-form-item>
+      </template>
+      <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
 
     <el-dialog v-model="detailVisible" title="账单详情" width="760px" class="bill-detail-dialog">
@@ -173,6 +180,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { addBill, batchDeleteBills, deleteBill, getBillDetails, getBillPage, updateBill } from '@/api/bill'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2].includes(userStore.userRole) && userStore.canOperate)
@@ -194,8 +202,19 @@ const form = ref({})
 const wizardSteps = [
   { title: '基础信息', fields: ['billCode', 'ownerId', 'assetId'] },
   { title: '金额状态', fields: ['billTotal'] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '账单编号', value: formatValue(form.value.billCode) },
+  { label: '业主ID', value: formatValue(form.value.ownerId) },
+  { label: '资产ID', value: formatValue(form.value.assetId) },
+  { label: '起始时间', value: formatValue(form.value.billStartTime) },
+  { label: '截止时间', value: formatValue(form.value.billEndTime) },
+  { label: '总金额', value: formatMoney(form.value.billTotal) },
+  { label: '已支付', value: formatMoney(form.value.billPaid) },
+  { label: '状态', type: 'tag', tagType: billStatusType(form.value.billStatus), value: billStatusText(form.value.billStatus) },
+  { label: '备注', value: formatValue(form.value.billRemark) }
+])
 const formRules = {
   billCode: [{ required: true, message: '请输入账单编号', trigger: 'blur' }],
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],

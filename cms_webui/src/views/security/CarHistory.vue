@@ -53,8 +53,12 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="车辆ID" prop="carId"><el-input v-model.number="form.carId" /></el-form-item>
         <el-form-item label="门岗ID" prop="gateId"><el-input v-model.number="form.gateId" /></el-form-item>
+        </template>
+        <template v-else-if="activeStep === 1">
         <el-form-item label="类型" prop="carHistoryType">
           <el-select v-model="form.carHistoryType" placeholder="请选择">
             <el-option label="入场" :value="0" />
@@ -64,15 +68,19 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.carHistoryRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCarHistoryPage, addCarHistory } from '@/api/car'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -84,13 +92,21 @@ const form = ref({})
 const wizardSteps = [
   { title: '车辆门岗', fields: ['carId', 'gateId'] },
   { title: '通行信息', fields: ['carHistoryType'] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '车辆ID', value: valueText(form.value.carId) },
+  { label: '门岗ID', value: valueText(form.value.gateId) },
+  { label: '类型', type: 'tag', tagType: [0, 2].includes(form.value.carHistoryType) ? 'success' : 'warning', value: carHistoryTypeText(form.value.carHistoryType) },
+  { label: '备注', value: valueText(form.value.carHistoryRemark) }
+])
 const formRules = {
   carId: [{ required: true, message: '请输入车辆ID', trigger: 'blur' }],
   gateId: [{ required: true, message: '请输入门岗ID', trigger: 'blur' }],
   carHistoryType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
+
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 
 function carHistoryTypeText(type) {
   return ['入场', '离场', '访客入场', '访客离场'][type] || '未知'

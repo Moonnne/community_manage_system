@@ -61,9 +61,13 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="车辆编号" prop="carCode" v-if="!isEdit"><el-input v-model="form.carCode" /></el-form-item>
         <el-form-item label="车牌号" prop="carNumber"><el-input v-model.number="form.carNumber" /></el-form-item>
         <el-form-item label="业主ID"><el-input v-model.number="form.ownerId" /></el-form-item>
+        </template>
+        <template v-else-if="activeStep === 1">
         <el-form-item label="类型" prop="carType">
           <el-select v-model="form.carType" placeholder="请选择"><el-option v-for="t in types" :key="t.carTypeId" :label="t.carTypeName" :value="t.carTypeId" /></el-select>
         </el-form-item>
@@ -74,6 +78,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="资产ID"><el-input v-model.number="form.assetId" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -84,6 +91,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getCarPage, getCarTypes, addCar, updateCar, deleteCar } from '@/api/car'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -99,14 +107,26 @@ const form = ref({})
 const wizardSteps = [
   { title: '车辆信息', fields: ['carCode', 'carNumber'] },
   { title: '归属状态', fields: ['carType', 'carStatus'] },
-  { title: '资产确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '车辆编号', value: valueText(form.value.carCode) },
+  { label: '车牌号', value: valueText(form.value.carNumber) },
+  { label: '业主ID', value: valueText(form.value.ownerId) },
+  { label: '类型', type: 'tag', value: carTypeNameText(form.value.carType) },
+  { label: '状态', type: 'tag', tagType: form.value.carStatus === 0 ? 'success' : 'info', value: carStatusText(form.value.carStatus) },
+  { label: '资产ID', value: valueText(form.value.assetId) }
+])
 const formRules = {
   carCode: [{ required: true, message: '请输入车辆编号', trigger: 'blur' }],
   carNumber: [{ required: true, message: '请输入车牌号', trigger: 'blur' }],
   carType: [{ required: true, message: '请选择类型', trigger: 'change' }],
   carStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
+
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
+function carTypeNameText(id) { return types.value.find(type => type.carTypeId === id)?.carTypeName || valueText(id) }
+function carStatusText(status) { return status === 0 ? '已入场' : status === 1 ? '已离场' : '未知' }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }

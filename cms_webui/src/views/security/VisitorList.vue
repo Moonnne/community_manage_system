@@ -65,13 +65,19 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="!isEdit && activeStep === 0">
         <el-form-item label="姓名" prop="visitorName" v-if="!isEdit"><el-input v-model="form.visitorName" /></el-form-item>
-        <el-form-item label="电话" prop="visitorPhone" v-if="!isEdit"><el-input v-model="form.visitorPhone" /></el-form-item>
+        <el-form-item label="电话" prop="visitorPhone" v-if="!isEdit"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
+        </template>
+        <template v-else-if="!isEdit && activeStep === 1">
         <el-form-item label="业主ID" prop="ownerId" v-if="!isEdit"><el-input v-model.number="form.ownerId" /></el-form-item>
         <el-form-item label="资产ID" v-if="!isEdit"><el-input v-model.number="form.assetId" /></el-form-item>
         <el-form-item label="类型" prop="visitorType" v-if="!isEdit">
           <el-select v-model="form.visitorType" placeholder="请选择"><el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" /></el-select>
         </el-form-item>
+        </template>
+        <template v-else-if="isEdit && activeStep === 0">
         <el-form-item label="状态" v-if="isEdit">
           <el-select v-model="form.visitorStatus" placeholder="请选择">
             <el-option label="待批准" value="1" />
@@ -81,6 +87,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.visitorRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <template v-else-if="!isEdit && activeStep === 2">
+          <el-form-item label="备注"><el-input v-model="form.visitorRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -91,6 +103,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getVisitorPage, getVisitorTypes, addVisitor, updateVisitor, deleteVisitor } from '@/api/visitor'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import { optionalPhoneRule, sanitizePhone } from '@/utils/validators'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -104,18 +118,38 @@ const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' })
 const form = ref({})
 const addWizardSteps = [
-  { title: '访客信息', fields: ['visitorName'] },
+  { title: '访客信息', fields: ['visitorName', 'visitorPhone'] },
   { title: '被访信息', fields: ['ownerId', 'visitorType'] },
-  { title: '备注确认', fields: [] }
+  { title: '备注信息', fields: [] },
+  { title: '确认信息', fields: [] }
 ]
 const editWizardSteps = [
   { title: '状态信息', fields: [] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => isEdit.value ? [
+  { label: '状态', type: 'tag', tagType: visitorStatusType(form.value.visitorStatus), value: visitorStatusText(form.value.visitorStatus) },
+  { label: '备注', value: valueText(form.value.visitorRemark) }
+] : [
+  { label: '姓名', value: valueText(form.value.visitorName) },
+  { label: '电话', value: valueText(form.value.visitorPhone) },
+  { label: '业主ID', value: valueText(form.value.ownerId) },
+  { label: '资产ID', value: valueText(form.value.assetId) },
+  { label: '类型', type: 'tag', value: visitorTypeNameText(form.value.visitorType) },
+  { label: '备注', value: valueText(form.value.visitorRemark) }
+])
 const formRules = {
   visitorName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  visitorPhone: [optionalPhoneRule()],
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],
   visitorType: [{ required: true, message: '请选择类型', trigger: 'change' }]
+}
+
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
+function visitorTypeNameText(id) { return types.value.find(type => type.visitorTypeId === id)?.visitorTypeName || valueText(id) }
+
+function handleVisitorPhoneInput(value) {
+  form.value.visitorPhone = sanitizePhone(value)
 }
 
 async function fetchData(forceRefresh = false) {

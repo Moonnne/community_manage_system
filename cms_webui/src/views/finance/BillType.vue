@@ -30,9 +30,14 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="类型名称" prop="billTypeName">
           <el-input v-model="form.billTypeName" />
         </el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -43,6 +48,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getBillTypes, addBillType, deleteBillType } from '@/api/bill'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -53,10 +59,17 @@ const dialogVisible = ref(false)
 const form = ref({ billTypeName: '' })
 const wizardSteps = [
   { title: '基础信息', fields: ['billTypeName'] },
-  { title: '确认提交', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '类型名称', value: valueText(form.value.billTypeName) }
+])
 const formRules = {
   billTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
+}
+
+function valueText(value) {
+  return value === '' || value === undefined || value === null ? '-' : value
 }
 
 async function fetchData(forceRefresh = false) {

@@ -23,7 +23,7 @@
         </el-form-item>
         <el-form-item prop="captchaCode">
           <div class="captcha-row">
-            <el-input v-model="form.captchaCode" placeholder="请输入验证码" :prefix-icon="Key" size="large" maxlength="4" />
+            <el-input-otp v-model="form.captchaCode" :length="4" inputmode="text" :validator="captchaInputValidator" />
             <img class="captcha-img" :src="captchaUrl" alt="验证码" @click="refreshCaptcha" />
           </div>
         </el-form-item>
@@ -44,9 +44,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, UserFilled, Lock, Key } from '@element-plus/icons-vue'
+import { User, UserFilled, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { captchaInputValidator, captchaRule } from '@/utils/validators'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -91,7 +92,7 @@ const rules = {
     { required: true, message: '请确认密码', trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
   ],
-  captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+  captchaCode: [captchaRule()]
 }
 
 const refreshCaptcha = () => {
@@ -177,8 +178,8 @@ refreshCaptcha()
 
 .captcha-row {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 120px;
+  display: flex;
+  justify-content: space-between;
   gap: 10px;
   align-items: center;
 }

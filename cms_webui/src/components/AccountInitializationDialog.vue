@@ -17,13 +17,13 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="init-form">
         <section v-show="activeStep === 0" class="welcome-step">
           <h2>欢迎使用物业管理系统</h2>
-          <p>首次登录需要完成账户初始化。接下来会引导你确认账户、完善生日和联系方式，完成后即可进入系统。</p>
+          <p>首次登录需要完成账户初始化。接下来会引导您确认账户、完善生日和联系方式等基本信息，完成后即可进入系统。</p>
         </section>
 
         <section v-show="activeStep === 1">
           <h2>基本信息</h2>
-          <div class="avatar-editor">
-            <AvatarEditor v-model="form.userAvata" :initial="avatarInitial" :size="128" />
+          <div class="avatar-editor-wrapper">
+            <AvatarEditor v-model="form.userAvata" :initial="avatarInitial" :size="96" />
           </div>
           <el-form-item label="ID">
             <el-input :model-value="form.id" disabled />
@@ -38,7 +38,7 @@
           <el-form-item label="用户角色">
             <el-input :model-value="form.roleName" disabled />
           </el-form-item>
-          <el-form-item label="性别">
+          <el-form-item label="性别" prop="userGender">
             <el-radio-group v-model="form.userGender">
               <el-radio :value="1">男</el-radio>
               <el-radio :value="2">女</el-radio>
@@ -56,11 +56,11 @@
 
         <section v-show="activeStep === 3">
           <h2>设置联系方式</h2>
-          <el-form-item label="电话">
-            <el-input v-model="form.userPhone" />
+          <el-form-item label="电话" prop="userPhone">
+            <el-input v-model="form.userPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handlePhoneInput" />
           </el-form-item>
-          <el-form-item label="邮箱">
-            <el-input v-model="form.userEmail" />
+          <el-form-item label="邮箱" prop="userEmail">
+            <el-input v-model="form.userEmail" maxlength="64" placeholder="请输入邮箱地址" clearable />
           </el-form-item>
           <p class="form-tip contact-tip">本页可跳过，后续也可以在个人设置中补充。</p>
         </section>
@@ -88,6 +88,7 @@ import { ElMessage } from 'element-plus'
 import { initializeUser, getUserInfo } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import { usePageCacheStore } from '@/stores/pageCache'
+import { genderRequiredRule, optionalEmailRule, optionalPhoneRule, sanitizePhone } from '@/utils/validators'
 import AvatarEditor from '@/components/AvatarEditor.vue'
 
 const router = useRouter()
@@ -116,7 +117,14 @@ const form = reactive({
 const rules = {
   uid: [{ required: true, message: '请输入账户', trigger: 'blur' }],
   userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  userBirthday: [{ required: true, message: '请选择生日', trigger: 'change' }]
+  userGender: [genderRequiredRule()],
+  userBirthday: [{ required: true, message: '请选择生日', trigger: 'change' }],
+  userPhone: [optionalPhoneRule()],
+  userEmail: [optionalEmailRule()]
+}
+
+function handlePhoneInput(value) {
+  form.userPhone = sanitizePhone(value)
 }
 
 watch(
@@ -140,10 +148,13 @@ watch(
 
 async function nextStep() {
   if (activeStep.value === 1) {
-    await formRef.value.validateField(['uid', 'userName'])
+    await formRef.value.validateField(['uid', 'userName', 'userGender'])
   }
   if (activeStep.value === 2) {
     await formRef.value.validateField(['userBirthday'])
+  }
+  if (activeStep.value === 3) {
+    await formRef.value.validateField(['userPhone', 'userEmail'])
   }
   activeStep.value += 1
 }
@@ -178,7 +189,7 @@ async function submitInitialization() {
 .welcome-step { max-width: 520px; margin: 90px auto 0; text-align: center; }
 .welcome-step p,
 .form-tip { margin: 8px 0 0; color: var(--vp-c-text-2); line-height: 1.7; }
-.avatar-editor { display: flex; justify-content: center; margin-bottom: 22px; }
+.avatar-editor-wrapper { display: flex; justify-content: center; margin-bottom: 22px; }
 .contact-tip { padding-left: 100px; }
 .init-footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 18px; border-top: 1px solid var(--vp-c-divider); }
 

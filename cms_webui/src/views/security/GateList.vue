@@ -30,9 +30,14 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="名称" prop="gateName"><el-input v-model="form.gateName" /></el-form-item>
         <el-form-item label="负责人ID" prop="gateChiefId"><el-input v-model.number="form.gateChiefId" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.gateRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -43,6 +48,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getGateList, addGate, updateGate, deleteGate } from '@/api/gate'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -54,9 +60,15 @@ const isEdit = ref(false)
 const form = ref({})
 const wizardSteps = [
   { title: '基础信息', fields: ['gateName'] },
-  { title: '负责备注', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '名称', value: valueText(form.value.gateName) },
+  { label: '负责人ID', value: valueText(form.value.gateChiefId) },
+  { label: '备注', value: valueText(form.value.gateRemark) }
+])
 const formRules = { gateName: [{ required: true, message: '请输入名称', trigger: 'blur' }] }
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getGateList({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }

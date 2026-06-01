@@ -69,12 +69,19 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="标题" prop="taskTitle"><el-input v-model="form.taskTitle" /></el-form-item>
         <el-form-item label="类型" prop="taskType">
           <el-select v-model="form.taskType" placeholder="请选择"><el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" /></el-select>
         </el-form-item>
+        </template>
+        <template v-else-if="activeStep === 1">
         <el-form-item label="描述" prop="taskInfo"><el-input v-model="form.taskInfo" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.taskRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
 
     <!-- Process Dialog -->
@@ -106,6 +113,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getTaskPage, getTaskTypes, addTask, updateTask, deleteTask, processTask } from '@/api/task'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const route = useRoute()
@@ -126,8 +134,14 @@ const processForm = ref({})
 const wizardSteps = [
   { title: '基础信息', fields: ['taskTitle', 'taskType'] },
   { title: '描述信息', fields: ['taskInfo'] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '标题', value: valueText(form.value.taskTitle) },
+  { label: '类型', type: 'tag', value: taskTypeNameText(form.value.taskType) },
+  { label: '描述', value: valueText(form.value.taskInfo) },
+  { label: '备注', value: valueText(form.value.taskRemark) }
+])
 const formRules = {
   taskTitle: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   taskType: [{ required: true, message: '请选择类型', trigger: 'change' }],
@@ -152,6 +166,9 @@ function openForgotPasswordTask() {
   }
   dialogVisible.value = true
 }
+
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
+function taskTypeNameText(id) { return types.value.find(type => type.taskTypeId === id)?.taskTypeName || valueText(id) }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }

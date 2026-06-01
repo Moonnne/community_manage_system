@@ -66,11 +66,15 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="资产编号" prop="assetCode" v-if="!isEdit"><el-input v-model="form.assetCode" /></el-form-item>
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="名称" prop="assetName"><el-input v-model="form.assetName" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="类型"><el-input :model-value="assetTypeName" disabled /></el-form-item></el-col>
         </el-row>
+        </template>
+        <template v-else-if="activeStep === 1">
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="业主ID" prop="assetOwnerId"><el-input v-model.number="form.assetOwnerId" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="面积"><el-input v-model.number="form.assetArea" /></el-form-item></el-col>
@@ -92,6 +96,9 @@
           <el-col :span="8"><el-form-item label="位置"><el-input v-model="form.assetPosition" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="备注"><el-input v-model="form.assetRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -102,6 +109,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getAssetPage, addAsset, updateAsset, deleteAsset } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const props = defineProps({
   assetType: { type: Number, required: true },
@@ -122,12 +130,28 @@ const form = ref({})
 const wizardSteps = [
   { title: '基础信息', fields: ['assetCode', 'assetName'] },
   { title: '归属状态', fields: ['assetStatus'] },
-  { title: '位置备注', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '资产编号', value: valueText(form.value.assetCode) },
+  { label: '名称', value: valueText(form.value.assetName) },
+  { label: '类型', type: 'tag', value: assetTypeName.value },
+  { label: '业主ID', value: valueText(form.value.assetOwnerId) },
+  { label: '状态', type: 'tag', tagType: assetStatusType(form.value.assetStatus), value: assetStatusText(form.value.assetStatus) },
+  { label: '面积', value: valueText(form.value.assetArea) },
+  { label: '楼栋', value: valueText(form.value.assetBuilding) },
+  { label: '楼层', value: valueText(form.value.assetFloor) },
+  { label: '位置', value: valueText(form.value.assetPosition) },
+  { label: '备注', value: valueText(form.value.assetRemark) }
+])
 const formRules = {
   assetCode: [{ required: true, message: '请输入资产编号', trigger: 'blur' }],
   assetName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   assetStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
+
+function valueText(value) {
+  return value === '' || value === undefined || value === null ? '-' : value
 }
 
 async function fetchData(forceRefresh = false) {

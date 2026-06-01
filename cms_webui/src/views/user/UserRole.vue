@@ -37,6 +37,8 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" />
         </el-form-item>
@@ -48,6 +50,9 @@
             <el-option label="3 - 系统权限" value="3" />
           </el-select>
         </el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -58,6 +63,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getUserRoles, addUserRole, deleteUserRole } from '@/api/user'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => userStore.userRole === 0 && userStore.canOperate)
@@ -68,11 +74,19 @@ const dialogVisible = ref(false)
 const form = ref({ roleName: '', rolePromission: '1' })
 const wizardSteps = [
   { title: '基础信息', fields: ['roleName', 'rolePromission'] },
-  { title: '确认提交', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '角色名称', value: valueText(form.value.roleName) },
+  { label: '权限等级', type: 'tag', tagType: permissionTagType(form.value.rolePromission), value: permissionText(form.value.rolePromission) }
+])
 const formRules = {
   roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   rolePromission: [{ required: true, message: '请选择权限等级', trigger: 'change' }]
+}
+
+function valueText(value) {
+  return value === '' || value === undefined || value === null ? '-' : value
 }
 
 async function fetchData(forceRefresh = false) {

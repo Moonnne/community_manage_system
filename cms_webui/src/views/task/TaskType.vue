@@ -29,12 +29,17 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-form-item label="类型名称" prop="taskTypeName">
           <el-input v-model="form.taskTypeName" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.taskTypeRemark" type="textarea" :rows="2" />
         </el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -45,6 +50,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getTaskTypes, addTaskType, deleteTaskType } from '@/api/task'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -55,11 +61,16 @@ const dialogVisible = ref(false)
 const form = ref({ taskTypeName: '', taskTypeRemark: '' })
 const wizardSteps = [
   { title: '基础信息', fields: ['taskTypeName'] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '类型名称', value: valueText(form.value.taskTypeName) },
+  { label: '备注', value: valueText(form.value.taskTypeRemark) }
+])
 const formRules = {
   taskTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]
 }
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getTaskTypes({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { taskTypeName: '', taskTypeRemark: '' }; dialogVisible.value = true }

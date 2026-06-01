@@ -14,7 +14,7 @@
           <el-input v-model="query.userName" placeholder="用户名" clearable />
         </el-col>
         <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
-          <el-input v-model="query.userPhone" placeholder="电话" clearable />
+          <el-input v-model="query.userPhone" placeholder="电话" maxlength="11" clearable @input="handleQueryPhoneInput" />
         </el-col>
         <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-select v-model="query.userRole" placeholder="角色" clearable>
@@ -154,34 +154,33 @@
     >
       <template #default="{ activeStep }">
         <section v-show="activeStep === 0" class="user-wizard-step">
-          <div class="avatar-editor">
-            <AvatarEditor v-model="form.userAvata" :initial="avatarInitial(form)" :size="96" @uploaded="handleFormAvatarUploaded" />
-            <div class="avatar-editor-text">
-              <h4>用户头像</h4>
-              <p>点击头像可预览大图，选择图片后可拖拽、滚轮缩放或双指缩放裁切，上传文件需小于 10MB。</p>
+          <el-form-item label="用户头像" class="avatar-form-item">
+            <div class="avatar-form-row">
+              <AvatarEditor v-model="form.userAvata" :initial="avatarInitial(form)" :size="96" @uploaded="handleFormAvatarUploaded" />
             </div>
-          </div>
+          </el-form-item>
 
           <el-form-item label="ID">
             <el-input v-model="form.id" disabled placeholder="保存后自动生成" />
           </el-form-item>
           <el-form-item label="账户" prop="uid">
-            <el-input v-model="form.uid" :disabled="isEdit" />
+            <el-input v-model="form.uid" :disabled="isEdit && !isSystemAdmin" />
           </el-form-item>
           <el-form-item label="用户名" prop="userName">
             <el-input v-model="form.userName" />
           </el-form-item>
-          <el-form-item label="性别">
+          <el-form-item label="性别" prop="userGender">
             <el-radio-group v-model="form.userGender">
               <el-radio :value="1">男</el-radio>
               <el-radio :value="2">女</el-radio>
+              <el-radio :value="PRIVATE_GENDER">不愿透露</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="电话" prop="userPhone">
-            <el-input v-model="form.userPhone" />
+            <el-input v-model="form.userPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleFormPhoneInput" />
           </el-form-item>
           <el-form-item label="邮箱" prop="userEmail">
-            <el-input v-model="form.userEmail" />
+            <el-input v-model="form.userEmail" maxlength="64" placeholder="请输入邮箱地址" clearable />
           </el-form-item>
           <el-form-item label="年龄">
             <el-date-picker
@@ -195,12 +194,12 @@
 
         <section v-show="activeStep === 1" class="user-wizard-step">
           <el-form-item label="用户角色" prop="userRole">
-            <el-select v-model="form.userRole" placeholder="请选择角色" :disabled="isEdit">
+            <el-select v-model="form.userRole" placeholder="请选择角色" :disabled="isEdit && !isSystemAdmin">
               <el-option v-for="r in roles" :key="r.roleId" :label="r.roleName" :value="r.roleId" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态设置" prop="userStatus">
-            <el-select v-model="form.userStatus" placeholder="请选择状态" :disabled="isEdit">
+            <el-select v-model="form.userStatus" placeholder="请选择状态" :disabled="isEdit && !isSystemAdmin">
               <el-option label="正常" :value="0" />
               <el-option label="冻结" :value="1" />
               <el-option label="禁用" :value="2" />
@@ -223,10 +222,7 @@
         </section>
 
         <section v-show="activeStep === 2" class="user-wizard-step">
-          <el-table :data="confirmRows" stripe style="width: 100%">
-            <el-table-column prop="label" label="字段" width="140" />
-            <el-table-column prop="value" label="内容" min-width="220" />
-          </el-table>
+          <ConfirmInfoTable :rows="confirmRows" />
         </section>
       </template>
     </WizardFormDrawer>
@@ -239,10 +235,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getUserPage, getUserRoles, addUser, updateUser, deleteUser, updateUserStatus } from '@/api/user'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import AvatarEditor from '@/components/AvatarEditor.vue'
+import { genderRequiredRule, optionalEmailRule, optionalPhoneRule, sanitizePhone } from '@/utils/validators'
 
 const userStore = useUserStore()
 const canEditSelf = computed(() => userStore.canOperate)
+const isSystemAdmin = computed(() => Number(userStore.userRole) === userStore.ROLE_ADMIN)
 const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
@@ -250,6 +249,7 @@ const total = ref(0)
 const roles = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const PRIVATE_GENDER = 'private'
 
 const query = ref({
   pageNum: 1,
@@ -263,28 +263,33 @@ const query = ref({
 
 const form = ref({})
 const addWizardSteps = [
-  { title: '基本信息', fields: ['uid', 'userName'] },
+  { title: '基本信息', fields: ['uid', 'userName', 'userGender', 'userPhone', 'userEmail'] },
   { title: '用户配置', fields: ['userRole', 'userStatus', 'userPassword', 'confirmPassword'] },
   { title: '确认信息', fields: [] }
 ]
 const editWizardSteps = [
-  { title: '基本信息', fields: ['uid', 'userName'] },
-  { title: '用户配置', fields: ['userPassword', 'confirmPassword'] },
+  { title: '基本信息', fields: ['uid', 'userName', 'userGender', 'userPhone', 'userEmail'] },
+  { title: '用户配置', fields: ['userRole', 'userStatus', 'userPassword', 'confirmPassword'] },
   { title: '确认信息', fields: [] }
 ]
 
 const confirmRows = computed(() => [
   { label: 'ID', value: valueText(form.value.id) },
-  { label: '头像', value: valueText(form.value.userAvata || form.value.userAvatar) },
+  {
+    label: '头像',
+    type: 'avatar',
+    avatarUrl: form.value.userAvata || form.value.userAvatar || '',
+    initial: avatarInitial(form.value)
+  },
   { label: '账户', value: valueText(form.value.uid) },
   { label: '用户名', value: valueText(form.value.userName) },
-  { label: '性别', value: form.value.userGender === 1 ? '男' : form.value.userGender === 2 ? '女' : '-' },
+  { label: '性别', value: genderText(form.value.userGender) },
   { label: '电话', value: valueText(form.value.userPhone) },
   { label: '邮箱', value: valueText(form.value.userEmail) },
   { label: '生日', value: valueText(form.value.userBirthday) },
   { label: '年龄', value: userAge(form.value.userBirthday) },
-  { label: '用户角色', value: roleNameText(form.value.userRole) },
-  { label: '状态设置', value: userStatusText(form.value.userStatus) },
+  { label: '用户角色', type: 'tag', tagType: 'success', value: roleNameText(form.value.userRole) },
+  { label: '状态设置', type: 'tag', tagType: userStatusType(form.value.userStatus), value: userStatusText(form.value.userStatus) },
   { label: '创建时间', value: valueText(form.value.userCreateTime) },
   { label: '用户密码', value: form.value.userPassword ? '已设置' : '未修改' }
 ])
@@ -310,8 +315,19 @@ const formRules = {
   userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   userPassword: [{ validator: validatePassword, trigger: 'blur' }],
   confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }],
+  userPhone: [optionalPhoneRule()],
+  userEmail: [optionalEmailRule()],
+  userGender: [genderRequiredRule()],
   userRole: [{ required: true, message: '请选择角色', trigger: 'change' }],
   userStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
+
+function handleQueryPhoneInput(value) {
+  query.value.userPhone = sanitizePhone(value)
+}
+
+function handleFormPhoneInput(value) {
+  form.value.userPhone = sanitizePhone(value)
 }
 
 async function fetchData(forceRefresh = false) {
@@ -363,7 +379,7 @@ function getDefaultForm() {
     userCreateTime: '',
     userPhone: '',
     userEmail: '',
-    userGender: 1
+    userGender: undefined
   }
 }
 
@@ -381,7 +397,7 @@ function mapRowToForm(row) {
     userCreateTime: row.userCreateTime || '',
     userPhone: row.userPhone,
     userEmail: row.userEmail,
-    userGender: row.userGender
+    userGender: row.userGender ?? PRIVATE_GENDER
   }
 }
 
@@ -408,6 +424,7 @@ async function handleSubmit() {
   try {
     const submitForm = { ...form.value }
     delete submitForm.confirmPassword
+    submitForm.userGender = submitForm.userGender === PRIVATE_GENDER ? null : submitForm.userGender
     if (isEdit.value && !submitForm.userPassword) delete submitForm.userPassword
     if (isEdit.value) {
       await updateUser(submitForm)
@@ -456,6 +473,10 @@ function userStatusType(status) {
   return ['success', 'warning', 'danger'][status] || 'info'
 }
 
+function genderText(gender) {
+  return gender === 1 ? '男' : gender === 2 ? '女' : gender === PRIVATE_GENDER ? '不愿透露' : '-'
+}
+
 function userAvatar(row) {
   return row.userAvata || row.userAvatar || ''
 }
@@ -495,29 +516,22 @@ onMounted(() => {
 .user-wizard-step {
   min-height: 420px;
 }
-.avatar-editor {
-  display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: 18px;
+.avatar-form-item :deep(.el-form-item__label) {
+  display: flex;
   align-items: center;
-  margin-bottom: 18px;
+  align-self: stretch;
 }
-.avatar-editor-text h4 {
-  margin: 0 0 8px;
-  color: var(--vp-c-text-1);
-}
-.avatar-editor-text p {
-  margin: 0;
-  color: var(--vp-c-text-2);
-  line-height: 1.7;
+.avatar-form-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 @media (max-width: 640px) {
-  .avatar-editor {
-    grid-template-columns: 1fr;
-    justify-items: center;
+  .avatar-form-row {
+    justify-content: center;
   }
 
-  .avatar-editor :deep(.el-form-item) {
+  .avatar-form-row :deep(.avatar-editor) {
     width: 100%;
   }
 }

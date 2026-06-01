@@ -62,7 +62,7 @@ const initialSnapshot = ref('')
 const drawerSize = computed(() => (window.innerWidth <= 768 ? '100%' : '640px'))
 const normalizedSteps = computed(() => {
   if (props.steps.length >= 2) return props.steps
-  return [{ title: '基础信息', fields: [] }, { title: '确认提交', fields: [] }]
+  return [{ title: '基础信息', fields: [] }, { title: '确认信息', fields: [] }]
 })
 const isLastStep = computed(() => activeStep.value === normalizedSteps.value.length - 1)
 
@@ -125,12 +125,15 @@ async function requestClose() {
 
 function handleBeforeClose(done) {
   if (!isDirty()) {
+    emit('cancel')
+    closeDrawer()
     done()
     return
   }
   ElMessageBox.confirm('表单内容尚未保存，确定关闭吗？', '提示', { type: 'warning' })
     .then(() => {
       emit('cancel')
+      closeDrawer()
       done()
     })
     .catch(() => {})

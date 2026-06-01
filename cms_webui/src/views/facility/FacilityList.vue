@@ -67,6 +67,8 @@
       :loading="submitLoading"
       @submit="handleSubmit"
     >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="名称" prop="facilityName"><el-input v-model="form.facilityName" /></el-form-item></el-col>
           <el-col :span="12">
@@ -75,6 +77,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+        </template>
+        <template v-else-if="activeStep === 1">
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="负责人ID"><el-input v-model.number="form.facilityChiefId" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="状态">
@@ -88,6 +92,9 @@
         </el-row>
         <el-form-item label="保质期"><el-input v-model.number="form.facilityExpirationDate" placeholder="月数" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.facilityRemark" type="textarea" :rows="2" /></el-form-item>
+        </template>
+        <ConfirmInfoTable v-else :rows="confirmRows" />
+      </template>
     </WizardFormDrawer>
   </div>
 </template>
@@ -98,6 +105,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getFacilityPage, getFacilityTypes, addFacility, updateFacility, deleteFacility } from '@/api/facility'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2].includes(userStore.userRole) && userStore.canOperate)
@@ -113,12 +121,28 @@ const form = ref({})
 const wizardSteps = [
   { title: '基础信息', fields: ['facilityName', 'facilityType'] },
   { title: '位置状态', fields: [] },
-  { title: '备注确认', fields: [] }
+  { title: '确认信息', fields: [] }
 ]
+const confirmRows = computed(() => [
+  { label: '名称', value: valueText(form.value.facilityName) },
+  { label: '类型', type: 'tag', value: facilityTypeNameText(form.value.facilityType) },
+  { label: '负责人ID', value: valueText(form.value.facilityChiefId) },
+  { label: '状态', type: 'tag', tagType: facilityStatusType(form.value.facilityStatus), value: facilityStatusText(form.value.facilityStatus) },
+  { label: '楼栋', value: valueText(form.value.facilityBuilding) },
+  { label: '楼层', value: valueText(form.value.facilityFloor) },
+  { label: '位置', value: valueText(form.value.facilityPosition) },
+  { label: '保质期', value: valueText(form.value.facilityExpirationDate) },
+  { label: '备注', value: valueText(form.value.facilityRemark) }
+])
 const formRules = {
   facilityName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   facilityType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
+
+function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
+function facilityTypeNameText(id) { return types.value.find(type => type.facilityTypeId === id)?.facilityTypeName || valueText(id) }
+function facilityStatusText(status) { return status === 1 ? '正常' : status === 2 ? '维修中' : status === 0 ? '停用' : '未知' }
+function facilityStatusType(status) { return status === 1 ? 'success' : status === 2 ? 'warning' : status === 0 ? 'danger' : 'info' }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getFacilityPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getFacilityTypes(); types.value = res.data }

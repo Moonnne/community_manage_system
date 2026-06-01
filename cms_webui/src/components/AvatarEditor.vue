@@ -4,11 +4,13 @@
       <el-avatar :size="size" shape="circle" :src="modelValue" :style="{ backgroundColor: 'var(--vp-c-brand-1)' }">
         {{ initial }}
       </el-avatar>
+      <span class="avatar-mask">预览</span>
     </button>
 
     <div class="avatar-actions">
       <el-button size="small" :icon="Upload" @click="openPicker">修改头像</el-button>
     </div>
+    <p v-if="tip" class="avatar-tip">{{ tip }}</p>
 
     <input ref="fileInputRef" class="file-input" type="file" accept="image/*" @change="handleFileChange" />
 
@@ -65,10 +67,11 @@ import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { uploadUserAvatar } from '@/api/user'
 
-const props = defineProps({
+defineProps({
   modelValue: { type: String, default: '' },
   initial: { type: String, default: 'U' },
-  size: { type: Number, default: 128 }
+  size: { type: Number, default: 128 },
+  tip: { type: String, default: '点击头像可预览大图，选择图片后可通过拖拽、缩放进行裁切，上传的文件需小于 10MB。' }
 })
 
 const emit = defineEmits(['update:modelValue', 'uploaded'])
@@ -318,10 +321,40 @@ function clamp(value, min, max) {
 
 <style scoped>
 .avatar-editor {
-  display: inline-grid;
-  grid-template-columns: 1fr;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
+}
+
+.avatar-preview {
+  position: relative;
+  display: inline-flex;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
+.avatar-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.48);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-preview:hover .avatar-mask {
+  opacity: 1;
 }
 
 .avatar-actions {
@@ -329,12 +362,14 @@ function clamp(value, min, max) {
   justify-content: center;
 }
 
-.avatar-preview {
-  display: inline-flex;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: zoom-in;
+.avatar-tip {
+  max-width: 260px;
+  margin: -2px 0 0;
+  color: var(--vp-c-text-3);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.6;
+  text-align: center;
 }
 
 .file-input {
@@ -380,9 +415,6 @@ function clamp(value, min, max) {
 .crop-frame {
   position: absolute;
   pointer-events: none;
-}
-
-.crop-frame {
   width: min(340px, calc(100% - 56px));
   height: min(340px, calc(100% - 56px));
   left: 50%;
@@ -399,16 +431,5 @@ function clamp(value, min, max) {
   grid-template-columns: 46px 1fr;
   align-items: center;
   gap: 12px;
-}
-
-@media (max-width: 640px) {
-  .avatar-editor {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .avatar-actions {
-    order: 2;
-  }
 }
 </style>
