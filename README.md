@@ -65,6 +65,7 @@ CommunityManageSystem
 │   │       └── mapper/                     # MyBatis Mapper 接口（17 个）
 │   └── main/resources/
 │       ├── application.yaml                # 后端配置（数据库、JWT 等）
+        ├── env.yaml                        # 密钥配置（需自行创建）
 │       └── mapper/                         # MyBatis XML 映射文件（10 个）
 ├── cms_webui/                              # 前端 Vue 3 项目
 │   └── src/
@@ -140,7 +141,7 @@ user_role ── user (role)
 
 ## 内置测试账号
 
-> 所有测试账号默认密码：`password123`
+> 所有测试账号默认密码：`123456`
 
 | 用户名 | UID | 角色 |
 | --- | --- | --- |
@@ -271,4 +272,4 @@ npm install --registry=https://registry.npmmirror.com
 
 ## License
 
-[Apache-2.0](LICENSE)
+[MIT License](LICENSE)
