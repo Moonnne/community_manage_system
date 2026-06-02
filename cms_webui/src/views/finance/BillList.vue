@@ -103,31 +103,30 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">
-            账单编号由系统保存时自动生成，格式为 B- 后接 16 位小写字母或数字。
+          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip" center>
+            账单编号由系统自动生成，将作为账单唯一标识符
           </el-alert>
 
           <el-form-item label="选择用户" prop="ownerIds">
             <el-select-v2
               v-model="form.ownerIds"
-              :multiple="!isEdit"
               filterable
               remote
               clearable
               :remote-method="handleUserRemoteSearch"
-              :options="userSelectOptions"
+              :options="visibleUserSelectOptions"
               class="full-width"
-              placeholder="请输入账户搜索用户"
+              placeholder="输入以搜索用户"
               @change="handleUserChange"
             >
               <template #header>
-                <div class="user-select-header">
+                <div class="user-select-header" @mousedown.stop @click.stop>
                   <el-select v-model="userFilters.userRole" placeholder="用户类型" clearable @change="reloadUsersByFilter">
                     <el-option
                       v-for="role in userRoleOptions"
-                      :key="role.roleId || role.userRoleId"
+                      :key="role.roleId ?? role.userRoleId"
                       :label="role.roleName || role.userRoleName"
-                      :value="role.roleId || role.userRoleId"
+                      :value="role.roleId ?? role.userRoleId"
                     />
                   </el-select>
                   <el-select v-model="userFilters.userStatus" placeholder="用户状态" clearable @change="reloadUsersByFilter">
@@ -135,11 +134,13 @@
                     <el-option label="冻结" :value="1" />
                     <el-option label="禁用" :value="2" />
                   </el-select>
-                  <el-button v-if="!isEdit" plain @click.stop="selectAllVisibleUsers">全选当前结果</el-button>
                 </div>
               </template>
               <template #default="{ item }">
-                <div class="user-option-row">
+                <div v-if="item.empty" class="select-empty-row">
+                  {{ item.label }}
+                </div>
+                <div v-else class="dual-option-row">
                   <strong>{{ item.label }}</strong>
                   <span>{{ item.userName }}</span>
                 </div>
@@ -148,22 +149,42 @@
           </el-form-item>
 
           <el-form-item label="选择资产" prop="assetIds">
-            <el-select
+            <el-select-v2
               v-model="form.assetIds"
               :multiple="!isEdit"
               filterable
+              remote
               clearable
               :disabled="normalizedOwnerIds.length === 0"
+              :remote-method="handleAssetRemoteSearch"
+              :options="visibleAssetSelectOptions"
               class="full-width"
-              placeholder="请先选择用户，再选择资产"
+              placeholder="选择用户后即可选择资产"
             >
-              <el-option
-                v-for="asset in assetOptions"
-                :key="asset.id"
-                :label="`${formatValue(asset.assetName)} / ${formatValue(asset.assetCode)}`"
-                :value="asset.id"
-              />
-            </el-select>
+              <template #header>
+                <div class="asset-select-header" @mousedown.stop @click.stop>
+                  <el-select v-model="assetFilters.assetType" placeholder="资产类型" clearable>
+                    <el-option v-for="type in assetTypeOptions" :key="type.assetTypeId" :label="type.assetTypeName" :value="type.assetTypeId" />
+                  </el-select>
+                  <el-select v-model="assetFilters.assetStatus" placeholder="资产状态" clearable>
+                    <el-option label="正常" :value="0" />
+                    <el-option label="过期" :value="1" />
+                    <el-option label="未使用" :value="2" />
+                    <el-option label="冻结" :value="3" />
+                  </el-select>
+                  <el-button v-if="!isEdit" plain @click.stop="selectAllVisibleAssets">全选当前结果</el-button>
+                </div>
+              </template>
+              <template #default="{ item }">
+                <div v-if="item.empty" class="select-empty-row">
+                  {{ item.label }}
+                </div>
+                <div v-else class="dual-option-row">
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.assetCode }}</span>
+                </div>
+              </template>
+            </el-select-v2>
           </el-form-item>
 
           <el-form-item label="开始时间" prop="billStartTime">
@@ -196,11 +217,6 @@
                 </template>
                 <el-row :gutter="12">
                   <el-col :xs="24" :sm="12">
-                    <el-form-item label="ID">
-                      <el-input :model-value="item.id || '新增'" disabled />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
                     <el-form-item label="账目名" required>
                       <el-input v-model="item.billDetailName" placeholder="请输入账目名" />
                     </el-form-item>
@@ -214,19 +230,16 @@
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="数量" required>
-                      <el-input-number v-model="item.billDetailQuantity" :min="1" :precision="0" class="full-width" />
+                      <el-input-number v-model="item.billDetailQuantity" :min="1" :precision="0" controls-position="right" class="full-width" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="单价" required>
-                      <el-input-number v-model="item.billDetailUnitPrice" :min="0" :precision="2" class="full-width" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="金额">
-                      <el-input :model-value="formatMoney(detailTotal(item))" disabled>
-                        <template #prefix>￥</template>
-                      </el-input>
+                      <el-input-number v-model="item.billDetailUnitPrice" :min="0" :precision="2" controls-position="right" class="full-width">
+                        <template #prefix>
+                          <span>￥</span>
+                        </template>
+                      </el-input-number>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24">
@@ -306,7 +319,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { addBill, batchDeleteBills, deleteBill, getBill, getBillDetails, getBillPage, getBillTypes, updateBill } from '@/api/bill'
 import { getUserPage, getUserRoles } from '@/api/user'
-import { getAssetPage } from '@/api/asset'
+import { getAssetPage, getAssetTypes } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 
@@ -336,6 +349,7 @@ const viewDetails = ref([])
 const userOptions = ref([])
 const userRoleOptions = ref([])
 const assetOptions = ref([])
+const assetTypeOptions = ref([])
 const billTypeOptions = ref([])
 const detailKeyword = ref('')
 const activeDetailPanels = ref([])
@@ -343,6 +357,7 @@ const details = ref([])
 
 const query = ref({ pageNum: 1, pageSize: 10, billCode: '', ownerId: '', billStatus: undefined })
 const userFilters = ref({ uid: '', userRole: undefined, userStatus: undefined })
+const assetFilters = ref({ keyword: '', assetType: undefined, assetStatus: undefined })
 const form = ref(getDefaultForm())
 const wizardSteps = [
   { title: '账单信息', fields: ['ownerIds', 'assetIds', 'billStartTime', 'billEndTime'] },
@@ -363,6 +378,30 @@ const userSelectOptions = computed(() => userOptions.value.map(user => ({
   label: formatValue(user.uid),
   userName: formatValue(user.userName)
 })))
+const visibleUserSelectOptions = computed(() => {
+  if (userSelectOptions.value.length > 0) return userSelectOptions.value
+  return [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }]
+})
+const filteredAssets = computed(() => {
+  const keyword = assetFilters.value.keyword.trim().toLowerCase()
+  return assetOptions.value.filter(asset => {
+    const matchesKeyword = !keyword
+      || String(asset.assetName || '').toLowerCase().includes(keyword)
+      || String(asset.assetCode || '').toLowerCase().includes(keyword)
+    const matchesType = assetFilters.value.assetType === undefined || assetFilters.value.assetType === '' || asset.assetType === assetFilters.value.assetType
+    const matchesStatus = assetFilters.value.assetStatus === undefined || assetFilters.value.assetStatus === '' || asset.assetStatus === assetFilters.value.assetStatus
+    return matchesKeyword && matchesType && matchesStatus
+  })
+})
+const assetSelectOptions = computed(() => filteredAssets.value.map(asset => ({
+  value: asset.id,
+  label: formatValue(asset.assetName),
+  assetCode: formatValue(asset.assetCode)
+})))
+const visibleAssetSelectOptions = computed(() => {
+  if (assetSelectOptions.value.length > 0) return assetSelectOptions.value
+  return [{ value: '__empty_assets__', label: '暂无匹配资产', assetCode: '', disabled: true, empty: true }]
+})
 const filteredDetails = computed(() => {
   const keyword = detailKeyword.value.trim().toLowerCase()
   if (!keyword) return details.value
@@ -431,7 +470,7 @@ function cleanParams(params) {
 }
 
 function getDefaultForm() {
-  return { ownerIds: [], assetIds: [], billStartTime: '', billEndTime: '', billRemark: '' }
+  return { ownerIds: null, assetIds: [], billStartTime: '', billEndTime: '', billRemark: '' }
 }
 
 async function fetchData(forceRefresh = false) {
@@ -480,6 +519,11 @@ async function loadBillTypes() {
   billTypeOptions.value = res.data || []
 }
 
+async function loadAssetTypes() {
+  const res = await getAssetTypes()
+  assetTypeOptions.value = res.data || []
+}
+
 async function loadAssets() {
   const ownerIds = normalizedOwnerIds.value
   if (ownerIds.length === 0) {
@@ -487,8 +531,8 @@ async function loadAssets() {
     form.value.assetIds = isEdit.value ? null : []
     return
   }
-  const results = await Promise.all(ownerIds.map(ownerId => getAssetPage({ pageNum: 1, pageSize: 100, assetOwnerId: ownerId }, { forceRefresh: true })))
-  const assets = results.flatMap(res => res.data.records || [])
+  const res = await getAssetPage({ pageNum: 1, pageSize: 100, assetOwnerId: ownerIds[0] }, { forceRefresh: true })
+  const assets = res.data.records || []
   const seen = new Set()
   assetOptions.value = assets.filter(asset => {
     if (seen.has(asset.id)) return false
@@ -497,9 +541,12 @@ async function loadAssets() {
   })
 }
 
-function selectAllVisibleUsers() {
-  form.value.ownerIds = userOptions.value.map(item => item.id)
-  handleUserChange()
+function handleAssetRemoteSearch(keyword) {
+  assetFilters.value.keyword = keyword || ''
+}
+
+function selectAllVisibleAssets() {
+  form.value.assetIds = filteredAssets.value.map(item => item.id)
 }
 
 async function handleUserChange() {
@@ -684,7 +731,7 @@ async function openBillDetail(row) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchData(), loadUsers(), loadRoles(), loadBillTypes()])
+  await Promise.all([fetchData(), loadUsers(), loadRoles(), loadBillTypes(), loadAssetTypes()])
 })
 </script>
 
@@ -698,10 +745,12 @@ onMounted(async () => {
 .form-tip { margin-bottom: 16px; }
 .selector-panel { width: 100%; }
 .selector-actions { display: flex; gap: 8px; margin: 10px 0; }
-.user-select-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; padding: 8px; border-bottom: 1px solid var(--vp-c-divider); }
-.user-option-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.user-option-row strong { color: var(--vp-c-text-1); font-weight: 800; }
-.user-option-row span { min-width: 0; overflow: hidden; color: var(--vp-c-text-3); font-size: 13px; font-style: italic; text-overflow: ellipsis; white-space: nowrap; }
+.user-select-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 8px; border-bottom: 1px solid var(--vp-c-divider); }
+.asset-select-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; padding: 8px; border-bottom: 1px solid var(--vp-c-divider); }
+.dual-option-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.dual-option-row strong { color: var(--vp-c-text-1); font-weight: 800; }
+.dual-option-row span { min-width: 0; overflow: hidden; color: var(--vp-c-text-3); font-size: 13px; font-style: italic; text-overflow: ellipsis; white-space: nowrap; }
+.select-empty-row { width: 100%; color: var(--vp-c-text-3); font-size: 13px; text-align: center; cursor: default; }
 .detail-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-bottom: 14px; }
 .detail-collapse { border-top: 0; }
 .detail-title { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-right: 12px; font-weight: 700; }
@@ -712,7 +761,7 @@ onMounted(async () => {
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 768px) {
   .bill-toolbar, .detail-toolbar { justify-content: flex-start; grid-template-columns: 1fr; }
-  .user-select-header { grid-template-columns: 1fr; }
+  .user-select-header, .asset-select-header { grid-template-columns: 1fr; }
   :deep(.bill-detail-dialog) { width: calc(100vw - 24px) !important; }
 }
 </style>
