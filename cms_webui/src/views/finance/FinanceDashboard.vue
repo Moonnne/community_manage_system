@@ -4,60 +4,40 @@
       <h2 class="page-title">我的账单</h2>
     </div>
 
-    <el-row :gutter="16" class="summary-grid">
-      <el-col v-for="item in summaryCards" :key="item.key" :xs="24" :sm="12" :lg="item.lg">
-        <el-card shadow="never" class="summary-card">
-          <el-statistic
-            :title="item.title"
-            :value="item.value"
-            :precision="item.precision || 0"
-            :prefix="item.prefix || ''"
-            :suffix="item.suffix || ''"
-          />
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <div class="resident-section-title">
-      <h3>未结清账单</h3>
-      <el-tag effect="plain">部分付款 {{ summary.partiallyPaidCount || 0 }} 笔</el-tag>
+    <div class="dashboard-summary">
+      <el-card shadow="never" class="amount-summary-card">
+        <p class="amount-kicker">待付款金额</p>
+        <div class="amount-value">￥{{ formatMoney(summary.unpaidAmount) }}</div>
+        <p class="amount-desc">当前账户仍需处理的账单金额</p>
+      </el-card>
     </div>
 
-    <el-empty v-if="!loading && bills.length === 0" description="暂无未结清账单" />
-    <el-row v-else :gutter="16" class="bill-card-grid" v-loading="loading">
-      <el-col v-for="bill in bills" :key="bill.id" :xs="24" :sm="12" :lg="8">
-        <el-card shadow="never" class="bill-card" @click="openBillDetail(bill)">
-          <div class="bill-card-header">
-            <div>
-              <span class="bill-code">{{ formatValue(bill.billCode) }}</span>
-              <p>{{ formatValue(bill.assetName) }}</p>
-            </div>
-            <el-tag :type="billStatusType(bill.billStatus)" effect="plain">
-              {{ billStatusText(bill.billStatus) }}
-            </el-tag>
-          </div>
-          <div class="bill-card-amount">￥{{ amountDue(bill) }}</div>
-          <div class="bill-card-meta">
-            <span>截止时间</span>
-            <strong>{{ formatValue(bill.billEndTime) }}</strong>
-          </div>
-          <div class="bill-countdown" :class="{ overdue: countdownInfo(bill).overdue }">
-            {{ countdownInfo(bill).text }}
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <div class="pagination-wrap" v-if="total > 0">
-      <el-pagination
-        background
-        layout="total, prev, pager, next"
-        v-model:current-page="query.pageNum"
-        :page-size="query.pageSize"
-        :total="total"
-        @current-change="fetchBills"
-      />
+    <div class="count-summary-grid">
+      <el-card v-for="item in countCards" :key="item.key" shadow="never" class="count-summary-card">
+        <p>{{ item.title }}</p>
+        <strong>{{ item.value }} <span>笔</span></strong>
+      </el-card>
     </div>
+
+    <section class="bill-section">
+      <div class="resident-section-title">
+        <h3>未结清账单</h3>
+      </div>
+      <el-empty v-if="!loading && visibleUnsettledBills.length === 0" description="暂无未结清账单" />
+      <div v-else class="bill-card-grid" v-loading="loading">
+        <BillCard v-for="bill in visibleUnsettledBills" :key="bill.id" :bill="bill" @click="openBillDetail(bill)" />
+      </div>
+    </section>
+
+    <section class="bill-section">
+      <div class="resident-section-title">
+        <h3>已完成账单</h3>
+      </div>
+      <el-empty v-if="!loading && visibleCompletedBills.length === 0" description="暂无已完成账单" />
+      <div v-else class="bill-card-grid" v-loading="loading">
+        <BillCard v-for="bill in visibleCompletedBills" :key="bill.id" :bill="bill" @click="openBillDetail(bill)" />
+      </div>
+    </section>
 
     <el-dialog
       v-model="detailVisible"
@@ -139,17 +119,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getBill, getBillDetails, getMyBillSummary, getMyUnpaidBills, payBill, payBillDetail } from '@/api/bill'
+import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+import { getBill, getBillDetails, getBillPage, getMyBillSummary, payBill, payBillDetail } from '@/api/bill'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const detailLoading = ref(false)
 const payLoading = ref(false)
-const bills = ref([])
-const total = ref(0)
+const allBills = ref([])
 const summary = ref({
   unpaidCount: 0,
   paidCount: 0,
@@ -161,18 +142,55 @@ const summary = ref({
 const detailVisible = ref(false)
 const details = ref([])
 const currentBill = ref(null)
-const query = ref({ pageNum: 1, pageSize: 9 })
 const now = ref(Date.now())
+const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
 let timer = null
 
-const summaryCards = computed(() => [
-  { key: 'unpaid', title: '未结清账单', value: summary.value.unpaidCount || 0, suffix: ' 笔', lg: 5 },
-  { key: 'paid', title: '已结清账单', value: summary.value.paidCount || 0, suffix: ' 笔', lg: 5 },
-  { key: 'cancelled', title: '已取消账单', value: summary.value.cancelledCount || 0, suffix: ' 笔', lg: 5 },
-  { key: 'amount', title: '待付款金额', value: Number(summary.value.unpaidAmount || 0), precision: 2, prefix: '￥', lg: 5 },
-  { key: 'overdue', title: '逾期账单', value: summary.value.overdueCount || 0, suffix: ' 笔', lg: 4 }
+const completedStatuses = new Set([0, 4, 5])
+const displayLimit = computed(() => (viewportWidth.value <= 768 ? 3 : 6))
+const completedBills = computed(() => allBills.value.filter((bill) => completedStatuses.has(bill.billStatus)))
+const unsettledBills = computed(() => allBills.value.filter((bill) => !completedStatuses.has(bill.billStatus)))
+const visibleCompletedBills = computed(() => completedBills.value.slice(0, displayLimit.value))
+const visibleUnsettledBills = computed(() => unsettledBills.value.slice(0, displayLimit.value))
+const countCards = computed(() => [
+  { key: 'unsettled', title: '未结清账单', value: unsettledBills.value.length },
+  { key: 'partial', title: '部分付款账单', value: allBills.value.filter((bill) => bill.billStatus === 2).length },
+  { key: 'repaid', title: '已补缴账单', value: allBills.value.filter((bill) => bill.billStatus === 4).length },
+  { key: 'paid', title: '已完成账单', value: allBills.value.filter((bill) => bill.billStatus === 0).length },
+  { key: 'overdue', title: '逾期账单', value: allBills.value.filter((bill) => bill.billStatus === 3).length }
 ])
 const canPayCurrentBill = computed(() => currentBill.value && [1, 2, 3].includes(currentBill.value.billStatus))
+
+const BillCard = defineComponent({
+  name: 'DashboardBillCard',
+  props: {
+    bill: { type: Object, required: true }
+  },
+  emits: ['click'],
+  setup(props, { emit }) {
+    return () => h(ElCard, {
+      shadow: 'never',
+      class: 'bill-card',
+      onClick: () => emit('click')
+    }, {
+      default: () => [
+        h('div', { class: 'bill-card-header' }, [
+          h('div', null, [
+            h('span', { class: 'bill-code' }, formatValue(props.bill.billCode)),
+            h('p', null, formatValue(props.bill.assetName))
+          ]),
+          h(ElTag, { type: billStatusType(props.bill.billStatus), effect: 'plain' }, () => billStatusText(props.bill.billStatus))
+        ]),
+        h('div', { class: 'bill-card-amount' }, `￥${amountDue(props.bill)}`),
+        h('div', { class: 'bill-card-meta' }, [
+          h('span', null, '截止时间'),
+          h('strong', null, formatValue(props.bill.billEndTime))
+        ]),
+        h('div', { class: ['bill-countdown', { overdue: countdownInfo(props.bill).overdue }] }, countdownInfo(props.bill).text)
+      ]
+    })
+  }
+})
 
 function billStatusText(status) {
   return ({ 0: '已完成', 1: '未完成', 2: '部分完成', 3: '已逾期', 4: '已补缴', 5: '已取消' })[status] || '未知'
@@ -209,6 +227,9 @@ function parseTime(value) {
 }
 
 function countdownInfo(bill) {
+  if (completedStatuses.has(bill?.billStatus)) {
+    return { text: billStatusText(bill.billStatus), overdue: false }
+  }
   const end = parseTime(bill?.billEndTime)
   if (!end) return { text: '暂无截止时间', overdue: false }
   const diffMinutes = Math.floor((end - now.value) / 60000)
@@ -231,9 +252,13 @@ async function fetchSummary(forceRefresh = false) {
 async function fetchBills(forceRefresh = false) {
   loading.value = true
   try {
-    const res = await getMyUnpaidBills(query.value, { forceRefresh: !!forceRefresh })
-    bills.value = res.data.records || []
-    total.value = res.data.total || 0
+    const params = {
+      pageNum: 1,
+      pageSize: 1000,
+      ownerId: userStore.userInfo?.id
+    }
+    const res = await getBillPage(params, { forceRefresh: !!forceRefresh })
+    allBills.value = res.data.records || []
   } finally {
     loading.value = false
   }
@@ -296,15 +321,21 @@ function handleAppeal() {
   router.push({ path: '/task/list', query: { intent: 'bill-appeal', billId: currentBill.value.id } })
 }
 
+function updateViewportWidth() {
+  viewportWidth.value = window.innerWidth
+}
+
 onMounted(() => {
   fetchData()
   timer = window.setInterval(() => {
     now.value = Date.now()
   }, 60000)
+  window.addEventListener('resize', updateViewportWidth)
 })
 
 onUnmounted(() => {
   if (timer) window.clearInterval(timer)
+  window.removeEventListener('resize', updateViewportWidth)
 })
 </script>
 
@@ -312,22 +343,57 @@ onUnmounted(() => {
 .page-container { padding: 0; }
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .page-title { margin: 0; color: var(--vp-c-text-1); font-size: 22px; font-weight: 800; }
-.summary-grid { row-gap: 16px; margin-bottom: 20px; }
-.summary-card, .bill-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.amount-summary-card {
+  grid-column: span 2;
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), var(--vp-card-bg) 52%, rgba(59, 130, 246, 0.08)) !important;
+}
+.amount-summary-card :deep(.el-card__body) {
+  min-height: 154px;
+}
+.amount-kicker { margin: 0 0 12px; color: var(--vp-c-brand-1); font-size: 20px; font-weight: 900; }
+.amount-value { color: var(--vp-c-text-1); font-size: 48px; line-height: 1; font-weight: 900; }
+.amount-desc { margin: 16px 0 0; color: var(--vp-c-text-3); font-size: 14px; }
+.count-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.count-summary-card {
+  min-width: 0;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+}
+.count-summary-card p { margin: 0 0 8px; color: var(--vp-c-text-3); font-size: 13px; }
+.count-summary-card strong { color: var(--vp-c-text-1); font-size: 24px; line-height: 1; font-weight: 800; }
+.count-summary-card span { color: var(--vp-c-text-2); font-size: 15px; font-weight: 600; }
+.bill-section { margin-top: 18px; }
 .resident-section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 14px; }
 .resident-section-title h3 { margin: 0; color: var(--vp-c-text-1); font-size: 18px; }
-.bill-card-grid { row-gap: 16px; }
-.bill-card { cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; }
-.bill-card:hover { transform: translateY(-2px); }
-.bill-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.bill-code { display: block; color: var(--vp-c-text-1); font-size: 17px; font-weight: 800; }
-.bill-card-header p { margin: 6px 0 0; color: var(--vp-c-text-2); }
-.bill-card-amount { margin: 22px 0 18px; color: var(--vp-c-brand-1); font-size: 30px; font-weight: 800; }
-.bill-card-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--vp-c-text-3); font-size: 13px; }
-.bill-card-meta strong { color: var(--vp-c-text-2); font-weight: 600; }
-.bill-countdown { margin-top: 12px; color: var(--vp-c-brand-1); font-size: 13px; font-weight: 700; }
-.bill-countdown.overdue { color: var(--el-color-danger); }
-.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+.bill-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.bill-card-grid :deep(.bill-card) { cursor: pointer; border-radius: 8px; border: 1px solid var(--vp-c-divider); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.bill-card-grid :deep(.bill-card:hover) { transform: translateY(-2px); }
+.bill-card-grid :deep(.bill-card .el-card__body) { display: flex; flex-direction: column; min-height: 202px; padding: 24px 26px; }
+.bill-card-grid :deep(.bill-card-header) { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.bill-card-grid :deep(.bill-code) { display: block; color: var(--vp-c-text-1); font-size: 19px; line-height: 1.15; font-weight: 900; }
+.bill-card-grid :deep(.bill-card-header p) { margin: 8px 0 0; color: var(--vp-c-text-2); font-size: 15px; line-height: 1.4; }
+.bill-card-grid :deep(.bill-card-amount) { margin: 26px 0 24px; color: var(--vp-c-brand-1); font-size: 38px; line-height: 1; font-weight: 900; letter-spacing: 0; }
+.bill-card-grid :deep(.bill-card-meta) { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--vp-c-divider); color: var(--vp-c-text-3); font-size: 14px; }
+.bill-card-grid :deep(.bill-card-meta strong) { color: var(--vp-c-text-1); font-size: 15px; font-weight: 700; }
+.bill-card-grid :deep(.bill-countdown) { margin-top: 10px; color: var(--vp-c-brand-1); font-size: 14px; line-height: 1.4; font-weight: 800; }
+.bill-card-grid :deep(.bill-countdown.overdue) { color: var(--el-color-danger); }
 .detail-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .detail-card-header p { margin: 0 0 4px; color: var(--vp-c-brand-1); font-size: 13px; font-weight: 700; }
 .detail-card-header h3 { margin: 0; color: var(--vp-c-text-1); font-size: 24px; }
@@ -337,7 +403,19 @@ onUnmounted(() => {
 :deep(.bill-detail-card-dialog .el-dialog) { border-radius: 16px; }
 :deep(.bill-detail-card-dialog .el-dialog__body) { padding-top: 8px; }
 @media (max-width: 768px) {
-  .resident-section-title, .bill-card-meta, .detail-actions { align-items: flex-start; flex-direction: column; }
+  .dashboard-summary,
+  .count-summary-grid,
+  .bill-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .amount-summary-card {
+    grid-column: auto;
+  }
+  .amount-summary-card :deep(.el-card__body) {
+    min-height: 0;
+  }
+  .amount-value { font-size: 38px; }
+  .bill-card-grid :deep(.bill-card-meta), .detail-actions { align-items: flex-start; flex-direction: column; }
   :deep(.bill-detail-card-dialog .el-dialog) { width: calc(100vw - 24px) !important; }
 }
 </style>

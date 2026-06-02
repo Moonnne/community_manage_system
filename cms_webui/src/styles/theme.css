@@ -250,7 +250,9 @@
 }
 
 .table-card .el-card__body {
+  max-width: 100%;
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .table-toolbar {
@@ -261,7 +263,12 @@
 }
 
 .table-card .el-table {
-  min-width: 760px;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.table-card .el-table__inner-wrapper {
+  min-width: 100%;
 }
 
 .mobile-table-action-overlay {
@@ -317,6 +324,14 @@
   .search-card .el-card__body,
   .table-card .el-card__body {
     padding: 14px !important;
+  }
+
+  .table-card .el-table .cms-mobile-operation-cell {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
   }
 
   .pagination-wrap {

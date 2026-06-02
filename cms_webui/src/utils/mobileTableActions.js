@@ -1,11 +1,14 @@
 const MOBILE_QUERY = '(max-width: 768px)'
 const LONG_PRESS_DELAY = 560
 const MOVE_TOLERANCE = 10
+const OPERATION_COLUMN_CLASS_RE = /^el-table_\d+_column_\d+$/
 
 let mediaQuery
 let pressTimer
 let startPoint
 let menuRoot
+let tableObserver
+let syncFrame
 
 function isMobile() {
   mediaQuery ||= window.matchMedia(MOBILE_QUERY)
@@ -56,7 +59,7 @@ function getRowActionButtons(row) {
 
     return Array.from(sameRow.querySelectorAll('.el-button')).filter((button) => {
       const text = button.textContent?.trim()
-      return text && !button.classList.contains('is-disabled') && !button.disabled && isVisible(button)
+      return text && !button.classList.contains('is-disabled') && !button.disabled && (isMobile() || isVisible(button))
     })
   })
 
@@ -67,6 +70,56 @@ function closeMenu() {
   if (!menuRoot) return
   menuRoot.remove()
   menuRoot = null
+}
+
+function getColumnClass(cell) {
+  return Array.from(cell.classList).find((className) => OPERATION_COLUMN_CLASS_RE.test(className))
+}
+
+function getOperationColumnClasses(table) {
+  return Array.from(table.querySelectorAll('.el-table__header-wrapper th'))
+    .filter((header) => header.classList.contains('el-table-fixed-column--right'))
+    .map(getColumnClass)
+    .filter(Boolean)
+}
+
+function setOperationColumnCollapsed(table, columnClass, collapsed) {
+  Array.from(table.querySelectorAll(`col[name="${columnClass}"]`)).forEach((col) => {
+    if (!col.dataset.cmsOriginalWidth) {
+      col.dataset.cmsOriginalWidth = col.getAttribute('width') || ''
+    }
+
+    if (collapsed) {
+      col.setAttribute('width', '0')
+      col.style.width = '0px'
+    } else {
+      const originalWidth = col.dataset.cmsOriginalWidth
+      if (originalWidth) col.setAttribute('width', originalWidth)
+      else col.removeAttribute('width')
+      col.style.width = ''
+    }
+  })
+
+  Array.from(table.querySelectorAll(`.${columnClass}`)).forEach((cell) => {
+    cell.classList.toggle('cms-mobile-operation-cell', collapsed)
+  })
+}
+
+function syncMobileOperationColumns() {
+  const collapsed = isMobile()
+  document.querySelectorAll('.table-card .el-table').forEach((table) => {
+    getOperationColumnClasses(table).forEach((columnClass) => {
+      setOperationColumnCollapsed(table, columnClass, collapsed)
+    })
+  })
+}
+
+function scheduleOperationColumnSync() {
+  if (syncFrame) return
+  syncFrame = window.requestAnimationFrame(() => {
+    syncFrame = null
+    syncMobileOperationColumns()
+  })
 }
 
 function createMenuItem(button) {
@@ -165,5 +218,10 @@ export function installMobileTableActions() {
   document.addEventListener('touchend', handleTouchEnd, true)
   document.addEventListener('touchcancel', handleTouchEnd, true)
   window.addEventListener('resize', closeMenu)
+  window.addEventListener('resize', scheduleOperationColumnSync)
   window.addEventListener('scroll', closeMenu, true)
+
+  tableObserver = new MutationObserver(scheduleOperationColumnSync)
+  tableObserver.observe(document.body, { childList: true, subtree: true })
+  scheduleOperationColumnSync()
 }

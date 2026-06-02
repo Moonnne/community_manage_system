@@ -1,112 +1,165 @@
 # CommunityManageSystem
 
-基于 Spring Boot、SSM 框架与 Vue 的小区物业管理系统。项目采用前后端分离结构，后端负责业务接口、数据访问与权限校验，前端负责管理端页面展示与交互操作，适用于小区物业日常管理、用户信息维护、业务数据管理等场景。
+基于 **Spring Boot 4.0** + **Vue 3** 的前后端分离小区物业管理系统。后端采用 Spring Security + JWT 实现无状态认证与角色权限控制，前端基于 Vue 3 + Vite + Element Plus + Pinia 构建管理页面，支持物业日常业务的全流程数字化管理。
 
-## 项目简介
+## 功能概览
 
-CommunityManageSystem 是一个面向社区物业管理场景的 Web 管理系统。系统后端基于 Spring Boot 构建，并结合 Spring MVC、MyBatis 等 SSM 技术完成接口开发与数据库访问；前端位于 `cms_webui` 目录下，基于 Vue 实现后台管理页面。
+| 模块 | 功能 |
+| --- | --- |
+| 用户管理 | 用户注册/登录、账户初始化、用户列表、角色权限管理、个人设置（头像上传、密码修改、UID 锁定） |
+| 财务管理 | 财务面板（数据概览）、账单管理（创建/编辑/缴费/状态流转）、账目类型管理 |
+| 资产管理 | 房产信息（住宅/商铺等）、停车位信息管理 |
+| 安防管理 | 访客登记与审批、访客类型管理、车辆注册与出入场、通行记录查询、门岗管理 |
+| 设施管理 | 公共设施台账、设施类型管理、责任人指派 |
+| 工单管理 | 投诉/报修/建议/退款/账户类工单的创建、受理、驳回、完成全流程 |
 
-项目主要目标是将传统物业管理中的住户、房屋、车位、公告、缴费、维修等业务流程进行数字化管理，提升物业人员对社区基础信息和日常事务的维护效率。
-
-## 技术栈与依赖
+## 技术栈
 
 ### 后端
 
-- Java
-- Spring Boot
-- Spring MVC
-- MyBatis / SSM
-- Maven
-- MySQL
-- Lombok
-- 日志组件：SLF4J / Logback
-- 数据库连接池：Druid 或 Spring Boot 默认数据源配置
+- **Java 21**, Spring Boot 4.0.6, Spring MVC
+- **Spring Security** — 无状态认证 + 角色/权限拦截
+- **JJWT** — JWT 令牌签发与校验
+- **MyBatis** — ORM，XML 映射文件方式
+- **MySQL 8.0+** — 关系型数据库
+- **Druid** — 数据库连接池
+- **BCrypt** — 密码加密
+- **PageHelper** — 物理分页
+- **MinIO** — 对象存储（头像等文件上传）
+- **FastJSON2** — JSON 序列化
+- **Apache POI** — Excel 导入导出
+- **Hutool** — 通用工具库
+- **AspectJ** — AOP 切面（`@RequirePermission` / `@RequireRole` 注解驱动的权限校验）
+- **Spring Actuator** — 应用监控
 
 ### 前端
 
-- Vue
-- Vue Router
-- Axios
-- Element UI / Element Plus 类后台管理组件库
-- Node.js
-- npm
-
-### 开发与构建工具
-
-- Git
-- Maven / Maven Wrapper
-- Node.js 与 npm
-- MySQL 数据库
-- IntelliJ IDEA / VS Code 等开发工具
+- **Vue 3** (Composition API) + **Vite 8**
+- **Element Plus** — 后台管理 UI 组件库
+- **Vue Router 4** — 路由管理（含路由守卫）
+- **Pinia** — 状态管理（用户状态、页面缓存）
+- **Axios** — HTTP 请求封装（含请求缓存、写入失效、冻结拦截）
 
 ## 项目结构
 
 ```text
-community-manage-system
-├── .mvn/                         # Maven Wrapper 相关配置
-├── cms_webui/                    # 前端 Vue 项目
-│   ├── public/                   # 前端静态资源
-│   ├── src/                      # 前端源码
-│   │   ├── api/                  # 接口请求封装
-│   │   ├── assets/               # 图片、样式等资源
-│   │   ├── components/           # 公共组件
-│   │   ├── router/               # 路由配置
-│   │   ├── views/                # 页面视图
-│   │   └── main.js               # 前端入口文件
-│   ├── package.json              # 前端依赖与脚本配置
-│   └── vue.config.js             # Vue 项目配置，若项目存在
-├── src/                          # 后端 Spring Boot 项目源码
-│   ├── main/
-│   │   ├── java/                 # Java 业务代码
-│   │   │   └── ...
-│   │   │       ├── controller/   # 控制层，提供 REST 接口
-│   │   │       ├── service/      # 业务逻辑层
-│   │   │       ├── mapper/       # MyBatis 数据访问层
-│   │   │       ├── entity/       # 实体类 / 数据模型
-│   │   │       ├── config/       # Spring、跨域、拦截器等配置
-│   │   │       └── utils/        # 工具类
-│   │   └── resources/            # 配置文件与 Mapper XML
-│   │       ├── application.yml   # 后端运行配置
-│   │       └── mapper/           # MyBatis XML 映射文件
-│   └── test/                     # 测试代码
-├── pom.xml                       # Maven 项目配置
-├── .gitignore                    # Git 忽略配置
-└── README.md                     # 项目说明文档
+CommunityManageSystem
+├── src/                                    # 后端 Spring Boot 源码
+│   ├── main/java/edu/tut/cms/
+│   │   ├── CommunityManageSystemApplication.java   # 启动入口
+│   │   ├── common/
+│   │   │   ├── aop/                        # AOP 切面（AuthAspect、权限注解）
+│   │   │   ├── config/                     # 配置（Security, WebMvc, OSS, PageHelper）
+│   │   │   ├── context/                    # 用户上下文（ThreadLocal）
+│   │   │   ├── exception/                  # 全局异常处理、业务异常定义
+│   │   │   ├── filter/                     # JWT 认证过滤器
+│   │   │   ├── result/                     # 统一响应体（Result, PageResult）
+│   │   │   └── utils/                      # 工具类（JWT, Password, OSS, JSON）
+│   │   ├── pojo/
+│   │   │   ├── dto/                        # 数据传输对象（50+）
+│   │   │   ├── entity/                     # 实体类（14 个）
+│   │   │   └── vo/                         # 视图对象（17 个）
+│   │   └── server/
+│   │       ├── controller/                 # REST 控制器（8 个业务 Controller）
+│   │       ├── service/                    # 业务逻辑层（9 个 Service）
+│   │       └── mapper/                     # MyBatis Mapper 接口（17 个）
+│   └── main/resources/
+│       ├── application.yaml                # 后端配置（数据库、JWT 等）
+│       └── mapper/                         # MyBatis XML 映射文件（10 个）
+├── cms_webui/                              # 前端 Vue 3 项目
+│   └── src/
+│       ├── api/                            # 接口请求封装（8 个模块）
+│       ├── components/                     # 公共组件（头像编辑、抽屉表单等）
+│       ├── layout/                         # 布局组件（MainLayout）
+│       ├── router/                         # 路由配置（含权限守卫）
+│       ├── stores/                         # Pinia 状态管理（user, pageCache）
+│       ├── styles/                         # 全局样式（CSS 变量主题）
+│       ├── utils/                          # 工具函数（请求封装、校验器、移动端适配）
+│       └── views/                          # 页面视图（按模块分目录）
+│           ├── asset/                      # 资产管理（房产、停车位）
+│           ├── facility/                   # 设施管理
+│           ├── finance/                    # 财务管理（面板、账单、类型）
+│           ├── security/                   # 安防管理（访客、车辆、通行记录、门岗）
+│           ├── task/                       # 工单管理
+│           └── user/                       # 用户管理（列表、角色）
+├── cms.sql                                 # 数据库初始化脚本（含结构 + 种子数据）
+├── pom.xml                                 # Maven 项目配置
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
 
-说明：实际目录名称以当前仓库代码为准。若项目中存在数据库脚本文件，请优先在运行前执行该脚本完成数据库初始化。
+## 数据库设计
 
-## 功能特性
+系统共 **14 张数据表**，核心关系如下：
 
-- 用户登录与身份认证
-- 用户信息管理
-- 角色与权限控制
-- 住户信息管理
-- 房屋信息管理
-- 车位信息管理
-- 物业公告管理
-- 报修记录管理
-- 缴费信息管理
-- 数据分页查询
-- 前后端分离接口交互
-- 后台管理页面可视化操作
-- 基于 MyBatis 的数据库持久化操作
-- 统一接口返回格式，便于前端处理成功、失败和异常信息
+```
+user ──┬── bill (owner/creater) ─── bill_detail ── bill_type
+       ├── asset (owner) ─────────── asset_type
+       ├── car (owner) ───────────── car_history ── gate
+       │    └── car_type
+       ├── facility (chief) ──────── facility_type
+       ├── task (owner/operator) ─── task_type
+       └── visitor (owner/creater) ─ visitor_type
+
+user_role ── user (role)
+```
+
+| 表 | 说明 |
+| --- | --- |
+| `user` | 用户信息（UID、密码、角色、状态、头像、账户初始化标记） |
+| `user_role` | 角色定义（系统管理员/物业经理/物业员工/安保人员/业主/租户） |
+| `asset` | 资产信息（房产/停车位，含面积、楼栋、楼层、状态） |
+| `asset_type` | 资产类型（房产、停车位） |
+| `bill` | 账单（创建人/所有人/资产关联，含应收/实收、状态流转） |
+| `bill_detail` | 账目明细（类型、数量、单价、金额、状态） |
+| `bill_type` | 账目类型（物业费/采暖费/水费/电费/燃气费/维修/社区事务/车位租金） |
+| `car` | 车辆注册（车主/车位/车牌号/车辆类型/状态） |
+| `car_history` | 通行记录（车辆/门岗/出入类型/时间） |
+| `car_type` | 车辆类型（业主/访客/服务/特种） |
+| `facility` | 公共设施（名称/负责人/类型/状态/位置/保质期） |
+| `facility_type` | 设施类型（变电器/水泵/供热泵/弱电机房/基站/电梯/摄像头/门禁） |
+| `gate` | 门岗（名称/负责人） |
+| `task` | 工单（投诉申诉/报修/意见建议/退款/账户） |
+| `task_type` | 工单类型 |
+| `visitor` | 访客（被访业主/资产/类型/状态/访问时间） |
+| `visitor_type` | 访客类型（亲友/外卖/快递/家政维修/公务人员） |
+
+## 角色权限体系
+
+| 角色 | ID | 权限等级 | 说明 |
+| --- | --- | --- | --- |
+| 系统管理员 | 0 | 3（系统权限） | 全部功能可见，可管理用户、角色 |
+| 物业经理 | 1 | 2（管理权限） | 管理物业日常业务 |
+| 物业员工 | 2 | 1（操作权限） | 执行具体操作 |
+| 安保人员 | 3 | 1（操作权限） | 门岗、车辆、访客相关操作 |
+| 业主 | 4 | 0（无权限） | 查看与自己相关的资产、账单 |
+| 租户 | 5 | 0（无权限） | 权限同业主 |
+
+后端通过 `@RequireRole` 和 `@RequirePermission` 注解 + AOP 切面实现声明式权限控制。
+
+## 内置测试账号
+
+> 所有测试账号默认密码：`password123`
+
+| 用户名 | UID | 角色 |
+| --- | --- | --- |
+| TestAdmin | admin | 系统管理员 |
+| TestManger | manager | 物业经理 |
+| TestEmployee | employee | 物业员工 |
+| TestUser | user | 业主 |
 
 ## 环境要求
 
-运行项目前，请确认本机已经安装以下软件：
-
-| 软件 | 建议版本 | 说明 |
+| 软件 | 版本 | 说明 |
 | --- | --- | --- |
-| JDK | 8 或 17 | 用于运行 Spring Boot 后端项目，具体版本以 `pom.xml` 为准 |
-| Maven | 3.6+ | 用于后端依赖安装与项目构建；也可使用 Maven Wrapper |
-| MySQL | 5.7+ / 8.0+ | 用于存储系统业务数据 |
-| Node.js | 14+ / 16+ | 用于运行前端 Vue 项目 |
-| npm | 6+ / 8+ | 用于安装前端依赖 |
-| Git | 任意较新版本 | 用于拉取项目代码 |
+| JDK | 21 | `pom.xml` 中 `java.version` 指定 |
+| Maven | 3.6+ | 或使用 Maven Wrapper（`mvnw`） |
+| MySQL | 8.0+ | 数据库字符集 utf8mb4 |
+| Node.js | 18+ | 用于运行前端 Vite 项目 |
+| npm | 9+ | 前端包管理 |
 
-## 构建与运行指南
+## 快速开始
 
 ### 1. 克隆项目
 
@@ -117,184 +170,105 @@ cd community-manage-system
 
 ### 2. 初始化数据库
 
-在 MySQL 中创建项目数据库，例如：
+在 MySQL 中创建数据库并导入脚本：
 
 ```sql
-CREATE DATABASE community_manage_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 ```
-
-如果项目中提供了 `.sql` 数据库脚本，请在 MySQL 中导入：
 
 ```bash
-mysql -u root -p community_manage_system < 数据库脚本文件.sql
+mysql -u root -p cms < cms.sql
 ```
 
-### 3. 修改后端配置
+脚本包含完整的表结构、外键约束和种子数据（角色、类型字典、测试用户等）。
 
-打开后端配置文件，通常位于：
+### 3. 配置后端环境变量
 
-```text
-src/main/resources/application.yml
-```
-
-根据本地 MySQL 环境修改数据库连接信息：
+在 `src/main/resources/` 下创建 `env.yaml`（已加入 `.gitignore`）：
 
 ```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/community_manage_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-    username: root
-    password: your_password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+datasource:
+  url: jdbc:mysql://localhost:3306/cms?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+  username: root
+  password: your_password
+
+jwt:
+  secret: your-jwt-secret-key-at-least-256-bits
+  expiration: 86400000
 ```
 
-如项目使用 Druid 数据源，请同时检查 Druid 的连接池参数是否完整。
-
-### 4. 启动后端项目
-
-方式一：使用 Maven Wrapper，推荐优先尝试：
+### 4. 启动后端
 
 ```bash
+# 使用 Maven Wrapper（推荐）
 ./mvnw spring-boot:run
-```
 
-Windows 环境：
-
-```bash
-mvnw.cmd spring-boot:run
-```
-
-方式二：使用本地 Maven：
-
-```bash
-mvn clean install
+# 或使用本地 Maven
 mvn spring-boot:run
 ```
 
-后端启动成功后，默认访问地址通常为：
+后端默认运行在 `http://localhost:8080`，可通过 Actuator 端点 `/actuator` 查看运行状态。
 
-```text
-http://localhost:8080
-```
-
-如果端口不同，请以 `application.yml` 中的 `server.port` 配置为准。
-
-### 5. 安装前端依赖
-
-进入前端目录：
+### 5. 启动前端
 
 ```bash
 cd cms_webui
 npm install
-```
-
-如果安装速度较慢，可以使用国内镜像源：
-
-```bash
-npm install --registry=https://registry.npmmirror.com
-```
-
-### 6. 启动前端项目
-
-```bash
-npm run serve
-```
-
-或根据 `package.json` 中实际脚本执行：
-
-```bash
 npm run dev
 ```
 
-前端启动成功后，默认访问地址通常为：
+前端默认运行在 `http://localhost:5173`，请求自动代理到后端 `localhost:8080`（Vite proxy 配置在 `vite.config.js` 中）。
 
-```text
-http://localhost:8081
-```
+### 6. 登录系统
 
-或终端输出的本地访问地址。
-
-### 7. 前端接口代理配置
-
-如果前端请求后端接口出现跨域或接口地址不匹配问题，请检查前端项目中的代理配置文件，例如：
-
-```text
-cms_webui/vue.config.js
-```
-
-常见代理配置示例：
-
-```js
-module.exports = {
-  devServer: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        pathRewrite: {
-          '^/api': ''
-        }
-      }
-    }
-  }
-}
-```
-
-实际接口前缀应以后端 Controller 与前端 axios 配置为准。
+打开浏览器访问 `http://localhost:5173`，使用内置测试账号登录。
 
 ## 打包部署
 
-### 后端打包
-
-在项目根目录执行：
+### 后端
 
 ```bash
-mvn clean package
+mvn clean package -DskipTests
+java -jar target/CommunityManageSystem-*.jar
 ```
 
-打包完成后，运行 `target` 目录下的 jar 文件：
-
-```bash
-java -jar target/*.jar
-```
-
-### 前端打包
-
-进入前端目录：
+### 前端
 
 ```bash
 cd cms_webui
 npm run build
 ```
 
-打包完成后，通常会生成 `dist` 目录，可部署到 Nginx 或其他静态资源服务器。
+生成的 `dist/` 目录可部署到 Nginx 等静态资源服务器。生产环境下需将 `/api` 请求反向代理到后端服务。
+
+## API 接口约定
+
+- 统一前缀：`/api`
+- 认证方式：`Authorization: Bearer <token>`（登录/注册/验证码接口除外）
+- 统一响应格式：`{ code: 200, message: "success", data: ... }`
+- 分页响应：`{ code: 200, message: "success", data: { total, list, pageNum, pageSize, pages } }`
+- 错误码：`401` 未认证、`403` 权限不足/账号冻结
 
 ## 常见问题
 
-### 1. 后端启动报错：Failed to configure a DataSource
+**Q: 后端启动报 `Failed to configure a DataSource`**
 
-原因通常是数据库连接配置缺失或错误。请检查：
+检查 `env.yaml` 是否存在且数据库连接信息正确，确认 MySQL 已启动且 `cms` 库已创建。
 
-- MySQL 是否启动
-- 数据库是否已创建
-- `application.yml` 中的 `url`、`username`、`password` 是否正确
-- MySQL 驱动依赖是否存在
+**Q: 前端请求返回 401**
 
-### 2. 前端接口请求失败
+确认后端已启动，登录接口正常返回 token。未登录直接访问管理页面会被路由守卫重定向到登录页。
 
-请检查：
-
-- 后端服务是否已启动
-- 前端代理地址是否正确
-- 后端接口路径是否与前端 axios 请求路径一致
-- 是否存在跨域限制
-
-### 3. npm install 速度较慢或失败
-
-可以尝试使用镜像源：
+**Q: `npm install` 失败或缓慢**
 
 ```bash
 npm install --registry=https://registry.npmmirror.com
 ```
 
-也可以删除 `node_modules` 和锁文件后重新安装依赖。
+**Q: 账号被冻结无法操作**
+
+前端在写入请求时主动拦截冻结账号，`403` 响应中携带「冻结」关键词时自动更新本地状态。管理员可在用户管理页面解冻。
+
+## License
+
+[Apache-2.0](LICENSE)
