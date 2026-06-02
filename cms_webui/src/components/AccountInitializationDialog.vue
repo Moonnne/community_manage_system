@@ -40,9 +40,9 @@
           </el-form-item>
           <el-form-item label="性别" prop="userGender">
             <el-radio-group v-model="form.userGender">
-              <el-radio :value="1">男</el-radio>
-              <el-radio :value="2">女</el-radio>
-              <el-radio :value="null">不愿透露</el-radio>
+              <el-radio :value="0">男</el-radio>
+              <el-radio :value="1">女</el-radio>
+              <el-radio :value="2">不愿透露</el-radio>
             </el-radio-group>
           </el-form-item>
         </section>
@@ -108,7 +108,7 @@ const form = reactive({
   userName: '',
   roleName: '',
   userBirthday: '',
-  userGender: null,
+  userGender: undefined,
   userPhone: '',
   userEmail: '',
   userAvata: ''
@@ -137,7 +137,7 @@ watch(
       userName: user.userName || '',
       roleName: user.roleName || '',
       userBirthday: user.userBirthday || '',
-      userGender: user.userGender ?? null,
+      userGender: user.userGender ?? undefined,
       userPhone: user.userPhone || '',
       userEmail: user.userEmail || '',
       userAvata: user.userAvata || ''

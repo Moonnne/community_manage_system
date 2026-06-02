@@ -28,7 +28,7 @@ export function captchaRule(message = '请输入验证码') {
 export function genderRequiredRule(message = '请选择性别') {
   return {
     validator: (rule, value, callback) => {
-      if (value === 1 || value === 2 || value === null || value === 'private') {
+      if (value === 0 || value === 1 || value === 2) {
         callback()
         return
       }

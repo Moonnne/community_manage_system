@@ -72,11 +72,11 @@ function formatValue(value) {
 }
 
 function assetStatusText(status) {
-  return ({ 0: '正常', 1: '冻结', 2: '过期', 3: '停用' })[status] || '未知'
+  return ({ 0: '正常', 1: '过期', 2: '未使用', 3: '冻结' })[status] || '未知'
 }
 
 function assetStatusType(status) {
-  return ({ 0: 'success', 1: 'warning', 2: 'danger', 3: 'info' })[status] || 'info'
+  return ({ 0: 'success', 1: 'danger', 2: 'info', 3: 'warning' })[status] || 'info'
 }
 
 async function fetchData(forceRefresh = false) {

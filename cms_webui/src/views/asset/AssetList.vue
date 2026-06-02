@@ -6,9 +6,10 @@
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.assetOwnerId" placeholder="业主ID" clearable /></el-col>
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.assetStatus" placeholder="状态" clearable>
-            <el-option label="空闲" :value="0" />
-            <el-option label="使用中" :value="1" />
-            <el-option label="维修中" :value="2" />
+            <el-option label="正常" :value="0" />
+            <el-option label="过期" :value="1" />
+            <el-option label="未使用" :value="2" />
+            <el-option label="冻结" :value="3" />
           </el-select>
         </el-col>
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.assetBuilding" placeholder="楼栋" clearable /></el-col>
@@ -87,9 +88,10 @@
           <el-col :span="12">
             <el-form-item label="状态" prop="assetStatus">
               <el-select v-model="form.assetStatus" placeholder="请选择">
-                <el-option label="空闲" :value="0" />
-                <el-option label="使用中" :value="1" />
-                <el-option label="维修中" :value="2" />
+                <el-option label="正常" :value="0" />
+                <el-option label="过期" :value="1" />
+                <el-option label="未使用" :value="2" />
+                <el-option label="冻结" :value="3" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -220,11 +222,11 @@ async function handleDelete(row) {
 }
 
 function assetStatusText(status) {
-  return ['空闲', '使用中', '维修中'][status] || '未知'
+  return ['正常', '过期', '未使用', '冻结'][status] || '未知'
 }
 
 function assetStatusType(status) {
-  return ['success', 'primary', 'warning'][status] || 'info'
+  return ['success', 'danger', 'info', 'warning'][status] || 'info'
 }
 
 onMounted(fetchData)

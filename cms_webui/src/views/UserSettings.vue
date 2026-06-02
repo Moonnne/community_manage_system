@@ -68,9 +68,9 @@
                   <el-col :span="24">
                     <el-form-item label="性别" prop="userGender">
                       <el-radio-group v-model="infoForm.userGender">
-                        <el-radio :value="1">男</el-radio>
-                        <el-radio :value="2">女</el-radio>
-                        <el-radio :value="null">不愿透露</el-radio>
+                        <el-radio :value="0">男</el-radio>
+                        <el-radio :value="1">女</el-radio>
+                        <el-radio :value="2">不愿透露</el-radio>
                       </el-radio-group>
                     </el-form-item>
                   </el-col>
@@ -142,7 +142,7 @@ const infoForm = ref({
   userPhone: '',
   userEmail: '',
   userBirthday: '',
-  userGender: null,
+  userGender: undefined,
   userAvata: ''
 })
 
@@ -194,7 +194,7 @@ async function loadUserInfo() {
     userPhone: u.userPhone || '',
     userEmail: u.userEmail || '',
     userBirthday: u.userBirthday || '',
-    userGender: u.userGender ?? null,
+    userGender: u.userGender ?? undefined,
     userAvata: u.userAvata || ''
   }
   userStore.updateUserInfo(u)
@@ -271,7 +271,7 @@ function statusTagType(status) {
 }
 
 function genderText(gender) {
-  return gender === 1 ? '男' : gender === 2 ? '女' : '不愿透露'
+  return gender === 0 ? '男' : gender === 1 ? '女' : gender === 2 ? '不愿透露' : '-'
 }
 
 onMounted(() => {

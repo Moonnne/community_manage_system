@@ -55,7 +55,7 @@ public class DashboardController {
 
         long todayVisitors = visitors.stream().filter(item -> inRange(item.getVisitorCreateTime(), todayStart, now)).count();
         long yesterdayVisitors = visitors.stream().filter(item -> inRange(item.getVisitorCreateTime(), yesterdayStart, yesterdayEnd)).count();
-        long stayingVisitors = visitors.stream().filter(item -> item.getVisitorFinishTime() == null).count();
+        long stayingVisitors = visitors.stream().filter(item -> "2".equals(item.getVisitorStatus())).count();
         long todayCars = histories.stream().filter(item -> inRange(item.getCarHistoryTime(), todayStart, now)).count();
         long yesterdayCars = histories.stream().filter(item -> inRange(item.getCarHistoryTime(), yesterdayStart, yesterdayEnd)).count();
 

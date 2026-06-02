@@ -85,7 +85,7 @@
         <el-table-column prop="userEmail" label="邮箱" min-width="200" show-overflow-tooltip />
         <el-table-column prop="userGender" label="性别" width="60" show-overflow-tooltip>
           <template #default="{ row }">
-            {{ row.userGender === 1 ? '男' : row.userGender === 2 ? '女' : '-' }}
+            {{ row.userGender === 0 ? '男' : row.userGender === 1 ? '女' : row.userGender === 2 ? '不愿透露' : '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="userStatus" label="状态" width="80">
@@ -175,9 +175,9 @@
           </el-form-item>
           <el-form-item label="性别" prop="userGender">
             <el-radio-group v-model="form.userGender">
-              <el-radio :value="1">男</el-radio>
-              <el-radio :value="2">女</el-radio>
-              <el-radio :value="PRIVATE_GENDER">不愿透露</el-radio>
+              <el-radio :value="0">男</el-radio>
+              <el-radio :value="1">女</el-radio>
+              <el-radio :value="2">不愿透露</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="电话" prop="userPhone">
@@ -253,7 +253,6 @@ const total = ref(0)
 const roles = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const PRIVATE_GENDER = 'private'
 
 const query = ref({
   pageNum: 1,
@@ -401,7 +400,7 @@ function mapRowToForm(row) {
     userCreateTime: row.userCreateTime || '',
     userPhone: row.userPhone,
     userEmail: row.userEmail,
-    userGender: row.userGender ?? PRIVATE_GENDER
+    userGender: row.userGender ?? undefined
   }
 }
 
@@ -428,8 +427,7 @@ async function handleSubmit() {
   try {
     const submitForm = { ...form.value }
     delete submitForm.confirmPassword
-    submitForm.userGender = submitForm.userGender === PRIVATE_GENDER ? null : submitForm.userGender
-    if (isEdit.value && !submitForm.userPassword) delete submitForm.userPassword
+        if (isEdit.value && !submitForm.userPassword) delete submitForm.userPassword
     if (isEdit.value) {
       await updateUser(submitForm)
       ElMessage.success('更新成功')
@@ -477,7 +475,7 @@ function userStatusType(status) {
 }
 
 function genderText(gender) {
-  return gender === 1 ? '男' : gender === 2 ? '女' : gender === PRIVATE_GENDER ? '不愿透露' : '-'
+  return gender === 0 ? '男' : gender === 1 ? '女' : gender === 2 ? '不愿透露' : '-'
 }
 
 function userAvatar(row) {

@@ -11,9 +11,10 @@
         </el-col>
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.facilityStatus" placeholder="状态" clearable>
-            <el-option label="正常" :value="1" />
-            <el-option label="维修中" :value="2" />
-            <el-option label="停用" :value="0" />
+            <el-option label="正常" :value="0" />
+            <el-option label="故障" :value="1" />
+            <el-option label="损坏" :value="2" />
+            <el-option label="缺失" :value="3" />
           </el-select>
         </el-col>
         <el-col :span="6" :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
@@ -35,8 +36,8 @@
         <el-table-column prop="chiefName" label="负责人" width="100" show-overflow-tooltip />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.facilityStatus === 1 ? 'success' : row.facilityStatus === 2 ? 'warning' : 'danger'" effect="plain">
-              {{ row.facilityStatus === 1 ? '正常' : row.facilityStatus === 2 ? '维修中' : '停用' }}
+            <el-tag :type="facilityStatusType(row.facilityStatus)" effect="plain">
+              {{ facilityStatusText(row.facilityStatus) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -86,7 +87,7 @@
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="负责人ID"><el-input v-model.number="form.facilityChiefId" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="状态">
-            <el-select v-model="form.facilityStatus"><el-option label="正常" :value="1" /><el-option label="维修中" :value="2" /><el-option label="停用" :value="0" /></el-select>
+            <el-select v-model="form.facilityStatus"><el-option label="正常" :value="0" /><el-option label="故障" :value="1" /><el-option label="损坏" :value="2" /><el-option label="缺失" :value="3" /></el-select>
           </el-form-item></el-col>
         </el-row>
         <el-row :gutter="16">
@@ -145,15 +146,15 @@ const formRules = {
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function facilityTypeNameText(id) { return types.value.find(type => type.facilityTypeId === id)?.facilityTypeName || valueText(id) }
-function facilityStatusText(status) { return status === 1 ? '正常' : status === 2 ? '维修中' : status === 0 ? '停用' : '未知' }
-function facilityStatusType(status) { return status === 1 ? 'success' : status === 2 ? 'warning' : status === 0 ? 'danger' : 'info' }
+function facilityStatusText(status) { return ({ 0: '正常', 1: '故障', 2: '损坏', 3: '缺失' })[status] || '未知' }
+function facilityStatusType(status) { return ({ 0: 'success', 1: 'warning', 2: 'danger', 3: 'info' })[status] || 'info' }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getFacilityPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getFacilityTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
-function getDefaultForm() { return { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 1, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' } }
+function getDefaultForm() { return { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 0, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, facilityName: row.facilityName, facilityType: row.facilityType, facilityChiefId: row.facilityChiefId, facilityStatus: row.facilityStatus, facilityBuilding: row.facilityBuilding, facilityFloor: row.facilityFloor, facilityPosition: row.facilityPosition, facilityExpirationDate: row.facilityExpirationDate, facilityRemark: row.facilityRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData(true) }

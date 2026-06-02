@@ -155,9 +155,10 @@ public class AssetServiceImpl implements AssetService {
     private String getAssetStatusName(Integer status) {
         if (status == null) return "";
         return switch (status) {
-            case 0 -> "空闲";
-            case 1 -> "使用中";
-            case 2 -> "维修中";
+            case 0 -> "正常";
+            case 1 -> "过期";
+            case 2 -> "未使用";
+            case 3 -> "冻结";
             default -> String.valueOf(status);
         };
     }

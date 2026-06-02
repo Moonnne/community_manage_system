@@ -78,9 +78,8 @@
           />
         </el-select>
         <el-select v-model="carForm.status" placeholder="车辆状态" class="quick-input">
-          <el-option label="正常" :value="0" />
-          <el-option label="冻结" :value="1" />
-          <el-option label="禁用" :value="2" />
+          <el-option label="已入场" :value="0" />
+          <el-option label="已离场" :value="1" />
         </el-select>
         <el-button type="primary" :disabled="!carForm.id || carForm.status === ''" @click="updateCarStatus">保存状态</el-button>
       </el-card>
