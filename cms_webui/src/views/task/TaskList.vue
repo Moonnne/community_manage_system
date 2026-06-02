@@ -30,26 +30,30 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="taskCode" label="工单编号" width="140" />
+        <el-table-column prop="taskCode" label="工单编号" width="140" show-overflow-tooltip />
         <el-table-column prop="taskTitle" label="标题" width="160" show-overflow-tooltip />
-        <el-table-column prop="taskTypeName" label="类型" width="100">
+        <el-table-column prop="taskTypeName" label="类型" width="100" show-overflow-tooltip>
           <template #default="{ row }"><el-tag effect="plain">{{ row.taskTypeName }}</el-tag></template>
         </el-table-column>
-        <el-table-column prop="ownerName" label="提交人" width="100" />
-        <el-table-column prop="operatorName" label="处理人" width="100" />
+        <el-table-column prop="ownerName" label="提交人" width="100" show-overflow-tooltip />
+        <el-table-column prop="operatorName" label="处理人" width="100" show-overflow-tooltip />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="taskStatusType(row.taskStatus)" effect="plain">{{ taskStatusText(row.taskStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="taskCreateTime" label="创建时间" width="170" />
+        <el-table-column prop="taskCreateTime" label="创建时间" width="170" show-overflow-tooltip />
         <el-table-column prop="taskInfo" label="描述" min-width="160" show-overflow-tooltip />
         <el-table-column prop="taskRemark" label="备注" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)" v-if="canManage">编辑</el-button>
             <el-button link type="primary" size="small" @click="openProcess(row)" v-if="canManage && [1, 2].includes(row.taskStatus)">处理</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)" v-if="canManage">删除</el-button>
+            <el-popconfirm title="确定删除该工单吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" v-if="canManage" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -190,7 +194,7 @@ function openProcess(row) { processForm.value = { id: row.id, status: row.taskSt
 
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(async () => {
   fetchData()
   await fetchTypes()

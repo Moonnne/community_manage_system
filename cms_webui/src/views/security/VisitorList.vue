@@ -29,11 +29,11 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="visitorCode" label="访客编号" width="140" />
-        <el-table-column prop="visitorName" label="姓名" width="100" />
-        <el-table-column prop="visitorPhone" label="电话" width="130" />
-        <el-table-column prop="ownerName" label="被访业主" width="100" />
-        <el-table-column prop="visitorTypeName" label="类型" width="100">
+        <el-table-column prop="visitorCode" label="访客编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="visitorName" label="姓名" width="100" show-overflow-tooltip />
+        <el-table-column prop="visitorPhone" label="电话" width="130" show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="被访业主" width="100" show-overflow-tooltip />
+        <el-table-column prop="visitorTypeName" label="类型" width="100" show-overflow-tooltip>
           <template #default="{ row }"><el-tag effect="plain">{{ row.visitorTypeName }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="visitorStatus" label="状态" width="90">
@@ -41,12 +41,16 @@
             <el-tag :type="visitorStatusType(row.visitorStatus)" effect="plain">{{ visitorStatusText(row.visitorStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="visitorCreateTime" label="登记时间" width="170" />
+        <el-table-column prop="visitorCreateTime" label="登记时间" width="170" show-overflow-tooltip />
         <el-table-column prop="visitorRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该访问记录吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -166,7 +170,7 @@ function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); di
 function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }
 function visitorStatusType(status) { return ({ '0': 'success', '1': 'warning', '2': 'primary', '3': 'danger' })[String(status)] || 'info' }
 onMounted(() => { fetchData(); fetchTypes() })

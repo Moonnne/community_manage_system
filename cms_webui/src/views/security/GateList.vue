@@ -6,15 +6,19 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="gateCode" label="门岗编号" width="140" />
-        <el-table-column prop="gateName" label="门岗名称" width="160" />
-        <el-table-column prop="chiefName" label="负责人" width="120" />
+        <el-table-column prop="id" label="ID" width="80" show-overflow-tooltip />
+        <el-table-column prop="gateCode" label="门岗编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="gateName" label="门岗名称" width="160" show-overflow-tooltip />
+        <el-table-column prop="chiefName" label="负责人" width="120" show-overflow-tooltip />
         <el-table-column prop="gateRemark" label="备注" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该门岗吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -76,7 +80,7 @@ function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); di
 function getDefaultForm() { return { gateName: '', gateChiefId: '', gateRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, gateName: row.gateName, gateChiefId: row.gateChiefId, gateRemark: row.gateRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateGate(form.value); ElMessage.success('更新成功') } else { await addGate(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteGate(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteGate(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(fetchData)
 </script>
 

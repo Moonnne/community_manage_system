@@ -255,6 +255,7 @@ const sidebarConfig = {
     {
       title: '信息管理',
       children: [
+        { path: '/security/dashboard', label: '社区安全面板' },
         { path: '/security/visitor', label: '访客管理' },
         { path: '/security/car', label: '车辆管理' },
         { path: '/security/car-history', label: '通行记录' }
@@ -273,7 +274,10 @@ const sidebarConfig = {
   '/facility': [
     {
       title: '信息管理',
-      children: [{ path: '/facility/list', label: '设施信息' }],
+      children: [
+        { path: '/facility/dashboard', label: '公共设施面板' },
+        { path: '/facility/list', label: '设施信息' }
+      ],
       roles: [0, 1, 2]
     },
     {
@@ -286,6 +290,7 @@ const sidebarConfig = {
     {
       title: '信息管理',
       children: [
+        { path: '/asset/dashboard', label: '资产面板' },
         { path: '/asset/property', label: '房产管理' },
         { path: '/asset/parking', label: '停车位管理' }
       ],
@@ -295,7 +300,10 @@ const sidebarConfig = {
   '/task': [
     {
       title: '信息管理',
-      children: [{ path: '/task/list', label: '工单列表' }],
+      children: [
+        { path: '/task/dashboard', label: '工单面板' },
+        { path: '/task/list', label: '工单列表' }
+      ],
       roles: [0, 1, 2, 3, 4]
     },
     {
@@ -311,7 +319,18 @@ const sidebarItems = computed(() => {
   const prefix = '/' + route.path.split('/')[1]
   const config = sidebarConfig[prefix]
   if (!config) return []
-  return config.filter(group => group.roles.includes(role))
+  return config
+    .filter(group => group.roles.includes(role))
+    .map(group => {
+      if (role >= 4 && (prefix === '/asset' || prefix === '/task')) {
+        return {
+          ...group,
+          children: group.children.filter(item => item.path.endsWith('/dashboard'))
+        }
+      }
+      return group
+    })
+    .filter(group => group.children.length > 0)
 })
 
 function handleCommand(command) {

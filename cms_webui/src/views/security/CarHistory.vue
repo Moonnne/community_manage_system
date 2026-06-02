@@ -24,18 +24,18 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="carHistoryCode" label="记录编号" width="140" />
-        <el-table-column prop="carNumber" label="车牌号" width="120" />
-        <el-table-column prop="gateName" label="门岗" width="120" />
-        <el-table-column prop="operatorName" label="操作人" width="100" />
-        <el-table-column label="类型" width="100">
+        <el-table-column prop="carHistoryCode" label="记录编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="carNumber" label="车牌号" width="120" show-overflow-tooltip />
+        <el-table-column prop="gateName" label="门岗" width="120" show-overflow-tooltip />
+        <el-table-column prop="operatorName" label="操作人" width="100" show-overflow-tooltip />
+        <el-table-column label="类型" width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag :type="[0, 2].includes(row.carHistoryType) ? 'success' : 'warning'" effect="plain">
               {{ carHistoryTypeText(row.carHistoryType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="carHistoryTime" label="时间" width="170" />
+        <el-table-column prop="carHistoryTime" label="时间" width="170" show-overflow-tooltip />
         <el-table-column prop="carHistoryRemark" label="备注" min-width="200" show-overflow-tooltip />
       </el-table>
       <div class="pagination-wrap">

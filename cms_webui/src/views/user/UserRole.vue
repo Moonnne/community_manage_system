@@ -10,8 +10,8 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="roleId" label="角色ID" width="160" />
-        <el-table-column prop="roleName" label="角色名称" min-width="300" />
+        <el-table-column prop="roleId" label="角色ID" width="160" show-overflow-tooltip />
+        <el-table-column prop="roleName" label="角色名称" min-width="300" show-overflow-tooltip />
         <el-table-column label="权限等级" width="400">
           <template #default="{ row }">
             <el-tag effect="plain" :type="permissionTagType(row.rolePromission)">
@@ -21,7 +21,11 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right" v-if="canEdit">
           <template #default="{ row }">
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该角色组吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -118,7 +122,6 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除角色组 ${row.roleName} 吗？`, '提示', { type: 'warning' })
   await deleteUserRole(row.roleId)
   ElMessage.success('删除成功')
   fetchData(true)

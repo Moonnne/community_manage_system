@@ -1,7 +1,7 @@
 <template>
   <el-table :data="normalizedRows" stripe style="width: 100%">
-    <el-table-column prop="label" label="字段" width="140" />
-    <el-table-column label="内容" min-width="220">
+    <el-table-column prop="label" label="字段" width="140" show-overflow-tooltip />
+    <el-table-column label="内容" min-width="220" show-overflow-tooltip>
       <template #default="{ row }">
         <div v-if="row.type === 'avatar'" class="confirm-avatar-cell">
           <el-avatar

@@ -27,12 +27,12 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="facilityCode" label="设施编号" width="140" />
-        <el-table-column prop="facilityName" label="名称" width="140" />
-        <el-table-column prop="facilityTypeName" label="类型" width="100">
+        <el-table-column prop="facilityCode" label="设施编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="facilityName" label="名称" width="140" show-overflow-tooltip />
+        <el-table-column prop="facilityTypeName" label="类型" width="100" show-overflow-tooltip>
           <template #default="{ row }"><el-tag effect="plain">{{ row.facilityTypeName }}</el-tag></template>
         </el-table-column>
-        <el-table-column prop="chiefName" label="负责人" width="100" />
+        <el-table-column prop="chiefName" label="负责人" width="100" show-overflow-tooltip />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.facilityStatus === 1 ? 'success' : row.facilityStatus === 2 ? 'warning' : 'danger'" effect="plain">
@@ -40,15 +40,19 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="facilityBuilding" label="楼栋" width="80" />
-        <el-table-column prop="facilityFloor" label="楼层" width="80" />
+        <el-table-column prop="facilityBuilding" label="楼栋" width="80" show-overflow-tooltip />
+        <el-table-column prop="facilityFloor" label="楼层" width="80" show-overflow-tooltip />
         <el-table-column prop="facilityPosition" label="位置" width="120" show-overflow-tooltip />
-        <el-table-column prop="facilityCheckTime" label="检查时间" width="170" />
+        <el-table-column prop="facilityCheckTime" label="检查时间" width="170" show-overflow-tooltip />
         <el-table-column prop="facilityRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该设施记录吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -152,7 +156,7 @@ function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); di
 function getDefaultForm() { return { facilityName: '', facilityType: undefined, facilityChiefId: '', facilityStatus: 1, facilityBuilding: '', facilityFloor: '', facilityPosition: '', facilityExpirationDate: null, facilityRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, facilityName: row.facilityName, facilityType: row.facilityType, facilityChiefId: row.facilityChiefId, facilityStatus: row.facilityStatus, facilityBuilding: row.facilityBuilding, facilityFloor: row.facilityFloor, facilityPosition: row.facilityPosition, facilityExpirationDate: row.facilityExpirationDate, facilityRemark: row.facilityRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateFacility(form.value); ElMessage.success('更新成功') } else { await addFacility(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteFacility(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>
 

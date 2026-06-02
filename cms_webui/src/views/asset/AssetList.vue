@@ -23,10 +23,10 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="assetCode" label="资产编号" width="140" />
-        <el-table-column prop="assetName" label="名称" width="120" />
-        <el-table-column prop="ownerName" label="业主" width="100" />
-        <el-table-column label="类型" width="100">
+        <el-table-column prop="assetCode" label="资产编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="assetName" label="名称" width="120" show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="业主" width="100" show-overflow-tooltip />
+        <el-table-column label="类型" width="100" show-overflow-tooltip>
           <template #default>
             <el-tag effect="plain">{{ assetTypeName }}</el-tag>
           </template>
@@ -38,16 +38,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="assetArea" label="面积" width="80" />
-        <el-table-column prop="assetBuilding" label="楼栋" width="80" />
-        <el-table-column prop="assetFloor" label="楼层" width="80" />
+        <el-table-column prop="assetArea" label="面积" width="80" show-overflow-tooltip />
+        <el-table-column prop="assetBuilding" label="楼栋" width="80" show-overflow-tooltip />
+        <el-table-column prop="assetFloor" label="楼层" width="80" show-overflow-tooltip />
         <el-table-column prop="assetPosition" label="位置" width="120" show-overflow-tooltip />
-        <el-table-column prop="assetRegTime" label="登记时间" width="170" />
+        <el-table-column prop="assetRegTime" label="登记时间" width="170" show-overflow-tooltip />
         <el-table-column prop="assetRemark" label="备注" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该资产记录吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -210,7 +214,6 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm('确定删除该资产吗？', '提示', { type: 'warning' })
   await deleteAsset(row.id)
   ElMessage.success('删除成功')
   fetchData(true)

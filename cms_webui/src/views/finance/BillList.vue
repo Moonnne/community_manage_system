@@ -43,18 +43,18 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="48" fixed="left" />
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="billCode" label="账单编号" width="190" />
-        <el-table-column prop="ownerName" label="业主" width="120" />
-        <el-table-column prop="createrName" label="创建人" width="120" />
-        <el-table-column prop="assetName" label="资产" width="150" />
-        <el-table-column label="总金额" width="120">
+        <el-table-column prop="id" label="ID" width="80" show-overflow-tooltip />
+        <el-table-column prop="billCode" label="账单编号" width="190" show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="业主" width="120" show-overflow-tooltip />
+        <el-table-column prop="createrName" label="创建人" width="120" show-overflow-tooltip />
+        <el-table-column prop="assetName" label="资产" width="150" show-overflow-tooltip />
+        <el-table-column label="总金额" width="120" show-overflow-tooltip>
           <template #default="{ row }">￥{{ formatMoney(row.billTotal) }}</template>
         </el-table-column>
-        <el-table-column label="已支付" width="120">
+        <el-table-column label="已支付" width="120" show-overflow-tooltip>
           <template #default="{ row }">￥{{ formatMoney(row.billPaid) }}</template>
         </el-table-column>
-        <el-table-column label="待付款" width="120">
+        <el-table-column label="待付款" width="120" show-overflow-tooltip>
           <template #default="{ row }">￥{{ amountDue(row) }}</template>
         </el-table-column>
         <el-table-column label="状态" width="110">
@@ -62,13 +62,17 @@
             <el-tag :type="billStatusType(row.billStatus)" effect="plain">{{ billStatusText(row.billStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="billStartTime" label="开始时间" width="170" />
-        <el-table-column prop="billEndTime" label="截止时间" width="170" />
+        <el-table-column prop="billStartTime" label="开始时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="billEndTime" label="截止时间" width="170" show-overflow-tooltip />
         <el-table-column prop="billRemark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="150" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该账单吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -104,45 +108,43 @@
           </el-alert>
 
           <el-form-item label="选择用户" prop="ownerIds">
-            <div class="selector-panel">
-              <el-row :gutter="10">
-                <el-col :xs="24" :sm="8">
-                  <el-input v-model="userFilters.uid" placeholder="按账户搜索" clearable @keyup.enter="loadUsers" />
-                </el-col>
-                <el-col :xs="24" :sm="8">
-                  <el-select v-model="userFilters.userRole" placeholder="用户类型" clearable>
-                    <el-option v-for="role in userRoleOptions" :key="role.userRoleId" :label="role.userRoleName" :value="role.userRoleId" />
+            <el-select-v2
+              v-model="form.ownerIds"
+              :multiple="!isEdit"
+              filterable
+              remote
+              clearable
+              :remote-method="handleUserRemoteSearch"
+              :options="userSelectOptions"
+              class="full-width"
+              placeholder="请输入账户搜索用户"
+              @change="handleUserChange"
+            >
+              <template #header>
+                <div class="user-select-header">
+                  <el-select v-model="userFilters.userRole" placeholder="用户类型" clearable @change="reloadUsersByFilter">
+                    <el-option
+                      v-for="role in userRoleOptions"
+                      :key="role.roleId || role.userRoleId"
+                      :label="role.roleName || role.userRoleName"
+                      :value="role.roleId || role.userRoleId"
+                    />
                   </el-select>
-                </el-col>
-                <el-col :xs="24" :sm="8">
-                  <el-select v-model="userFilters.userStatus" placeholder="用户状态" clearable>
+                  <el-select v-model="userFilters.userStatus" placeholder="用户状态" clearable @change="reloadUsersByFilter">
                     <el-option label="正常" :value="0" />
                     <el-option label="冻结" :value="1" />
                     <el-option label="禁用" :value="2" />
                   </el-select>
-                </el-col>
-              </el-row>
-              <div class="selector-actions">
-                <el-button size="small" @click="loadUsers">搜索用户</el-button>
-                <el-button v-if="!isEdit" size="small" @click="selectAllVisibleUsers">全选当前结果</el-button>
-              </div>
-              <el-select
-                v-model="form.ownerIds"
-                :multiple="!isEdit"
-                filterable
-                clearable
-                class="full-width"
-                placeholder="请选择用户"
-                @change="handleUserChange"
-              >
-                <el-option
-                  v-for="user in userOptions"
-                  :key="user.id"
-                  :label="`${formatValue(user.uid)} / ${formatValue(user.userName)}`"
-                  :value="user.id"
-                />
-              </el-select>
-            </div>
+                  <el-button v-if="!isEdit" plain @click.stop="selectAllVisibleUsers">全选当前结果</el-button>
+                </div>
+              </template>
+              <template #default="{ item }">
+                <div class="user-option-row">
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.userName }}</span>
+                </div>
+              </template>
+            </el-select-v2>
           </el-form-item>
 
           <el-form-item label="选择资产" prop="assetIds">
@@ -244,15 +246,15 @@
         <template v-else>
           <ConfirmInfoTable :rows="confirmRows" />
           <el-table :data="details" stripe class="confirm-detail-table">
-            <el-table-column prop="billDetailName" label="账目名" min-width="140" />
-            <el-table-column label="费用类型" min-width="120">
+            <el-table-column prop="billDetailName" label="账目名" min-width="140" show-overflow-tooltip />
+            <el-table-column label="费用类型" min-width="120" show-overflow-tooltip>
               <template #default="{ row }">{{ billTypeName(row.billDetailType) }}</template>
             </el-table-column>
-            <el-table-column prop="billDetailQuantity" label="数量" width="80" />
-            <el-table-column label="单价" width="100">
+            <el-table-column prop="billDetailQuantity" label="数量" width="80" show-overflow-tooltip />
+            <el-table-column label="单价" width="100" show-overflow-tooltip>
               <template #default="{ row }">￥{{ formatMoney(row.billDetailUnitPrice) }}</template>
             </el-table-column>
-            <el-table-column label="金额" width="110">
+            <el-table-column label="金额" width="110" show-overflow-tooltip>
               <template #default="{ row }">￥{{ formatMoney(detailTotal(row)) }}</template>
             </el-table-column>
           </el-table>
@@ -276,17 +278,17 @@
         </el-descriptions>
 
         <el-table :data="viewDetails" stripe v-loading="detailLoading" class="bill-detail-table">
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="billDetailName" label="账目名" min-width="130" />
-          <el-table-column prop="billDetailTypeName" label="费用类型" width="120" />
-          <el-table-column prop="billDetailQuantity" label="数量" width="80" />
-          <el-table-column label="单价" width="100">
+          <el-table-column prop="id" label="ID" width="80" show-overflow-tooltip />
+          <el-table-column prop="billDetailName" label="账目名" min-width="130" show-overflow-tooltip />
+          <el-table-column prop="billDetailTypeName" label="费用类型" width="120" show-overflow-tooltip />
+          <el-table-column prop="billDetailQuantity" label="数量" width="80" show-overflow-tooltip />
+          <el-table-column label="单价" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailUnitPrice) }}</template>
           </el-table-column>
-          <el-table-column label="金额" width="100">
+          <el-table-column label="金额" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailTotal) }}</template>
           </el-table-column>
-          <el-table-column label="待付" width="100">
+          <el-table-column label="待付" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailDue) }}</template>
           </el-table-column>
         </el-table>
@@ -356,6 +358,11 @@ const formRules = {
 
 const normalizedOwnerIds = computed(() => Array.isArray(form.value.ownerIds) ? form.value.ownerIds : (form.value.ownerIds ? [form.value.ownerIds] : []))
 const normalizedAssetIds = computed(() => Array.isArray(form.value.assetIds) ? form.value.assetIds : (form.value.assetIds ? [form.value.assetIds] : []))
+const userSelectOptions = computed(() => userOptions.value.map(user => ({
+  value: user.id,
+  label: formatValue(user.uid),
+  userName: formatValue(user.userName)
+})))
 const filteredDetails = computed(() => {
   const keyword = detailKeyword.value.trim().toLowerCase()
   if (!keyword) return details.value
@@ -452,6 +459,15 @@ async function loadUsers() {
     userStatus: userFilters.value.userStatus
   }), { forceRefresh: true })
   userOptions.value = res.data.records || []
+}
+
+function handleUserRemoteSearch(keyword) {
+  userFilters.value.uid = keyword
+  loadUsers()
+}
+
+function reloadUsersByFilter() {
+  loadUsers()
 }
 
 async function loadRoles() {
@@ -625,7 +641,6 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm('确定删除该账单吗？', '提示', { type: 'warning' })
   await deleteBill(row.id)
   ElMessage.success('删除成功')
   fetchData(true)
@@ -683,6 +698,10 @@ onMounted(async () => {
 .form-tip { margin-bottom: 16px; }
 .selector-panel { width: 100%; }
 .selector-actions { display: flex; gap: 8px; margin: 10px 0; }
+.user-select-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; padding: 8px; border-bottom: 1px solid var(--vp-c-divider); }
+.user-option-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.user-option-row strong { color: var(--vp-c-text-1); font-weight: 800; }
+.user-option-row span { min-width: 0; overflow: hidden; color: var(--vp-c-text-3); font-size: 13px; font-style: italic; text-overflow: ellipsis; white-space: nowrap; }
 .detail-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-bottom: 14px; }
 .detail-collapse { border-top: 0; }
 .detail-title { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-right: 12px; font-weight: 700; }
@@ -693,6 +712,7 @@ onMounted(async () => {
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 768px) {
   .bill-toolbar, .detail-toolbar { justify-content: flex-start; grid-template-columns: 1fr; }
+  .user-select-header { grid-template-columns: 1fr; }
   :deep(.bill-detail-dialog) { width: calc(100vw - 24px) !important; }
 }
 </style>

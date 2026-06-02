@@ -6,12 +6,16 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="类型ID" width="100" />
-        <el-table-column prop="visitorTypeName" label="类型名称" min-width="200" />
-        <el-table-column prop="visitorTypeRemark" label="备注" min-width="300" />
+        <el-table-column prop="id" label="类型ID" width="100" show-overflow-tooltip />
+        <el-table-column prop="visitorTypeName" label="类型名称" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="visitorTypeRemark" label="备注" min-width="300" show-overflow-tooltip />
         <el-table-column label="操作" width="100" fixed="right" v-if="canEdit">
           <template #default="{ row }">
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定删除该访客类型吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" @click.stop="() => {}">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -67,7 +71,7 @@ function valueText(value) { return value === '' || value === undefined || value 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getVisitorTypes({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { visitorTypeName: '', visitorTypeRemark: '' }; dialogVisible.value = true }
 async function handleSubmit() { submitLoading.value = true; try { await addVisitorType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleDelete(row) { await ElMessageBox.confirm('确定删除?', '提示', { type: 'warning' }); await deleteVisitorType(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteVisitorType(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(fetchData)
 </script>
 

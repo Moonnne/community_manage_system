@@ -70,17 +70,28 @@
         </el-descriptions>
 
         <el-table :data="details" stripe v-loading="detailLoading" class="bill-detail-table">
-          <el-table-column prop="id" label="ID" width="72" />
-          <el-table-column prop="billDetailName" label="账目名" min-width="140" />
-          <el-table-column prop="billDetailTypeName" label="费用类型" width="120" />
-          <el-table-column prop="billDetailQuantity" label="数量" width="80" />
-          <el-table-column label="单价" width="100">
+          <el-table-column label="账目名" min-width="140" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip
+                v-if="row.billDetailRemark"
+                :content="row.billDetailRemark"
+                placement="top"
+                popper-class="bill-detail-remark-tooltip"
+              >
+                <span class="remark-tooltip-trigger">{{ formatValue(row.billDetailName) }}</span>
+              </el-tooltip>
+              <span v-else>{{ formatValue(row.billDetailName) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="billDetailTypeName" label="费用类型" width="140" show-overflow-tooltip />
+          <el-table-column prop="billDetailQuantity" label="数量" width="80" show-overflow-tooltip />
+          <el-table-column label="单价" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailUnitPrice) }}</template>
           </el-table-column>
-          <el-table-column label="金额" width="100">
+          <el-table-column label="金额" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailTotal) }}</template>
           </el-table-column>
-          <el-table-column label="待付" width="100">
+          <el-table-column label="待付" width="100" show-overflow-tooltip>
             <template #default="{ row }">￥{{ formatMoney(row.billDetailDue) }}</template>
           </el-table-column>
           <el-table-column label="状态" width="100">
@@ -105,7 +116,7 @@
         </el-table>
 
         <div class="detail-actions">
-          <el-link type="warning" :underline="false" @click="handleAppeal">账单申诉</el-link>
+          <el-button type="warning" plain @click="handleAppeal">账单申诉</el-button>
           <div>
             <el-button @click="detailVisible = false">关闭</el-button>
             <el-button v-if="canPayCurrentBill" type="primary" :loading="payLoading" @click="handlePayAll">
@@ -399,7 +410,10 @@ onUnmounted(() => {
 .detail-card-header h3 { margin: 0; color: var(--vp-c-text-1); font-size: 24px; }
 .bill-detail-desc { margin-bottom: 18px; }
 .bill-detail-table { margin-top: 12px; }
+.remark-tooltip-trigger { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; white-space: nowrap; }
 .detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--vp-c-divider); }
+:global(.bill-detail-remark-tooltip) { max-width: 280px; border-radius: 8px !important; background: rgba(15, 23, 42, 0.92) !important; color: #fff !important; font-size: 12px; line-height: 1.6; }
+:global(.bill-detail-remark-tooltip .el-popper__arrow::before) { background: rgba(15, 23, 42, 0.92) !important; }
 :deep(.bill-detail-card-dialog .el-dialog) { border-radius: 16px; }
 :deep(.bill-detail-card-dialog .el-dialog__body) { padding-top: 8px; }
 @media (max-width: 768px) {
@@ -415,7 +429,9 @@ onUnmounted(() => {
     min-height: 0;
   }
   .amount-value { font-size: 38px; }
-  .bill-card-grid :deep(.bill-card-meta), .detail-actions { align-items: flex-start; flex-direction: column; }
+  .bill-card-grid :deep(.bill-card-meta) { align-items: flex-start; flex-direction: column; }
+  .detail-actions { align-items: center; justify-content: flex-end; flex-wrap: nowrap; }
+  .detail-actions > div { display: flex; justify-content: flex-end; gap: 10px; white-space: nowrap; }
   :deep(.bill-detail-card-dialog .el-dialog) { width: calc(100vw - 24px) !important; }
 }
 </style>

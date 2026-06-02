@@ -73,8 +73,14 @@ const routes = [
       {
         path: 'security',
         name: 'SecurityManage',
-        redirect: '/security/visitor',
+        redirect: '/security/dashboard',
         children: [
+          {
+            path: 'dashboard',
+            name: 'SecurityDashboard',
+            component: () => import('@/views/security/SecurityDashboard.vue'),
+            meta: { title: '社区安全面板' }
+          },
           {
             path: 'visitor',
             name: 'VisitorList',
@@ -110,8 +116,14 @@ const routes = [
       {
         path: 'facility',
         name: 'FacilityManage',
-        redirect: '/facility/list',
+        redirect: '/facility/dashboard',
         children: [
+          {
+            path: 'dashboard',
+            name: 'FacilityDashboard',
+            component: () => import('@/views/facility/FacilityDashboard.vue'),
+            meta: { title: '公共设施面板' }
+          },
           {
             path: 'list',
             name: 'FacilityList',
@@ -129,8 +141,14 @@ const routes = [
       {
         path: 'asset',
         name: 'AssetManage',
-        redirect: '/asset/property',
+        redirect: '/asset/dashboard',
         children: [
+          {
+            path: 'dashboard',
+            name: 'AssetDashboard',
+            component: () => import('@/views/asset/AssetDashboard.vue'),
+            meta: { title: '资产面板' }
+          },
           {
             path: 'property',
             name: 'PropertyList',
@@ -148,8 +166,14 @@ const routes = [
       {
         path: 'task',
         name: 'TaskManage',
-        redirect: '/task/list',
+        redirect: '/task/dashboard',
         children: [
+          {
+            path: 'dashboard',
+            name: 'TaskDashboard',
+            component: () => import('@/views/task/TaskDashboard.vue'),
+            meta: { title: '工单面板' }
+          },
           {
             path: 'list',
             name: 'TaskList',

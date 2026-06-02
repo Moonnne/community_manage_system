@@ -55,7 +55,7 @@
         style="width: 100%"
         height="410"
       >
-        <el-table-column prop="id" label="ID" width="100" sortable />
+        <el-table-column prop="id" label="ID" width="100" sortable show-overflow-tooltip />
         <el-table-column label="头像" width="60">
           <template #default="{ row }">
             <el-avatar
@@ -69,21 +69,21 @@
             </el-avatar>
           </template>
         </el-table-column>
-        <el-table-column prop="uid" label="账户" width="140" sortable />
-        <el-table-column prop="userName" label="用户名" width="140" />
-        <el-table-column prop="roleName" label="角色" width="120">
+        <el-table-column prop="uid" label="账户" width="140" sortable show-overflow-tooltip />
+        <el-table-column prop="userName" label="用户名" width="140" show-overflow-tooltip />
+        <el-table-column prop="roleName" label="角色" width="120" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag effect="plain" type="success">{{ row.roleName }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="年龄" width="80" sortable>
+        <el-table-column label="年龄" width="80" sortable show-overflow-tooltip>
           <template #default="{ row }">
             {{ userAge(row.userBirthday) }}
           </template>
         </el-table-column>
-        <el-table-column prop="userPhone" label="电话" width="160" />
-        <el-table-column prop="userEmail" label="邮箱" min-width="200" />
-        <el-table-column prop="userGender" label="性别" width="60">
+        <el-table-column prop="userPhone" label="电话" width="160" show-overflow-tooltip />
+        <el-table-column prop="userEmail" label="邮箱" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="userGender" label="性别" width="60" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.userGender === 1 ? '男' : row.userGender === 2 ? '女' : '-' }}
           </template>
@@ -95,7 +95,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="userCreateTime" label="创建时间" width="160" />
+        <el-table-column prop="userCreateTime" label="创建时间" width="160" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)" v-if="userStore.canOperate">编辑</el-button>
@@ -121,9 +121,13 @@
             >
               {{ row.userStatus === 2 ? '恢复' : '禁用' }}
             </el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)" v-if="userStore.userRole === 0 && userStore.canOperate">
+            <el-popconfirm title="确定删除该用户记录吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" size="small" v-if="userStore.userRole === 0 && userStore.canOperate" @click.stop="() => {}">
               删除
             </el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -441,7 +445,6 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除用户 ${row.userName} ?`, '提示', { type: 'warning' })
   await deleteUser(row.id)
   ElMessage.success('删除成功')
   fetchData(true)
