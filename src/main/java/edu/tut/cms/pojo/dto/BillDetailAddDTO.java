@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BillDetailAddDTO {
-    @NotNull
+    private Long id;
     private Long billId;
     private String billDetailName;
     private Integer billDetailType;

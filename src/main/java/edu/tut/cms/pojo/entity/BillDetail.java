@@ -19,5 +19,6 @@ public class BillDetail {
     private Integer billDetailQuantity;
     private BigDecimal billDetailUnitPrice;
     private BigDecimal billDetailTotal;
+    private Integer billDetailStatus;
     private String billDetailRemark;
 }

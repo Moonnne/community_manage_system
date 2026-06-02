@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 @Builder
 public class BillSummaryVO {
     private Long unpaidCount;
+    private Long paidCount;
+    private Long cancelledCount;
     private BigDecimal unpaidAmount;
     private Long overdueCount;
     private Long partiallyPaidCount;

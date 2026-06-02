@@ -11,7 +11,7 @@
  Target Server Version : 80408
  File Encoding         : 65001
 
- Date: 31/05/2026 12:53:31
+ Date: 02/06/2026 10:46:16
 */
 
 SET NAMES utf8mb4;
@@ -40,11 +40,14 @@ CREATE TABLE `asset`  (
   INDEX `ASSET_OWNER_ID_FK`(`asset_owner_id` ASC) USING BTREE,
   CONSTRAINT `ASSET_OWNER_ID_FK` FOREIGN KEY (`asset_owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `ASSET_TYPE_KF` FOREIGN KEY (`asset_type`) REFERENCES `asset_type` (`asset_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of asset
 -- ----------------------------
+INSERT INTO `asset` VALUES (1, 'B0001', 1, '物业办公室', 1, '2026-05-31 13:10:54', '2099-12-31 13:10:56', 1, NULL, '1', '1', NULL, NULL);
+INSERT INTO `asset` VALUES (2, 'P0001', 1, '物业办公楼前车位-1', 2, '2026-05-31 13:15:12', '2026-05-31 13:16:40', 0, NULL, '1', '1', '1-1', NULL);
+INSERT INTO `asset` VALUES (3, 'P0002', 1, '物业办公楼前车位-2', 2, '2026-05-31 13:16:21', '2026-05-31 13:16:44', 0, NULL, '1', '1', '1-2', NULL);
 
 -- ----------------------------
 -- Table structure for asset_type
@@ -87,11 +90,12 @@ CREATE TABLE `bill`  (
   CONSTRAINT `ASSET_ID_FK` FOREIGN KEY (`asset_id`) REFERENCES `asset` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `CREATER_ID_FK` FOREIGN KEY (`creater_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `OWNER_ID_FK` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of bill
 -- ----------------------------
+INSERT INTO `bill` VALUES (1, 'B00000001', 2, 1, 1, '2026-05-31 18:18:39', '2026-05-31 18:18:41', '2026-05-31 18:18:46', '2026-05-31 19:15:16', 1, 0.00, 0.00, NULL);
 
 -- ----------------------------
 -- Table structure for bill_detail
@@ -105,13 +109,14 @@ CREATE TABLE `bill_detail`  (
   `bill_detail_quantity` int NOT NULL COMMENT '账目数量',
   `bill_detail_unit_price` decimal(10, 2) NOT NULL COMMENT '账目单价',
   `bill_detail_total` decimal(10, 2) NOT NULL COMMENT '账目金额',
+  `bill_detail_status` int NOT NULL DEFAULT 1 COMMENT '账目状态 0-已结清 1-未结清 2-部分结清',
   `bill_detail_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '账目备注',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `BILL_DETAIL_TYPE_FK`(`bill_detail_type` ASC) USING BTREE,
   INDEX `BILL_ID_FK`(`bill_id` ASC) USING BTREE,
   CONSTRAINT `BILL_DETAIL_TYPE_FK` FOREIGN KEY (`bill_detail_type`) REFERENCES `bill_type` (`bill_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `BILL_ID_FK` FOREIGN KEY (`bill_id`) REFERENCES `bill` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of bill_detail
@@ -161,7 +166,7 @@ CREATE TABLE `car`  (
   CONSTRAINT `CAR_OWNER_ID_FK` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `CAR_TYPE` FOREIGN KEY (`car_type`) REFERENCES `car_type` (`car_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `CAR_VISITOR_FK` FOREIGN KEY (`visitor_id`) REFERENCES `visitor` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of car
@@ -187,7 +192,7 @@ CREATE TABLE `car_history`  (
   CONSTRAINT `CAR_HISTORY_CAR_ID_FK` FOREIGN KEY (`car_id`) REFERENCES `car` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `CAR_HISTORY_OPERATOR_FK` FOREIGN KEY (`car_history_operator_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `GATE_ID_FK` FOREIGN KEY (`gate_id`) REFERENCES `gate` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of car_history
@@ -282,7 +287,7 @@ CREATE TABLE `gate`  (
 -- ----------------------------
 -- Records of gate
 -- ----------------------------
-INSERT INTO `gate` VALUES (1, 'N1', '北一门', NULL, '北一门通用');
+INSERT INTO `gate` VALUES (1, 'N1', '北一门', 4, '北一门通用');
 INSERT INTO `gate` VALUES (2, 'N2', '北二门', NULL, '北二门仅允许行人');
 INSERT INTO `gate` VALUES (3, 'E1', '东门', NULL, '东门通用');
 
@@ -363,8 +368,8 @@ CREATE TABLE `user`  (
 -- ----------------------------
 -- Records of user
 -- ----------------------------
-INSERT INTO `user` VALUES (1, 'admin', 'TestAdmin', '2026-05-04', NULL, '', '', '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 0, 0, '2026-05-04 17:52:08', NULL, 1, 1);
-INSERT INTO `user` VALUES (2, 'user', 'TestUser', '2026-05-01', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 4, 0, '2026-05-05 09:52:27', NULL, 1, 1);
+INSERT INTO `user` VALUES (1, 'admin', 'TestAdmin', '2026-05-04', 1, '13811112222', '', '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 0, 0, '2026-05-04 17:52:08', 'https://oss.moonne.top/cms/avatas/a5a5e769-23d8-4c54-99cb-d87df8b31f34.png', 1, 1);
+INSERT INTO `user` VALUES (2, 'user', 'TestUser', '2026-05-01', 1, '', '', '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 4, 0, '2026-05-05 09:52:27', 'https://oss.moonne.top/cms/avatas/bdb1aecb-0d4b-414e-ac3b-1cbe7c41efaa.png', 1, 1);
 INSERT INTO `user` VALUES (3, 'manager', 'TestManger', '2026-03-05', NULL, NULL, NULL, '$2a$10$BHQSZwduJfrAapgQWiW9AOS9pIJ.lGZSdroe5wTU7lxPQTOOTh78m', 1, 0, '2026-05-05 09:54:11', NULL, 1, 1);
 INSERT INTO `user` VALUES (4, 'employee', 'TestEmployee', NULL, 1, '', '', '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 2, 0, '2026-05-06 15:11:19', NULL, 1, 1);
 INSERT INTO `user` VALUES (5, 't1', '测试1', '2026-05-06', NULL, NULL, NULL, '$2a$10$7ZxQ2qYDxMftxJO/byk8feLe4oZ1LUezhCeVlLTPuU27e3xwCtKwG', 4, 0, '2026-05-06 17:30:20', NULL, 1, 1);

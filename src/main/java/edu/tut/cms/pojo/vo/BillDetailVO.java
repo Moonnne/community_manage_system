@@ -20,5 +20,7 @@ public class BillDetailVO {
     private Integer billDetailQuantity;
     private BigDecimal billDetailUnitPrice;
     private BigDecimal billDetailTotal;
+    private BigDecimal billDetailDue;
+    private Integer billDetailStatus;
     private String billDetailRemark;
 }

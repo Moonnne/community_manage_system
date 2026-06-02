@@ -43,6 +43,8 @@ public interface BillService {
 
     void payBill(BillPayDTO dto);
 
+    void payBillDetail(BillDetailPayDTO dto);
+
     /**
      * 获取账单详情（含明细列表）
      *

@@ -10,7 +10,7 @@ import java.util.List;
 public interface BillDetailMapper {
 
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    @Insert("INSERT INTO bill_detail(bill_id, bill_detail_name, bill_detail_type, bill_detail_quantity, bill_detail_unit_price, bill_detail_total, bill_detail_remark) VALUES(#{billId}, #{billDetailName}, #{billDetailType}, #{billDetailQuantity}, #{billDetailUnitPrice}, #{billDetailTotal}, #{billDetailRemark})")
+    @Insert("INSERT INTO bill_detail(bill_id, bill_detail_name, bill_detail_type, bill_detail_quantity, bill_detail_unit_price, bill_detail_total, bill_detail_status, bill_detail_remark) VALUES(#{billId}, #{billDetailName}, #{billDetailType}, #{billDetailQuantity}, #{billDetailUnitPrice}, #{billDetailTotal}, #{billDetailStatus}, #{billDetailRemark})")
     int insert(BillDetail detail);
 
     int updateById(BillDetail detail);
@@ -20,6 +20,9 @@ public interface BillDetailMapper {
 
     @Delete("DELETE FROM bill_detail WHERE bill_id = #{billId}")
     int deleteByBillId(Long billId);
+
+    @Select("SELECT * FROM bill_detail WHERE id = #{id}")
+    BillDetail selectById(Long id);
 
     @Select("SELECT COUNT(1) FROM bill_detail WHERE bill_detail_type = #{billTypeId}")
     int countByBillTypeId(Integer billTypeId);

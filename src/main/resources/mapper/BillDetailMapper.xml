@@ -11,6 +11,7 @@
             <if test="billDetailQuantity != null">bill_detail_quantity = #{billDetailQuantity},</if>
             <if test="billDetailUnitPrice != null">bill_detail_unit_price = #{billDetailUnitPrice},</if>
             <if test="billDetailTotal != null">bill_detail_total = #{billDetailTotal},</if>
+            <if test="billDetailStatus != null">bill_detail_status = #{billDetailStatus},</if>
             <if test="billDetailRemark != null">bill_detail_remark = #{billDetailRemark},</if>
         </set>
         WHERE id = #{id}
@@ -18,7 +19,8 @@
 
     <select id="selectByBillId" resultType="edu.tut.cms.pojo.vo.BillDetailVO">
         SELECT bd.*,
-               bt.bill_type_name AS bill_detail_type_name
+               bt.bill_type_name AS bill_detail_type_name,
+               CASE WHEN bd.bill_detail_status = 0 THEN 0 ELSE bd.bill_detail_total END AS bill_detail_due
         FROM bill_detail bd
         LEFT JOIN bill_type bt ON bd.bill_detail_type = bt.bill_type_id
         WHERE bd.bill_id = #{billId}

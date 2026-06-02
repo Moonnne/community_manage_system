@@ -74,6 +74,13 @@ public class BillController {
         return Result.success();
     }
 
+    @PostMapping("/detail/pay")
+    @RequirePermission(minLevel = 0)
+    public Result<Void> payDetail(@Valid @RequestBody BillDetailPayDTO dto) {
+        billService.payBillDetail(dto);
+        return Result.success();
+    }
+
     @GetMapping("/{id}")
     public Result<BillVO> get(@PathVariable Long id) {
         return Result.success(billService.getBill(id));

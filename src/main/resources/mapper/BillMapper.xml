@@ -59,16 +59,29 @@
 
     <select id="selectSummary" resultType="edu.tut.cms.pojo.vo.BillSummaryVO">
         SELECT
-            COUNT(CASE WHEN bill_status IN (1, 2, 3) THEN 1 END) AS unpaidCount,
+            COUNT(CASE WHEN effective_status IN (1, 2, 3) THEN 1 END) AS unpaidCount,
+            COUNT(CASE WHEN effective_status = 0 THEN 1 END) AS paidCount,
+            COUNT(CASE WHEN effective_status = 5 THEN 1 END) AS cancelledCount,
             COALESCE(SUM(CASE
-                WHEN bill_status IN (1, 2, 3)
+                WHEN effective_status IN (1, 2, 3)
                 THEN GREATEST(bill_total - COALESCE(bill_paid, 0), 0)
                 ELSE 0
             END), 0) AS unpaidAmount,
-            COUNT(CASE WHEN bill_status = 3 THEN 1 END) AS overdueCount,
-            COUNT(CASE WHEN bill_status = 2 THEN 1 END) AS partiallyPaidCount
-        FROM bill
-        WHERE owner_id = #{ownerId}
+            COUNT(CASE WHEN effective_status = 3 THEN 1 END) AS overdueCount,
+            COUNT(CASE WHEN effective_status = 2 THEN 1 END) AS partiallyPaidCount
+        FROM (
+            SELECT bill_total,
+                   bill_paid,
+                   CASE
+                       WHEN bill_status = 5 THEN 5
+                       WHEN COALESCE(bill_paid, 0) >= COALESCE(bill_total, 0) THEN 0
+                       WHEN bill_end_time &lt; NOW() THEN 3
+                       WHEN COALESCE(bill_paid, 0) &gt; 0 THEN 2
+                       ELSE 1
+                   END AS effective_status
+            FROM bill
+            WHERE owner_id = #{ownerId}
+        ) t
     </select>
 
 </mapper>

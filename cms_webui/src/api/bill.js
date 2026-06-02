@@ -40,6 +40,10 @@ export function payBill(id) {
   return request.post('/api/bill/pay', { id })
 }
 
+export function payBillDetail(data) {
+  return request.post('/api/bill/detail/pay', data)
+}
+
 export function addBillDetail(data) {
   return request.post('/api/bill/detail/add', data)
 }

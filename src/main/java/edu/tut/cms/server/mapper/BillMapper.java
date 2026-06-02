@@ -22,6 +22,9 @@ public interface BillMapper {
     @Select("SELECT * FROM bill WHERE id = #{id}")
     Bill selectById(Long id);
 
+    @Select("SELECT COUNT(1) FROM bill WHERE bill_code = #{billCode}")
+    int countByBillCode(String billCode);
+
     @Update("UPDATE bill SET bill_status = #{billStatus} WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("billStatus") Integer billStatus);
 

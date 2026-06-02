@@ -167,6 +167,20 @@ function openForgotPasswordTask() {
   dialogVisible.value = true
 }
 
+function openBillAppealTask() {
+  isEdit.value = false
+  const billType = types.value.find(type => type.taskTypeName === '账单')
+    || types.value.find(type => type.taskTypeName === '财务')
+    || types.value[0]
+  form.value = {
+    taskTitle: '账单申诉申请',
+    taskType: billType?.taskTypeId,
+    taskInfo: `用户ID：${userStore.userInfo?.id || '-'}\n账户：${userStore.userInfo?.uid || '-'}\n账单ID：${route.query.billId || '-'}\n申诉说明：请在此补充账单申诉原因。`,
+    taskRemark: ''
+  }
+  dialogVisible.value = true
+}
+
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function taskTypeNameText(id) { return types.value.find(type => type.taskTypeId === id)?.taskTypeName || valueText(id) }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
@@ -182,6 +196,8 @@ onMounted(async () => {
   await fetchTypes()
   if (route.query.intent === 'forgot-password') {
     openForgotPasswordTask()
+  } else if (route.query.intent === 'bill-appeal') {
+    openBillAppealTask()
   }
 })
 </script>
