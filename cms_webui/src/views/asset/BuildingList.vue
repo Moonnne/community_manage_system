@@ -79,7 +79,7 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">建筑编号将由系统保存时自动生成。</el-alert>
+          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip" center>建筑编号将由系统保存时自动生成。</el-alert>
           <el-form-item v-if="isEdit" label="建筑编号">
             <el-input :model-value="form.buildingCode" disabled />
           </el-form-item>

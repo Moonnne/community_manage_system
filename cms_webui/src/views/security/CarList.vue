@@ -27,20 +27,20 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="carCode" label="车辆编号" width="140" show-overflow-tooltip />
-        <el-table-column prop="carNumber" label="车牌号" width="120" show-overflow-tooltip />
-        <el-table-column prop="ownerName" label="车主" width="100" show-overflow-tooltip />
-        <el-table-column prop="carTypeName" label="类型" width="100" show-overflow-tooltip>
+        <el-table-column prop="carCode" label="车辆编号" width="200" show-overflow-tooltip />
+        <el-table-column prop="carNumber" label="车牌号" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="车主" width="160" show-overflow-tooltip />
+        <el-table-column prop="carTypeName" label="类型" width="160" show-overflow-tooltip>
           <template #default="{ row }"><el-tag effect="plain">{{ row.carTypeName }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="状态" width="140">
           <template #default="{ row }">
             <el-tag :type="row.carStatus === 0 ? 'success' : 'info'" effect="plain">
               {{ row.carStatus === 0 ? '已入场' : '已离场' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
+        <el-table-column label="操作" width="300" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-popconfirm title="确定删除该车辆记录吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">

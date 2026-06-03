@@ -43,12 +43,11 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="48" fixed="left" />
-        <el-table-column prop="id" label="ID" width="80" show-overflow-tooltip />
-        <el-table-column prop="billCode" label="账单编号" width="190" show-overflow-tooltip />
-        <el-table-column prop="ownerName" label="业主" width="120" show-overflow-tooltip />
-        <el-table-column prop="createrName" label="创建人" width="120" show-overflow-tooltip />
-        <el-table-column prop="assetName" label="资产" width="150" show-overflow-tooltip />
-        <el-table-column label="总金额" width="120" show-overflow-tooltip>
+        <el-table-column prop="billCode" label="账单编号" width="200" sortable show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="业主" width="140" show-overflow-tooltip />
+        <el-table-column prop="createrName" label="创建人" width="140" show-overflow-tooltip />
+        <el-table-column prop="assetName" label="资产" width="200" show-overflow-tooltip />
+        <el-table-column label="总金额" width="120" sortable show-overflow-tooltip>
           <template #default="{ row }">￥{{ formatMoney(row.billTotal) }}</template>
         </el-table-column>
         <el-table-column label="已支付" width="120" show-overflow-tooltip>
@@ -57,14 +56,14 @@
         <el-table-column label="待付款" width="120" show-overflow-tooltip>
           <template #default="{ row }">￥{{ amountDue(row) }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="110" sortable>
           <template #default="{ row }">
             <el-tag :type="billStatusType(row.billStatus)" effect="plain">{{ billStatusText(row.billStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="billStartTime" label="开始时间" width="170" show-overflow-tooltip />
-        <el-table-column prop="billEndTime" label="截止时间" width="170" show-overflow-tooltip />
-        <el-table-column prop="billRemark" label="备注" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="billStartTime" label="开始时间" width="160" sortable show-overflow-tooltip />
+        <el-table-column prop="billEndTime" label="截止时间" width="160" sortable show-overflow-tooltip />
+        <el-table-column prop="billRemark" label="备注" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="150" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>

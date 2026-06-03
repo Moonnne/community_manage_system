@@ -49,10 +49,10 @@
         </el-form-item>
         <el-form-item label="权限等级" prop="rolePromission">
           <el-select v-model="form.rolePromission" placeholder="请选择">
-            <el-option label="0 - 只读权限" value="0" />
-            <el-option label="1 - 操作权限" value="1" />
-            <el-option label="2 - 管理权限" value="2" />
-            <el-option label="3 - 系统权限" value="3" />
+            <el-option label="只读权限" value="0" />
+            <el-option label="操作权限" value="1" />
+            <el-option label="管理权限" value="2" />
+            <el-option label="系统权限" value="3" />
           </el-select>
         </el-form-item>
         </template>
