@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class AssetType {
     private Integer assetTypeId;
     private String assetTypeName;
+    private String assetTypeShort;
 }

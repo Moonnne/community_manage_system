@@ -6,7 +6,7 @@
       ref="inputRefs"
       class="otp-input__box"
       :value="chars[index] || ''"
-      :inputmode="inputmode"
+      inputmode="none"
       :maxlength="1"
       autocomplete="one-time-code"
       @input="handleInput(index, $event)"
@@ -38,6 +38,7 @@ function isAllowed(value) {
 function normalize(value) {
   return String(value || '')
     .split('')
+    .map(char => char.toUpperCase())
     .filter(char => isAllowed(char))
     .join('')
     .slice(0, props.length)
@@ -114,6 +115,7 @@ function handlePaste(event) {
   font-weight: 600;
   line-height: 1;
   text-align: center;
+  text-transform: uppercase;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }

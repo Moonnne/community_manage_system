@@ -98,8 +98,7 @@ public class DashboardController {
     public Result<Map<String, Object>> asset(@RequestParam(required = false) Long ownerId,
                                              @RequestParam(required = false) String assetName) {
         CurrentUser user = UserContext.getCurrentUser();
-        Long scopedOwnerId = user.getUserRole() != null && user.getUserRole() >= 4 ? user.getId() : ownerId;
-        List<AssetVO> assets = assetMapper.selectPage(scopedOwnerId, null, null, null).stream()
+        List<AssetVO> assets = assetMapper.selectPage(user.getId(), null, null, null).stream()
                 .filter(item -> !hasText(assetName) || contains(item.getAssetName(), assetName))
                 .toList();
         LocalDateTime now = LocalDateTime.now();
@@ -127,12 +126,12 @@ public class DashboardController {
         CurrentUser user = UserContext.getCurrentUser();
         boolean canProcess = user.getUserRole() != null && (user.getUserRole() == 0 || user.getUserRole() == 1);
 
-        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null).stream()
+        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null, false).stream()
                 .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                 .filter(item -> taskType == null || Objects.equals(item.getTaskType(), taskType))
                 .toList();
         List<TaskVO> processingTasks = canProcess
-                ? taskMapper.selectPage(ownerId, null, null, taskType).stream()
+                ? taskMapper.selectPage(ownerId, null, null, taskType, false).stream()
                     .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                     .toList()
                 : List.of();

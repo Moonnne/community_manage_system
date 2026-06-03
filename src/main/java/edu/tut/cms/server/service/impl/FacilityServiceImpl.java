@@ -3,13 +3,16 @@ package edu.tut.cms.server.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import edu.tut.cms.common.result.PageResult;
+import edu.tut.cms.common.exception.BusinessException;
 import edu.tut.cms.pojo.dto.FacilityAddDTO;
 import edu.tut.cms.pojo.dto.FacilityTypeAddDTO;
 import edu.tut.cms.pojo.dto.FacilityUpdateDTO;
+import edu.tut.cms.pojo.entity.Building;
 import edu.tut.cms.pojo.entity.Facility;
 import edu.tut.cms.pojo.entity.FacilityType;
 import edu.tut.cms.pojo.vo.FacilityTypeVO;
 import edu.tut.cms.pojo.vo.FacilityVO;
+import edu.tut.cms.server.mapper.BuildingMapper;
 import edu.tut.cms.server.mapper.FacilityMapper;
 import edu.tut.cms.server.mapper.FacilityTypeMapper;
 import edu.tut.cms.server.service.FacilityService;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,12 +32,13 @@ public class FacilityServiceImpl implements FacilityService {
 
     private final FacilityMapper facilityMapper;
     private final FacilityTypeMapper facilityTypeMapper;
+    private final BuildingMapper buildingMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addFacility(FacilityAddDTO dto) {
         Facility facility = Facility.builder()
-                .facilityCode(dto.getFacilityCode())
+                .facilityCode(generateFacilityCode(dto.getFacilityBuilding(), dto.getFacilityFloor()))
                 .facilityName(dto.getFacilityName())
                 .facilityChiefId(dto.getFacilityChiefId())
                 .facilityType(dto.getFacilityType())
@@ -52,6 +57,9 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateFacility(FacilityUpdateDTO dto) {
+        if (dto.getFacilityBuilding() != null && dto.getFacilityFloor() != null) {
+            buildLocationCode(dto.getFacilityBuilding(), dto.getFacilityFloor());
+        }
         Facility facility = Facility.builder()
                 .id(dto.getId())
                 .facilityName(dto.getFacilityName())
@@ -122,5 +130,37 @@ public class FacilityServiceImpl implements FacilityService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteFacilityType(Integer id) {
         facilityTypeMapper.deleteById(id);
+    }
+
+    private String generateFacilityCode(Long buildingId, String floor) {
+        String suffix = buildLocationCode(buildingId, floor);
+        for (int i = 0; i < 20; i++) {
+            String code = "F" + suffix + String.format("%08d", ThreadLocalRandom.current().nextInt(100_000_000));
+            if (facilityMapper.countByCode(code) == 0) {
+                return code;
+            }
+        }
+        throw new BusinessException("设施编号生成失败，请重试");
+    }
+
+    private String buildLocationCode(Long buildingId, String floor) {
+        Building building = buildingMapper.selectById(buildingId);
+        if (building == null) {
+            throw new BusinessException("建筑物不存在");
+        }
+        Integer floorNumber;
+        try {
+            floorNumber = Integer.valueOf(floor);
+        } catch (Exception e) {
+            throw new BusinessException("楼层必须为数字");
+        }
+        if (floorNumber < building.getBuildingMinFloor() || floorNumber > building.getBuildingMaxFloor()) {
+            throw new BusinessException("楼层不在建筑物楼层范围内");
+        }
+        String buildingCode = building.getBuildingCode();
+        if (buildingCode == null || buildingCode.length() < 2) {
+            throw new BusinessException("建筑物编号不正确");
+        }
+        return buildingCode.substring(buildingCode.length() - 2) + String.format("%02d", floorNumber);
     }
 }

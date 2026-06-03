@@ -19,3 +19,15 @@ export function getAssetPage(params, options = {}) {
 export function getAssetTypes(options = {}) {
   return request.get('/api/asset/types', options)
 }
+
+export function addAssetType(data) {
+  return request.post('/api/asset/type/add', data)
+}
+
+export function updateAssetType(data) {
+  return request.post('/api/asset/type/update', data)
+}
+
+export function deleteAssetType(id) {
+  return request.post('/api/asset/type/delete', null, { params: { id } })
+}

@@ -44,7 +44,7 @@
         </el-table-column>
         <el-table-column prop="taskCreateTime" label="创建时间" width="170" show-overflow-tooltip />
         <el-table-column prop="taskInfo" label="描述" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="taskRemark" label="备注" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="taskRemark" label="回复" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)" v-if="canManage">编辑</el-button>
@@ -79,10 +79,8 @@
         <el-form-item label="类型" prop="taskType">
           <el-select v-model="form.taskType" placeholder="请选择"><el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" /></el-select>
         </el-form-item>
-        </template>
-        <template v-else-if="activeStep === 1">
         <el-form-item label="描述" prop="taskInfo"><el-input v-model="form.taskInfo" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="备注"><el-input v-model="form.taskRemark" type="textarea" :rows="2" /></el-form-item>
+        <el-form-item v-if="isEdit" label="回复"><el-input v-model="form.taskRemark" type="textarea" :rows="2" /></el-form-item>
         </template>
         <ConfirmInfoTable v-else :rows="confirmRows" />
       </template>
@@ -100,7 +98,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="处理人ID"><el-input v-model.number="processForm.operatorId" /></el-form-item>
-        <el-form-item label="备注"><el-input v-model="processForm.remark" type="textarea" :rows="2" /></el-form-item>
+        <el-form-item label="回复"><el-input v-model="processForm.remark" type="textarea" :rows="2" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="processVisible = false">取消</el-button>
@@ -136,15 +134,14 @@ const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', t
 const form = ref({})
 const processForm = ref({})
 const wizardSteps = [
-  { title: '基础信息', fields: ['taskTitle', 'taskType'] },
-  { title: '描述信息', fields: ['taskInfo'] },
+  { title: '工单信息', fields: ['taskTitle', 'taskType', 'taskInfo'] },
   { title: '确认信息', fields: [] }
 ]
 const confirmRows = computed(() => [
   { label: '标题', value: valueText(form.value.taskTitle) },
   { label: '类型', type: 'tag', value: taskTypeNameText(form.value.taskType) },
   { label: '描述', value: valueText(form.value.taskInfo) },
-  { label: '备注', value: valueText(form.value.taskRemark) }
+  { label: '回复', value: isEdit.value ? valueText(form.value.taskRemark) : '提交后由处理人填写' }
 ])
 const formRules = {
   taskTitle: [{ required: true, message: '请输入标题', trigger: 'blur' }],

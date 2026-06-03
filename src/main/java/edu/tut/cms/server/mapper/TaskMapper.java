@@ -21,11 +21,15 @@ public interface TaskMapper {
     @Select("SELECT * FROM task WHERE id = #{id}")
     Task selectById(Long id);
 
+    @Select("SELECT COUNT(1) FROM task WHERE task_code = #{taskCode}")
+    int countByCode(String taskCode);
+
     @Select("SELECT COUNT(1) FROM task WHERE task_type = #{taskTypeId}")
     int countByTaskTypeId(Integer taskTypeId);
 
     List<TaskVO> selectPage(@Param("ownerId") Long ownerId,
                             @Param("taskOperatorId") Long taskOperatorId,
                             @Param("taskStatus") Integer taskStatus,
-                            @Param("taskType") Integer taskType);
+                            @Param("taskType") Integer taskType,
+                            @Param("excludeComplaint") Boolean excludeComplaint);
 }

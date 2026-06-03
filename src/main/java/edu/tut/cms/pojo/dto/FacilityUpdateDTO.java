@@ -19,7 +19,7 @@ public class FacilityUpdateDTO {
     private Integer facilityStatus;
     private LocalDateTime facilityCheckTime;
     private Integer facilityExpirationDate;
-    private String facilityBuilding;
+    private Long facilityBuilding;
     private String facilityFloor;
     private String facilityPosition;
     private String facilityOwner;

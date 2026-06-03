@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssetAddDTO {
-    @NotBlank
     private String assetCode;
     private Long assetOwnerId;
     @NotBlank
@@ -23,7 +22,8 @@ public class AssetAddDTO {
     private LocalDateTime assetDueTime;
     private Integer assetStatus;
     private BigDecimal assetArea;
-    private String assetBuilding;
+    @NotNull
+    private Long assetBuilding;
     private String assetFloor;
     private String assetPosition;
     private String assetRemark;

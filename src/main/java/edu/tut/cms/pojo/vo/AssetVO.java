@@ -21,13 +21,19 @@ public class AssetVO {
     private String assetName;
     private Integer assetType;
     private String assetTypeName;
+    private String assetTypeShort;
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime assetRegTime;
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime assetDueTime;
     private Integer assetStatus;
     private BigDecimal assetArea;
-    private String assetBuilding;
+    private Long assetBuilding;
+    private String buildingCode;
+    private String buildingName;
+    private Integer buildingMinFloor;
+    private Integer buildingMaxFloor;
+    private String buildingLocation;
     private String assetFloor;
     private String assetPosition;
     private String assetRemark;

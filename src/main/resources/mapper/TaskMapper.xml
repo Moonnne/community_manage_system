@@ -40,6 +40,9 @@
             <if test="taskType != null">
                 AND t.task_type = #{taskType}
             </if>
+            <if test="excludeComplaint != null and excludeComplaint">
+                AND t.task_type != 1
+            </if>
         </where>
         ORDER BY t.id ASC
     </select>

@@ -7,13 +7,16 @@ import edu.tut.cms.common.context.UserContext;
 import edu.tut.cms.common.exception.BusinessException;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.pojo.dto.AssetAddDTO;
+import edu.tut.cms.pojo.dto.AssetTypeAddDTO;
 import edu.tut.cms.pojo.dto.AssetUpdateDTO;
 import edu.tut.cms.pojo.entity.Asset;
 import edu.tut.cms.pojo.entity.AssetType;
+import edu.tut.cms.pojo.entity.Building;
 import edu.tut.cms.pojo.vo.AssetTypeVO;
 import edu.tut.cms.pojo.vo.AssetVO;
 import edu.tut.cms.server.mapper.AssetMapper;
 import edu.tut.cms.server.mapper.AssetTypeMapper;
+import edu.tut.cms.server.mapper.BuildingMapper;
 import edu.tut.cms.server.service.AssetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +42,7 @@ public class AssetServiceImpl implements AssetService {
 
     private final AssetMapper assetMapper;
     private final AssetTypeMapper assetTypeMapper;
+    private final BuildingMapper buildingMapper;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -44,7 +50,7 @@ public class AssetServiceImpl implements AssetService {
     @Transactional(rollbackFor = Exception.class)
     public void addAsset(AssetAddDTO dto) {
         Asset asset = Asset.builder()
-                .assetCode(dto.getAssetCode())
+                .assetCode(generateAssetCode(dto.getAssetType(), dto.getAssetBuilding(), dto.getAssetFloor()))
                 .assetOwnerId(dto.getAssetOwnerId())
                 .assetName(dto.getAssetName())
                 .assetType(dto.getAssetType())
@@ -63,6 +69,9 @@ public class AssetServiceImpl implements AssetService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateAsset(AssetUpdateDTO dto) {
+        if (dto.getAssetBuilding() != null && dto.getAssetFloor() != null) {
+            buildLocationCode(dto.getAssetBuilding(), dto.getAssetFloor());
+        }
         Asset asset = Asset.builder()
                 .id(dto.getId())
                 .assetOwnerId(dto.getAssetOwnerId())
@@ -88,9 +97,9 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public PageResult<AssetVO> pageAssets(Integer pageNum, Integer pageSize,
                                           Long assetOwnerId, Integer assetType,
-                                          Integer assetStatus, String assetBuilding) {
+                                          Integer assetStatus, Long assetBuilding) {
         CurrentUser currentUser = UserContext.getCurrentUser();
-        if (currentUser.getUserRole() >= 4) {
+        if (currentUser.getUserRole() != null && currentUser.getUserRole() >= 4) {
             assetOwnerId = currentUser.getId();
         }
 
@@ -111,7 +120,7 @@ public class AssetServiceImpl implements AssetService {
     @Transactional(readOnly = true)
     public byte[] exportAssetsToExcel(Long assetOwnerId) {
         CurrentUser currentUser = UserContext.getCurrentUser();
-        if (currentUser.getUserRole() >= 4) {
+        if (currentUser.getUserRole() != null && currentUser.getUserRole() >= 4) {
             assetOwnerId = currentUser.getId();
         }
 
@@ -137,7 +146,7 @@ public class AssetServiceImpl implements AssetService {
                 row.createCell(5).setCellValue(asset.getAssetDueTime() != null ? asset.getAssetDueTime().format(FORMATTER) : "");
                 row.createCell(6).setCellValue(getAssetStatusName(asset.getAssetStatus()));
                 row.createCell(7).setCellValue(asset.getAssetArea() != null ? asset.getAssetArea().doubleValue() : 0);
-                row.createCell(8).setCellValue(asset.getAssetBuilding() != null ? asset.getAssetBuilding() : "");
+                row.createCell(8).setCellValue(formatBuilding(asset));
                 row.createCell(9).setCellValue(asset.getAssetFloor() != null ? asset.getAssetFloor() : "");
                 row.createCell(10).setCellValue(asset.getAssetPosition() != null ? asset.getAssetPosition() : "");
                 row.createCell(11).setCellValue(asset.getAssetRemark() != null ? asset.getAssetRemark() : "");
@@ -163,12 +172,99 @@ public class AssetServiceImpl implements AssetService {
         };
     }
 
+    private String formatBuilding(AssetVO asset) {
+        if (asset.getBuildingCode() == null && asset.getBuildingName() == null) {
+            return asset.getAssetBuilding() != null ? String.valueOf(asset.getAssetBuilding()) : "";
+        }
+        String code = asset.getBuildingCode() != null ? asset.getBuildingCode() : "";
+        String name = asset.getBuildingName() != null ? asset.getBuildingName() : "";
+        return (code + " " + name).trim();
+    }
+
     @Override
     public List<AssetTypeVO> listAssetTypes() {
         List<AssetType> types = assetTypeMapper.selectAll();
         return types.stream().map(t -> AssetTypeVO.builder()
                 .assetTypeId(t.getAssetTypeId())
                 .assetTypeName(t.getAssetTypeName())
+                .assetTypeShort(t.getAssetTypeShort())
                 .build()).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addAssetType(AssetTypeAddDTO dto) {
+        Integer nextTypeId = assetTypeMapper.selectMaxTypeId() + 1;
+        AssetType type = AssetType.builder()
+                .assetTypeId(nextTypeId)
+                .assetTypeName(dto.getAssetTypeName())
+                .assetTypeShort(normalizeAssetTypeShort(dto.getAssetTypeShort()))
+                .build();
+        assetTypeMapper.insert(type);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAssetType(AssetTypeAddDTO dto) {
+        AssetType type = AssetType.builder()
+                .assetTypeId(dto.getAssetTypeId())
+                .assetTypeName(dto.getAssetTypeName())
+                .assetTypeShort(normalizeAssetTypeShort(dto.getAssetTypeShort()))
+                .build();
+        assetTypeMapper.updateById(type);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAssetType(Integer id) {
+        if (assetMapper.countByAssetTypeId(id) > 0) {
+            throw new BusinessException("该资产类型已被资产使用，无法删除");
+        }
+        assetTypeMapper.deleteById(id);
+    }
+
+    private String generateAssetCode(Integer assetTypeId, Long buildingId, String floor) {
+        AssetType type = assetTypeMapper.selectById(assetTypeId);
+        if (type == null) {
+            throw new BusinessException("资产类型不存在");
+        }
+        String typeShort = normalizeAssetTypeShort(type.getAssetTypeShort());
+        String suffix = buildLocationCode(buildingId, floor);
+        for (int i = 0; i < 20; i++) {
+            String code = typeShort + suffix + String.format("%08d", ThreadLocalRandom.current().nextInt(100_000_000));
+            if (assetMapper.countByCode(code) == 0) {
+                return code;
+            }
+        }
+        throw new BusinessException("资产编号生成失败，请重试");
+    }
+
+    private String buildLocationCode(Long buildingId, String floor) {
+        Building building = buildingMapper.selectById(buildingId);
+        if (building == null) {
+            throw new BusinessException("建筑物不存在");
+        }
+        Integer floorNumber;
+        try {
+            floorNumber = Integer.valueOf(floor);
+        } catch (Exception e) {
+            throw new BusinessException("楼层必须为数字");
+        }
+        if (floorNumber < building.getBuildingMinFloor() || floorNumber > building.getBuildingMaxFloor()) {
+            throw new BusinessException("楼层不在建筑物楼层范围内");
+        }
+        String buildingCode = building.getBuildingCode();
+        if (buildingCode == null || buildingCode.length() < 2) {
+            throw new BusinessException("建筑物编号不正确");
+        }
+        return buildingCode.substring(buildingCode.length() - 2) + String.format("%02d", floorNumber);
+    }
+
+    private String normalizeAssetTypeShort(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        if (!normalized.matches("[A-Z]{1,2}")) {
+            throw new BusinessException("资产类型缩写必须为一至两位大写英文字母");
+        }
+        return normalized;
     }
 }

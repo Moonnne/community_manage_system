@@ -160,6 +160,18 @@ const routes = [
             name: 'ParkingList',
             component: () => import('@/views/asset/ParkingList.vue'),
             meta: { title: '停车位管理' }
+          },
+          {
+            path: 'type',
+            name: 'AssetType',
+            component: () => import('@/views/asset/AssetType.vue'),
+            meta: { title: '资产类型' }
+          },
+          {
+            path: 'building',
+            name: 'BuildingList',
+            component: () => import('@/views/asset/BuildingList.vue'),
+            meta: { title: '建筑物管理' }
           }
         ]
       },

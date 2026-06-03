@@ -21,6 +21,9 @@ public interface FacilityMapper {
     @Select("SELECT * FROM facility WHERE id = #{id}")
     Facility selectById(Long id);
 
+    @Select("SELECT COUNT(1) FROM facility WHERE facility_code = #{facilityCode}")
+    int countByCode(String facilityCode);
+
     List<FacilityVO> selectPage(@Param("facilityType") Integer facilityType,
                                 @Param("facilityStatus") Integer facilityStatus,
                                 @Param("facilityName") String facilityName);

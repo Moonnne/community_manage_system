@@ -14,4 +14,6 @@ public class AssetTypeAddDTO {
     private Integer assetTypeId;
     @NotBlank
     private String assetTypeName;
+    @NotBlank
+    private String assetTypeShort;
 }

@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 public class TaskUpdateDTO {
     @NotNull
     private Long id;
+    private String taskTitle;
+    private String taskInfo;
+    private Integer taskType;
     private Integer taskStatus;
     private Long taskOperatorId;
     private String taskRemark;

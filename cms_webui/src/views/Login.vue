@@ -93,12 +93,17 @@ refreshCaptcha()
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
+  background: 
+  linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
+  url('https://oss.moonne.top/web/background.png') center / cover no-repeat;
+  box-sizing: border-box;
 }
 
 .auth-container {
   width: 400px;
   padding: 40px;
-  background-color: var(--vp-card-bg);
+  background-color: rgba(255, 255, 255, 0.88);
   border-radius: 12px;
   border: 1px solid var(--vp-c-divider);
   box-shadow: var(--vp-card-shadow);

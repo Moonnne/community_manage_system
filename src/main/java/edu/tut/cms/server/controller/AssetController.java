@@ -5,6 +5,7 @@ import edu.tut.cms.common.aop.RequireRole;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.common.result.Result;
 import edu.tut.cms.pojo.dto.AssetAddDTO;
+import edu.tut.cms.pojo.dto.AssetTypeAddDTO;
 import edu.tut.cms.pojo.dto.AssetUpdateDTO;
 import edu.tut.cms.pojo.vo.AssetTypeVO;
 import edu.tut.cms.pojo.vo.AssetVO;
@@ -56,7 +57,7 @@ public class AssetController {
                                             @RequestParam(required = false) Long assetOwnerId,
                                             @RequestParam(required = false) Integer assetType,
                                             @RequestParam(required = false) Integer assetStatus,
-                                            @RequestParam(required = false) String assetBuilding) {
+                                            @RequestParam(required = false) Long assetBuilding) {
         return Result.success(assetService.pageAssets(pageNum, pageSize, assetOwnerId, assetType, assetStatus, assetBuilding));
     }
 
@@ -75,5 +76,26 @@ public class AssetController {
     @GetMapping("/types")
     public Result<List<AssetTypeVO>> types() {
         return Result.success(assetService.listAssetTypes());
+    }
+
+    @PostMapping("/type/add")
+    @RequireRole({0, 1})
+    public Result<Void> addType(@Valid @RequestBody AssetTypeAddDTO dto) {
+        assetService.addAssetType(dto);
+        return Result.success();
+    }
+
+    @PostMapping("/type/update")
+    @RequireRole({0, 1})
+    public Result<Void> updateType(@Valid @RequestBody AssetTypeAddDTO dto) {
+        assetService.updateAssetType(dto);
+        return Result.success();
+    }
+
+    @PostMapping("/type/delete")
+    @RequireRole({0, 1})
+    public Result<Void> deleteType(@RequestParam Integer id) {
+        assetService.deleteAssetType(id);
+        return Result.success();
     }
 }

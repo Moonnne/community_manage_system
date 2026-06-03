@@ -20,7 +20,7 @@ public class AssetUpdateDTO {
     private LocalDateTime assetDueTime;
     private Integer assetStatus;
     private BigDecimal assetArea;
-    private String assetBuilding;
+    private Long assetBuilding;
     private String assetFloor;
     private String assetPosition;
     private String assetRemark;

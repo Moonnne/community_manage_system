@@ -11,7 +11,7 @@
  Target Server Version : 80408
  File Encoding         : 65001
 
- Date: 02/06/2026 10:46:16
+ Date: 03/06/2026 09:23:23
 */
 
 SET NAMES utf8mb4;
@@ -31,23 +31,25 @@ CREATE TABLE `asset`  (
   `asset_due_time` datetime NULL DEFAULT NULL COMMENT '资产过期时间',
   `asset_status` int NULL DEFAULT NULL COMMENT '资产状态\r\n0 - 正常\r\n1 - 过期\r\n2 - 未使用\r\n3 - 冻结',
   `asset_area` decimal(10, 2) NULL DEFAULT NULL COMMENT '资产面积',
-  `asset_building` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '资产所在建筑编号',
+  `asset_building` bigint NULL DEFAULT NULL COMMENT '资产所在建筑编号',
   `asset_floor` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '资产所在楼层',
   `asset_position` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '资产相对定位',
   `asset_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '资产备注',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `ASSET_TYPE_KF`(`asset_type` ASC) USING BTREE,
   INDEX `ASSET_OWNER_ID_FK`(`asset_owner_id` ASC) USING BTREE,
+  INDEX `ASSET_BUILDING_ID_FK`(`asset_building` ASC) USING BTREE,
   CONSTRAINT `ASSET_OWNER_ID_FK` FOREIGN KEY (`asset_owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `ASSET_TYPE_KF` FOREIGN KEY (`asset_type`) REFERENCES `asset_type` (`asset_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `ASSET_TYPE_KF` FOREIGN KEY (`asset_type`) REFERENCES `asset_type` (`asset_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `ASSET_BUILDING_ID_FK` FOREIGN KEY (`asset_building`) REFERENCES `building` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of asset
 -- ----------------------------
-INSERT INTO `asset` VALUES (1, 'B0001', 1, '物业办公室', 1, '2026-05-31 13:10:54', '2099-12-31 13:10:56', 1, NULL, '1', '1', NULL, NULL);
-INSERT INTO `asset` VALUES (2, 'P0001', 1, '物业办公楼前车位-1', 2, '2026-05-31 13:15:12', '2026-05-31 13:16:40', 0, NULL, '1', '1', '1-1', NULL);
-INSERT INTO `asset` VALUES (3, 'P0002', 1, '物业办公楼前车位-2', 2, '2026-05-31 13:16:21', '2026-05-31 13:16:44', 0, NULL, '1', '1', '1-2', NULL);
+INSERT INTO `asset` VALUES (1, 'B0001', 1, '物业办公室', 1, '2026-05-31 13:10:54', '2099-12-31 13:10:56', 0, NULL, 1, '1', NULL, NULL);
+INSERT INTO `asset` VALUES (2, 'P0001', 1, '物业办公楼前车位-1', 2, '2026-05-31 13:15:12', '2026-05-31 13:16:40', 0, NULL, 1, '1', '1-1', NULL);
+INSERT INTO `asset` VALUES (3, 'P0002', 1, '物业办公楼前车位-2', 2, '2026-05-31 13:16:21', '2026-05-31 13:16:44', 0, NULL, 1, '1', '1-2', NULL);
 
 -- ----------------------------
 -- Table structure for asset_type
@@ -56,14 +58,15 @@ DROP TABLE IF EXISTS `asset_type`;
 CREATE TABLE `asset_type`  (
   `asset_type_id` int NOT NULL COMMENT '资产类型ID',
   `asset_type_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '资产类型名称',
+  `asset_type_short` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '资产类型简写',
   PRIMARY KEY (`asset_type_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of asset_type
 -- ----------------------------
-INSERT INTO `asset_type` VALUES (1, '房产');
-INSERT INTO `asset_type` VALUES (2, '停车位');
+INSERT INTO `asset_type` VALUES (1, '房产', 'B');
+INSERT INTO `asset_type` VALUES (2, '停车位', 'T');
 
 -- ----------------------------
 -- Table structure for bill
@@ -96,6 +99,7 @@ CREATE TABLE `bill`  (
 -- Records of bill
 -- ----------------------------
 INSERT INTO `bill` VALUES (1, 'B00000001', 2, 1, 1, '2026-05-31 18:18:39', '2026-05-31 18:18:41', '2026-05-31 18:18:46', '2026-05-31 19:15:16', 1, 0.00, 0.00, NULL);
+INSERT INTO `bill` VALUES (2, 'B-fkvdyvxplxyr5fzj', 1, 1, 1, '2026-06-02 13:54:52', '2026-06-02 00:00:00', '2026-08-02 13:53:03', NULL, 1, 4029.40, 0.00, '');
 
 -- ----------------------------
 -- Table structure for bill_detail
@@ -121,6 +125,8 @@ CREATE TABLE `bill_detail`  (
 -- ----------------------------
 -- Records of bill_detail
 -- ----------------------------
+INSERT INTO `bill_detail` VALUES (2, 2, '维护费', 1, 200, 20.00, 4000.00, 1, '');
+INSERT INTO `bill_detail` VALUES (3, 2, '电费', 4, 60, 0.49, 29.40, 1, '');
 
 -- ----------------------------
 -- Table structure for bill_type
@@ -143,6 +149,26 @@ INSERT INTO `bill_type` VALUES (5, '燃气费');
 INSERT INTO `bill_type` VALUES (6, '公共设施维修');
 INSERT INTO `bill_type` VALUES (7, '社区事务');
 INSERT INTO `bill_type` VALUES (8, '车位租金');
+
+-- ----------------------------
+-- Table structure for building
+-- ----------------------------
+DROP TABLE IF EXISTS `building`;
+CREATE TABLE `building`  (
+  `id` bigint NOT NULL COMMENT '建筑物ID',
+  `building_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '建筑物业务编码',
+  `building_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '建筑物名称',
+  `building_min_floor` int NOT NULL COMMENT '建筑物最低楼层',
+  `building_max_floor` int NOT NULL COMMENT '建筑物最大楼层',
+  `building_location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '建筑物位置',
+  `building_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '建筑物备注',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of building
+-- ----------------------------
+INSERT INTO `building` VALUES (1, 'B0001', '物业办公室', 1, 2, '小区西北角', '物业办公主楼');
 
 -- ----------------------------
 -- Table structure for car
@@ -230,7 +256,7 @@ CREATE TABLE `facility`  (
   `facility_status` int NOT NULL COMMENT '设备状态\r\n0 - 正常\r\n1 - 故障\r\n2 - 损坏\r\n3 - 缺失',
   `facility_check_time` datetime NULL DEFAULT NULL COMMENT '设备检修时间',
   `facility_expiration_date` int NULL DEFAULT NULL COMMENT '设备保质期 [月]',
-  `facility_building` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '设备所在建筑编号',
+  `facility_building` bigint NULL DEFAULT NULL COMMENT '设备所在建筑编号',
   `facility_floor` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '设备所在楼层',
   `facility_position` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '设施相对定位',
   `facility_owner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '设施所有主体',
@@ -238,8 +264,10 @@ CREATE TABLE `facility`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `FACILITY_CHIEF_ID_FK`(`facility_chief_id` ASC) USING BTREE,
   INDEX `FACILITY_TYPE_FK`(`facility_type` ASC) USING BTREE,
+  INDEX `FACILITY_BUILDING_ID_FK`(`facility_building` ASC) USING BTREE,
   CONSTRAINT `FACILITY_CHIEF_ID_FK` FOREIGN KEY (`facility_chief_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `FACILITY_TYPE_FK` FOREIGN KEY (`facility_type`) REFERENCES `facility_type` (`facility_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `FACILITY_TYPE_FK` FOREIGN KEY (`facility_type`) REFERENCES `facility_type` (`facility_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `FACILITY_BUILDING_ID_FK` FOREIGN KEY (`facility_building`) REFERENCES `building` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -315,11 +343,13 @@ CREATE TABLE `task`  (
   CONSTRAINT `TASK_OWNER_ID_FK` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `TASK_PERATOR_ID_FK` FOREIGN KEY (`task_operator_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `TASK_TYPE_FK` FOREIGN KEY (`task_type`) REFERENCES `task_type` (`task_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of task
 -- ----------------------------
+INSERT INTO `task` VALUES (1, 'T1780393262260', '测试工单', '测试工单系统是否正常工作', 1, NULL, 2, 3, '2026-06-02 17:41:02', '2026-06-02 19:28:46', NULL, '');
+INSERT INTO `task` VALUES (2, 'T1780399706039', '投诉测试', 'test', 1, NULL, 2, 1, '2026-06-02 19:28:26', '2026-06-02 19:31:39', NULL, '');
 
 -- ----------------------------
 -- Table structure for task_type
@@ -427,11 +457,12 @@ CREATE TABLE `visitor`  (
   CONSTRAINT `VISITOR_CREATER_FK` FOREIGN KEY (`visitor_creater`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `VISITOR_OWNER_ID_FK` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `VISITOR_TYPE_FK` FOREIGN KEY (`visitor_type`) REFERENCES `visitor_type` (`visitor_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of visitor
 -- ----------------------------
+INSERT INTO `visitor` VALUES (1, 'V1780379921804', 1, 1, 1, '赵林兵', '18574627097', 2, '2', '2026-06-02 13:58:42', NULL, '外卖');
 
 -- ----------------------------
 -- Table structure for visitor_type

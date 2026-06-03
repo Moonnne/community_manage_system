@@ -53,7 +53,7 @@ public interface TaskService {
      * @param id         工单ID
      * @param status     目标状态
      * @param operatorId 处理人ID
-     * @param remark     备注
+     * @param remark     回复
      */
     void processTask(Long id, Integer status, Long operatorId, String remark);
 

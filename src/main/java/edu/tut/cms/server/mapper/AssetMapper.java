@@ -21,10 +21,16 @@ public interface AssetMapper {
     @Select("SELECT * FROM asset WHERE id = #{id}")
     Asset selectById(Long id);
 
+    @Select("SELECT COUNT(1) FROM asset WHERE asset_code = #{assetCode}")
+    int countByCode(String assetCode);
+
+    @Select("SELECT COUNT(1) FROM asset WHERE asset_type = #{assetTypeId}")
+    int countByAssetTypeId(Integer assetTypeId);
+
     List<AssetVO> selectPage(@Param("assetOwnerId") Long assetOwnerId,
                              @Param("assetType") Integer assetType,
                              @Param("assetStatus") Integer assetStatus,
-                             @Param("assetBuilding") String assetBuilding);
+                             @Param("assetBuilding") Long assetBuilding);
 
     List<AssetVO> selectAll(@Param("assetOwnerId") Long assetOwnerId);
 }

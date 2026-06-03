@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.tut.cms.server.mapper.BuildingMapper">
+
+    <update id="updateById">
+        UPDATE building
+        <set>
+            <if test="buildingName != null and buildingName != ''">building_name = #{buildingName},</if>
+            <if test="buildingMinFloor != null">building_min_floor = #{buildingMinFloor},</if>
+            <if test="buildingMaxFloor != null">building_max_floor = #{buildingMaxFloor},</if>
+            <if test="buildingLocation != null">building_location = #{buildingLocation},</if>
+            <if test="buildingRemark != null">building_remark = #{buildingRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectPage" resultType="edu.tut.cms.pojo.vo.BuildingVO">
+        SELECT *
+        FROM building
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (building_code LIKE CONCAT('%', #{keyword}, '%')
+                    OR building_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR building_location LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY id ASC
+    </select>
+
+</mapper>

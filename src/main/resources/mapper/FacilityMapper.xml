@@ -11,8 +11,8 @@
             <if test="facilityType != null">facility_type = #{facilityType},</if>
             <if test="facilityStatus != null">facility_status = #{facilityStatus},</if>
             <if test="facilityCheckTime != null">facility_check_time = #{facilityCheckTime},</if>
-            <if test="facilityExpirationDate != null">facility_expiration_date = #{facilityExpirationDate},</if>
-            <if test="facilityBuilding != null and facilityBuilding != ''">facility_building = #{facilityBuilding},</if>
+            facility_expiration_date = #{facilityExpirationDate},
+            <if test="facilityBuilding != null">facility_building = #{facilityBuilding},</if>
             <if test="facilityFloor != null and facilityFloor != ''">facility_floor = #{facilityFloor},</if>
             <if test="facilityPosition != null and facilityPosition != ''">facility_position = #{facilityPosition},</if>
             <if test="facilityOwner != null and facilityOwner != ''">facility_owner = #{facilityOwner},</if>
@@ -24,10 +24,16 @@
     <select id="selectPage" resultType="edu.tut.cms.pojo.vo.FacilityVO">
         SELECT f.*,
                u.user_name AS chief_name,
-               ft.facility_type_name
+               ft.facility_type_name,
+               b.building_code,
+               b.building_name,
+               b.building_min_floor,
+               b.building_max_floor,
+               b.building_location
         FROM facility f
         LEFT JOIN user u ON f.facility_chief_id = u.id
         LEFT JOIN facility_type ft ON f.facility_type = ft.facility_type_id
+        LEFT JOIN building b ON f.facility_building = b.id
         <where>
             <if test="facilityType != null">
                 AND f.facility_type = #{facilityType}
@@ -45,10 +51,16 @@
     <select id="selectNearExpiration" resultType="edu.tut.cms.pojo.vo.FacilityVO">
         SELECT f.*,
                u.user_name AS chief_name,
-               ft.facility_type_name
+               ft.facility_type_name,
+               b.building_code,
+               b.building_name,
+               b.building_min_floor,
+               b.building_max_floor,
+               b.building_location
         FROM facility f
         LEFT JOIN user u ON f.facility_chief_id = u.id
         LEFT JOIN facility_type ft ON f.facility_type = ft.facility_type_id
+        LEFT JOIN building b ON f.facility_building = b.id
         WHERE f.facility_check_time IS NOT NULL
           AND DATE_ADD(f.facility_check_time, INTERVAL f.facility_expiration_date MONTH) &lt;= DATE_ADD(NOW(), INTERVAL #{months} MONTH)
         ORDER BY DATE_ADD(f.facility_check_time, INTERVAL f.facility_expiration_date MONTH) ASC

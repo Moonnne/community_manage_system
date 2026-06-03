@@ -255,7 +255,13 @@ const sidebarConfig = {
     {
       title: '信息管理',
       children: [
-        { path: '/security/dashboard', label: '社区安全面板' },
+        { path: '/security/dashboard', label: '社区安全面板' }
+      ],
+      roles: [0, 1, 3]
+    },
+    {
+      title: '社区安全管理',
+      children: [
         { path: '/security/visitor', label: '访客管理' },
         { path: '/security/car', label: '车辆管理' },
         { path: '/security/car-history', label: '通行记录' }
@@ -275,7 +281,13 @@ const sidebarConfig = {
     {
       title: '信息管理',
       children: [
-        { path: '/facility/dashboard', label: '公共设施面板' },
+        { path: '/facility/dashboard', label: '公共设施面板' }
+      ],
+      roles: [0, 1, 2]
+    },
+    {
+      title: '设施管理',
+      children: [
         { path: '/facility/list', label: '设施信息' }
       ],
       roles: [0, 1, 2]
@@ -291,10 +303,24 @@ const sidebarConfig = {
       title: '信息管理',
       children: [
         { path: '/asset/dashboard', label: '资产面板' },
+      ],
+      roles: [0, 1, 2, 4]
+    },
+    {
+      title: '资产管理',
+      children: [
         { path: '/asset/property', label: '房产管理' },
         { path: '/asset/parking', label: '停车位管理' }
       ],
-      roles: [0, 1, 2, 4]
+      roles: [0, 1, 2]
+    },
+    {
+      title: '类型管理',
+      children: [
+        { path: '/asset/type', label: '资产类型' },
+        { path: '/asset/building', label: '建筑物管理' }
+      ],
+      roles: [0, 1]
     }
   ],
   '/task': [

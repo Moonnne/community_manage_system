@@ -2,6 +2,7 @@ package edu.tut.cms.server.service;
 
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.pojo.dto.AssetAddDTO;
+import edu.tut.cms.pojo.dto.AssetTypeAddDTO;
 import edu.tut.cms.pojo.dto.AssetUpdateDTO;
 import edu.tut.cms.pojo.vo.AssetTypeVO;
 import edu.tut.cms.pojo.vo.AssetVO;
@@ -44,7 +45,7 @@ public interface AssetService {
      */
     PageResult<AssetVO> pageAssets(Integer pageNum, Integer pageSize,
                                    Long assetOwnerId, Integer assetType,
-                                   Integer assetStatus, String assetBuilding);
+                                   Integer assetStatus, Long assetBuilding);
 
     /**
      * 导出资产数据为Excel
@@ -60,4 +61,10 @@ public interface AssetService {
      * @return 资产类型列表
      */
     List<AssetTypeVO> listAssetTypes();
+
+    void addAssetType(AssetTypeAddDTO dto);
+
+    void updateAssetType(AssetTypeAddDTO dto);
+
+    void deleteAssetType(Integer id);
 }

@@ -14,15 +14,29 @@
     </div>
 
     <section class="task-section">
-      <h3>我的工单</h3>
+      <div class="section-head">
+        <h3>我的工单</h3>
+        <span>{{ myTasks.length }} 项</span>
+      </div>
       <div v-if="myTasks.length > 0" class="task-card-list">
-        <TaskCard v-for="task in myTasks" :key="task.id" :task="task" @click="openDetail(task, false)" />
+        <article v-for="task in myTasks" :key="task.id" class="task-card" @click="openDetail(task, false)">
+          <div class="task-card-top">
+            <strong>{{ formatValue(task.taskCode) }}</strong>
+            <el-tag :type="taskStatusType(task.taskStatus)" effect="plain">{{ taskStatusText(task.taskStatus) }}</el-tag>
+          </div>
+          <h4>{{ formatValue(task.taskTitle) }}</h4>
+          <p>{{ formatValue(task.taskInfo) }}</p>
+          <div class="task-card-meta">
+            <span>{{ formatValue(task.taskTypeName) }}</span>
+            <strong>{{ formatValue(task.taskCreateTime) }}</strong>
+          </div>
+        </article>
       </div>
       <el-empty v-else description="暂无工单" />
     </section>
 
     <section v-if="canProcess" class="task-section">
-      <div class="section-head">
+      <div class="section-head process-head">
         <h3>处理工单</h3>
         <div class="process-filters">
           <el-select v-model="query.taskType" placeholder="类型" clearable @change="fetchData(true)">
@@ -32,7 +46,18 @@
         </div>
       </div>
       <div v-if="processingTasks.length > 0" class="task-card-list">
-        <TaskCard v-for="task in processingTasks" :key="task.id" :task="task" process @click="openDetail(task, true)" />
+        <article v-for="task in processingTasks" :key="task.id" class="task-card process" @click="openDetail(task, true)">
+          <div class="task-card-top">
+            <strong>{{ formatValue(task.taskCode) }}</strong>
+            <el-tag :type="taskStatusType(task.taskStatus)" effect="plain">{{ taskStatusText(task.taskStatus) }}</el-tag>
+          </div>
+          <h4>{{ formatValue(task.taskTitle) }}</h4>
+          <p>{{ formatValue(task.taskInfo) }}</p>
+          <div class="task-card-meta">
+            <span>提交人：{{ formatValue(task.ownerName) }}</span>
+            <strong>{{ formatValue(task.taskCreateTime) }}</strong>
+          </div>
+        </article>
       </div>
       <el-empty v-else description="暂无待处理工单" />
     </section>
@@ -64,30 +89,32 @@
         <el-descriptions-item label="提交人">{{ formatValue(currentTask.ownerName) }}</el-descriptions-item>
         <el-descriptions-item label="处理人">{{ formatValue(currentTask.operatorName) }}</el-descriptions-item>
         <el-descriptions-item label="描述" :span="2">{{ formatValue(currentTask.taskInfo) }}</el-descriptions-item>
-        <el-descriptions-item label="回执" :span="2">{{ formatValue(currentTask.taskRemark) }}</el-descriptions-item>
+        <el-descriptions-item label="回复" :span="2">{{ formatValue(currentTask.taskRemark) }}</el-descriptions-item>
       </el-descriptions>
       <el-form v-if="detailProcessMode" class="process-form" label-width="82px">
         <el-form-item label="处理状态">
           <el-select v-model="processForm.status" class="full-width">
             <el-option label="已完成" :value="0" />
-            <el-option label="处理中" :value="2" />
+            <el-option label="受理中" :value="2" />
+            <el-option label="已驳回" :value="3" />
+            <el-option label="已取消" :value="4" />
           </el-select>
         </el-form-item>
-        <el-form-item label="处理回执">
+        <el-form-item label="回复">
           <el-input v-model="processForm.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button v-if="detailProcessMode" type="primary" @click="submitProcess">保存回执</el-button>
+        <el-button v-if="detailProcessMode" type="primary" @click="submitProcess">保存回复</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, ref } from 'vue'
-import { ElCard, ElMessage, ElTag } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { addTask, getTaskTypes, processTask } from '@/api/task'
 import { getTaskDashboard } from '@/api/dashboard'
@@ -105,37 +132,16 @@ const submitForm = ref({ taskTitle: '', taskType: undefined, taskInfo: '' })
 const processForm = ref({ status: 2, remark: '' })
 const canProcess = computed(() => [0, 1].includes(userStore.userRole))
 
-const TaskCard = defineComponent({
-  props: { task: { type: Object, required: true }, process: { type: Boolean, default: false } },
-  emits: ['click'],
-  setup(props, { emit }) {
-    return () => h(ElCard, { shadow: 'never', class: 'task-card', onClick: () => emit('click') }, {
-      default: () => [
-        h('div', { class: 'task-card-top' }, [
-          h('span', null, formatValue(props.task.taskCode)),
-          h(ElTag, { type: taskStatusType(props.task.taskStatus), effect: 'plain' }, () => taskStatusText(props.task.taskStatus))
-        ]),
-        h('h3', null, formatValue(props.task.taskTitle)),
-        h('p', null, formatValue(props.task.taskInfo)),
-        h('div', { class: 'task-card-meta' }, [
-          h('span', null, props.process ? `提交人：${formatValue(props.task.ownerName)}` : `类型：${formatValue(props.task.taskTypeName)}`),
-          h('strong', null, formatValue(props.task.taskCreateTime))
-        ])
-      ]
-    })
-  }
-})
-
 function formatValue(value) {
   return value === null || value === undefined || value === '' ? '-' : value
 }
 
 function taskStatusText(status) {
-  return ({ 0: '已完成', 1: '待处理', 2: '处理中' })[status] || '未知'
+  return ({ 0: '已完成', 1: '待处理', 2: '受理中', 3: '已驳回', 4: '已取消' })[status] || '未知'
 }
 
 function taskStatusType(status) {
-  return ({ 0: 'success', 1: 'warning', 2: 'primary' })[status] || 'info'
+  return ({ 0: 'success', 1: 'warning', 2: 'primary', 3: 'danger', 4: 'info' })[status] || 'info'
 }
 
 async function fetchData(forceRefresh = false) {
@@ -184,7 +190,7 @@ async function submitProcess() {
     operatorId: userStore.userInfo?.id,
     remark: processForm.value.remark
   })
-  ElMessage.success('处理回执已保存')
+  ElMessage.success('回复已保存')
   detailVisible.value = false
   fetchData(true)
 }
@@ -198,24 +204,29 @@ onMounted(() => {
 <style scoped>
 .page-container { padding: 0; }
 .page-header, .section-head, .task-card-top, .task-card-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.page-header { margin-bottom: 18px; }
-.page-title { margin: 0; color: var(--vp-c-text-1); font-size: 22px; font-weight: 800; }
-.page-subtitle { margin: 8px 0 0; color: var(--vp-c-text-3); font-size: 13px; }
-.header-actions { display: flex; gap: 12px; width: min(520px, 100%); }
-.task-section { margin-top: 20px; }
-.task-section h3 { margin: 0 0 14px; color: var(--vp-c-text-1); font-size: 18px; }
+.page-header { margin-bottom: 20px; }
+.page-title { margin: 0; color: var(--vp-c-text-1); font-size: 26px; font-weight: 800; }
+.page-subtitle { margin: 8px 0 0; color: var(--vp-c-text-3); font-size: 14px; }
+.header-actions { display: flex; gap: 12px; width: min(560px, 100%); }
+.task-section { margin-top: 24px; }
+.section-head { align-items: center; margin-bottom: 14px; }
+.section-head h3 { margin: 0; color: var(--vp-c-text-1); font-size: 20px; font-weight: 800; }
+.section-head span { color: var(--vp-c-text-3); font-size: 13px; }
 .process-filters { display: flex; gap: 10px; width: min(520px, 100%); }
 .task-card-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.task-card { cursor: pointer; border-radius: 8px; border: 1px solid var(--vp-c-divider); }
-.task-card h3 { margin: 18px 0 8px; color: var(--vp-c-text-1); font-size: 18px; }
-.task-card p { display: -webkit-box; min-height: 42px; margin: 0; overflow: hidden; color: var(--vp-c-text-2); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.task-card { min-height: 190px; padding: 18px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), var(--vp-card-bg) 64%); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.task-card.process { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), var(--vp-card-bg) 64%); }
+.task-card:hover { transform: translateY(-2px); box-shadow: var(--el-box-shadow-light); }
+.task-card-top strong { color: var(--vp-c-text-1); font-size: 16px; }
+.task-card h4 { margin: 20px 0 8px; color: var(--vp-c-text-1); font-size: 21px; font-weight: 800; }
+.task-card p { display: -webkit-box; min-height: 44px; margin: 0; overflow: hidden; color: var(--vp-c-text-2); font-size: 14px; line-height: 1.55; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .task-card-meta { margin-top: 18px; color: var(--vp-c-text-3); font-size: 13px; }
 .task-card-meta strong { color: var(--vp-c-text-1); }
 .full-width { width: 100%; }
 .process-form { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--vp-c-divider); }
 :deep(.rounded-dialog .el-dialog) { border-radius: 16px; }
 @media (max-width: 768px) {
-  .page-header, .section-head { flex-direction: column; }
+  .page-header, .section-head, .process-head { flex-direction: column; align-items: stretch; }
   .header-actions, .process-filters { flex-direction: column; width: 100%; }
   .task-card-list { grid-template-columns: 1fr; }
   :deep(.rounded-dialog .el-dialog) { width: calc(100vw - 24px) !important; }

@@ -10,7 +10,7 @@
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
         <el-table-column prop="taskTypeId" label="类型ID" width="100" show-overflow-tooltip />
         <el-table-column prop="taskTypeName" label="类型名称" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="taskTypeRemark" label="备注" min-width="300" show-overflow-tooltip />
+        <el-table-column prop="taskTypeRemark" label="说明" min-width="300" show-overflow-tooltip />
         <el-table-column label="操作" width="100" fixed="right" v-if="canEdit">
           <template #default="{ row }">
             <el-popconfirm title="确定删除该工单类型吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row)">
@@ -38,7 +38,7 @@
         <el-form-item label="类型名称" prop="taskTypeName">
           <el-input v-model="form.taskTypeName" />
         </el-form-item>
-        <el-form-item label="备注">
+        <el-form-item label="说明">
           <el-input v-model="form.taskTypeRemark" type="textarea" :rows="2" />
         </el-form-item>
         </template>
@@ -69,7 +69,7 @@ const wizardSteps = [
 ]
 const confirmRows = computed(() => [
   { label: '类型名称', value: valueText(form.value.taskTypeName) },
-  { label: '备注', value: valueText(form.value.taskTypeRemark) }
+  { label: '说明', value: valueText(form.value.taskTypeRemark) }
 ])
 const formRules = {
   taskTypeName: [{ required: true, message: '请输入类型名称', trigger: 'blur' }]

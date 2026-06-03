@@ -24,7 +24,12 @@ public class FacilityVO {
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime facilityCheckTime;
     private Integer facilityExpirationDate;
-    private String facilityBuilding;
+    private Long facilityBuilding;
+    private String buildingCode;
+    private String buildingName;
+    private Integer buildingMinFloor;
+    private Integer buildingMaxFloor;
+    private String buildingLocation;
     private String facilityFloor;
     private String facilityPosition;
     private String facilityOwner;

@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,12 +34,13 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskMapper taskMapper;
     private final TaskTypeMapper taskTypeMapper;
+    private static final DateTimeFormatter TASK_CODE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHH");
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addTask(TaskAddDTO dto) {
         CurrentUser currentUser = UserContext.getCurrentUser();
-        String taskCode = "T" + System.currentTimeMillis();
+        String taskCode = generateTaskCode();
 
         Task task = Task.builder()
                 .taskCode(taskCode)
@@ -47,7 +50,7 @@ public class TaskServiceImpl implements TaskService {
                 .taskStatus(1)
                 .taskType(dto.getTaskType())
                 .taskCreateTime(LocalDateTime.now())
-                .taskRemark(dto.getTaskRemark())
+                .taskRemark(null)
                 .build();
         taskMapper.insert(task);
     }
@@ -57,6 +60,9 @@ public class TaskServiceImpl implements TaskService {
     public void updateTask(TaskUpdateDTO dto) {
         Task task = Task.builder()
                 .id(dto.getId())
+                .taskTitle(dto.getTaskTitle())
+                .taskInfo(dto.getTaskInfo())
+                .taskType(dto.getTaskType())
                 .taskStatus(dto.getTaskStatus())
                 .taskOperatorId(dto.getTaskOperatorId())
                 .taskUpdateTime(LocalDateTime.now())
@@ -84,7 +90,10 @@ public class TaskServiceImpl implements TaskService {
         }
 
         PageHelper.startPage(pageNum, pageSize);
-        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskStatus, taskType);
+        Boolean excludeComplaint = currentUser.getUserRole() != null
+                && (currentUser.getUserRole() == 2 || currentUser.getUserRole() == 3)
+                && !currentUser.getId().equals(ownerId);
+        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskStatus, taskType, excludeComplaint);
         PageInfo<TaskVO> pageInfo = new PageInfo<>(list);
 
         PageResult<TaskVO> result = new PageResult<>();
@@ -99,6 +108,15 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void processTask(Long id, Integer status, Long operatorId, String remark) {
+        CurrentUser currentUser = UserContext.getCurrentUser();
+        Task existing = taskMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException("工单不存在");
+        }
+        if (existing.getTaskType() != null && existing.getTaskType() == 1
+                && (currentUser.getUserRole() == null || (currentUser.getUserRole() != 0 && currentUser.getUserRole() != 1))) {
+            throw new BusinessException("投诉/申诉类工单仅系统管理员和物业经理可处理");
+        }
         Task task = Task.builder()
                 .id(id)
                 .taskOperatorId(operatorId)
@@ -141,5 +159,16 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException("该工单类型已被工单使用，无法删除");
         }
         taskTypeMapper.deleteById(id);
+    }
+
+    private String generateTaskCode() {
+        String prefix = "T" + LocalDateTime.now().format(TASK_CODE_FORMATTER);
+        for (int i = 0; i < 20; i++) {
+            String code = prefix + String.format("%04d", ThreadLocalRandom.current().nextInt(10_000));
+            if (taskMapper.countByCode(code) == 0) {
+                return code;
+            }
+        }
+        throw new BusinessException("工单编号生成失败，请重试");
     }
 }

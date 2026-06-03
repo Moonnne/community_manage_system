@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FacilityAddDTO {
-    @NotBlank
     private String facilityCode;
     @NotBlank
     private String facilityName;
@@ -23,7 +22,8 @@ public class FacilityAddDTO {
     private Integer facilityStatus;
     private LocalDateTime facilityCheckTime;
     private Integer facilityExpirationDate;
-    private String facilityBuilding;
+    @NotNull
+    private Long facilityBuilding;
     private String facilityFloor;
     private String facilityPosition;
     private String facilityOwner;

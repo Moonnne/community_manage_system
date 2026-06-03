@@ -2,7 +2,6 @@
   <div class="page-container dashboard-page">
     <div class="page-header">
       <h2 class="page-title">社区安全面板</h2>
-      <el-segmented v-model="range" :options="rangeOptions" @change="fetchData(true)" />
     </div>
 
     <div class="stat-grid security-stat-grid">
@@ -12,7 +11,7 @@
       </el-card>
       <el-card shadow="never" class="stat-card warning">
         <el-statistic title="滞留访客" :value="summary.stayingVisitorCount || 0" suffix="人" />
-        <p class="trend-text">需关注仍未离开的访客</p>
+        <p class="trend-text">登记进入但未登记离开的访客</p>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <el-statistic title="车辆进出" :value="summary.carFlowCount || 0" suffix="次" />
@@ -20,12 +19,20 @@
       </el-card>
     </div>
 
+    <div class="chart-toolbar">
+      <div>
+        <strong>时间聚焦</strong>
+        <span>调整访客与车辆流量的统计图表显示范围</span>
+      </div>
+      <el-segmented v-model="range" :options="rangeOptions" @change="fetchData(true)" />
+    </div>
+
     <div class="flow-chart-grid">
       <el-card shadow="never" class="panel-card chart-card">
         <template #header>
           <div class="panel-header">
             <strong>访客分时段流量</strong>
-            <span>访客登记趋势</span>
+            <span>访客通行趋势</span>
           </div>
         </template>
         <v-chart class="flow-chart" :option="visitorChartOption" autoresize />
@@ -106,8 +113,8 @@ const rangeOptions = [
   { label: '1h', value: '1h' },
   { label: '3h', value: '3h' },
   { label: '6h', value: '6h' },
-  { label: '1d', value: '1d' },
-  { label: '3d', value: '3d' }
+  { label: '1天', value: '1d' },
+  { label: '3天', value: '3d' }
 ]
 const summary = ref({ flow: [] })
 const visitorOptions = ref([])
@@ -188,6 +195,31 @@ onMounted(() => fetchData())
 .page-container { padding: 0; }
 .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .page-title { margin: 0; color: var(--vp-c-text-1); font-size: 22px; font-weight: 800; }
+.chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 16px 0 0; padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg-soft); }
+.chart-toolbar div { display: flex; flex-direction: column; gap: 4px; }
+.chart-toolbar strong { color: var(--vp-c-text-1); font-size: 16px; }
+.chart-toolbar span { color: var(--vp-c-text-3); font-size: 13px; }
+.chart-toolbar :deep(.el-segmented) {
+  --el-segmented-bg-color: var(--vp-c-bg);
+  --el-segmented-item-selected-color: #fff;
+  --el-segmented-item-selected-bg-color: var(--vp-c-brand-1);
+  --el-segmented-item-hover-bg-color: var(--vp-c-brand-soft);
+  min-width: 280px;
+  padding: 4px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  box-shadow: none;
+}
+.chart-toolbar :deep(.el-segmented__group) { gap: 2px; }
+.chart-toolbar :deep(.el-segmented__item) {
+  height: 34px;
+  min-width: 48px;
+  border-radius: 6px;
+  color: var(--vp-c-text-2);
+  font-weight: 700;
+}
+.chart-toolbar :deep(.el-segmented__item.is-selected) { color: #fff; }
+.chart-toolbar :deep(.el-segmented__item-label) { line-height: 34px; }
 .stat-grid, .quick-grid, .flow-chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
 .flow-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -204,7 +236,8 @@ onMounted(() => fetchData())
 .full-width { width: 100%; }
 .quick-input { margin: 12px 0; }
 @media (max-width: 768px) {
-  .page-header, .panel-header { align-items: flex-start; flex-direction: column; }
+  .page-header, .panel-header, .chart-toolbar { align-items: flex-start; flex-direction: column; }
+  .chart-toolbar :deep(.el-segmented) { min-width: 0; width: 100%; }
   .stat-grid, .quick-grid, .flow-chart-grid { grid-template-columns: 1fr; }
   .flow-chart { height: 280px; }
 }
