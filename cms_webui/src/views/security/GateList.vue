@@ -38,7 +38,17 @@
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
         <el-form-item label="名称" prop="gateName"><el-input v-model="form.gateName" /></el-form-item>
-        <el-form-item label="负责人ID" prop="gateChiefId"><el-input v-model.number="form.gateChiefId" /></el-form-item>
+        <el-form-item label="负责人ID" prop="gateChiefId">
+          <DualSelectV2
+            v-model="form.gateChiefId"
+            :options="userOptions"
+            remote
+            :remote-method="handleUserRemoteSearch"
+            placeholder="输入以搜索用户"
+            primary-key="label"
+            secondary-key="userName"
+          />
+        </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.gateRemark" type="textarea" :rows="2" /></el-form-item>
         </template>
         <ConfirmInfoTable v-else :rows="confirmRows" />
@@ -52,14 +62,17 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getGateList, addGate, updateGate, deleteGate } from '@/api/gate'
+import { getUserPage } from '@/api/user'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
 const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
+const users = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const form = ref({})
@@ -73,16 +86,19 @@ const confirmRows = computed(() => [
   { label: '备注', value: valueText(form.value.gateRemark) }
 ])
 const formRules = { gateName: [{ required: true, message: '请输入名称', trigger: 'blur' }] }
+const userOptions = computed(() => users.value.length ? users.value.map(user => ({ value: user.id, label: user.uid || String(user.id), userName: user.userName || '-' })) : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }])
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getGateList({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
+async function fetchUsers(keyword = '') { const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true }); users.value = res.data?.records || [] }
+function handleUserRemoteSearch(keyword) { fetchUsers(keyword) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { gateName: '', gateChiefId: '', gateRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, gateName: row.gateName, gateChiefId: row.gateChiefId, gateRemark: row.gateRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateGate(form.value); ElMessage.success('更新成功') } else { await addGate(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteGate(row.id); ElMessage.success('删除成功'); fetchData(true) }
-onMounted(fetchData)
+onMounted(() => { fetchData(); fetchUsers() })
 </script>
 
 <style scoped>

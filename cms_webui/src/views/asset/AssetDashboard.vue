@@ -40,8 +40,8 @@
             <span>楼栋</span><strong>{{ formatBuilding(asset) }}</strong>
             <span>楼层</span><strong>{{ formatValue(asset.assetFloor) }}</strong>
             <span>位置</span><strong>{{ formatValue(asset.assetPosition) }}</strong>
-            <span>登记</span><strong>{{ formatDate(asset.assetRegTime) }}</strong>
-            <span>过期</span><strong>{{ formatDate(asset.assetDueTime, '无过期时间') }}</strong>
+            <span>登记日期</span><strong>{{ formatDate(asset.assetRegTime) }}</strong>
+            <span>过期日期</span><strong>{{ formatDate(asset.assetDueTime, '无过期时间') }}</strong>
           </div>
         </el-card>
       </div>
@@ -140,7 +140,7 @@ onMounted(() => fetchData())
 .asset-card-top strong { color: var(--vp-c-text-1); font-size: 18px; }
 .asset-card h3 { margin: 22px 0 8px; color: var(--vp-c-text-1); font-size: 24px; line-height: 1.25; }
 .asset-type { margin: 0 0 20px; color: var(--vp-c-text-2); font-size: 15px; }
-.asset-detail-grid { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 9px 12px; color: var(--vp-c-text-3); font-size: 14px; }
+.asset-detail-grid { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 9px 12px; color: var(--vp-c-text-3); font-size: 14px; }
 .asset-detail-grid strong { min-width: 0; color: var(--vp-c-text-1); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :deep(.rounded-dialog .el-dialog) { border-radius: 16px; }
 @media (max-width: 1180px) {

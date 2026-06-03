@@ -15,7 +15,7 @@ public class Car {
     private Long ownerId;
     private Long assetId;
     private Long visitorId;
-    private Integer carNumber;
+    private String carNumber;
     private Integer carType;
     private Integer carStatus;
 }

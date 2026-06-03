@@ -328,9 +328,15 @@ const sidebarConfig = {
       title: '信息管理',
       children: [
         { path: '/task/dashboard', label: '工单面板' },
-        { path: '/task/list', label: '工单列表' }
       ],
       roles: [0, 1, 2, 3, 4]
+    },
+    {
+      title: '工单管理',
+      children: [
+        { path: '/task/list', label: '工单列表' }
+      ],
+      roles: [0, 1, 2]
     },
     {
       title: '类型管理',

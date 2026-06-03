@@ -18,7 +18,7 @@ public class CarHistoryVO {
     private Long carHistoryOperatorId;
     private String operatorName;
     private Long carId;
-    private Integer carNumber;
+    private String carNumber;
     private Integer gateId;
     private String gateName;
     private Integer carHistoryType;

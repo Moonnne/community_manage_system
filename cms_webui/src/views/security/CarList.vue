@@ -77,7 +77,17 @@
             <el-input v-model="form.carPlateBody" maxlength="7" placeholder="请输入车牌号码" @input="handlePlateBodyInput" />
           </div>
         </el-form-item>
-        <el-form-item label="业主ID"><el-input v-model.number="form.ownerId" /></el-form-item>
+        <el-form-item label="业主ID">
+          <DualSelectV2
+            v-model="form.ownerId"
+            :options="userOptions"
+            remote
+            :remote-method="handleUserRemoteSearch"
+            placeholder="输入以搜索用户"
+            primary-key="label"
+            secondary-key="userName"
+          />
+        </el-form-item>
         </template>
         <template v-else-if="activeStep === 1">
         <el-form-item label="类型" prop="carType">
@@ -89,7 +99,17 @@
             <el-option label="已离场" :value="1" />
           </el-select>
         </el-form-item>
-        <el-form-item label="资产ID"><el-input v-model.number="form.assetId" /></el-form-item>
+        <el-form-item label="资产ID">
+          <DualSelectV2
+            v-model="form.assetId"
+            :options="assetOptions"
+            remote
+            :remote-method="handleAssetRemoteSearch"
+            placeholder="输入以搜索资产"
+            primary-key="label"
+            secondary-key="assetCode"
+          />
+        </el-form-item>
         </template>
         <ConfirmInfoTable v-else :rows="confirmRows" />
       </template>
@@ -102,8 +122,11 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getCarPage, getCarTypes, addCar, updateCar, deleteCar } from '@/api/car'
+import { getUserPage } from '@/api/user'
+import { getAssetPage } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -112,6 +135,8 @@ const submitLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const types = ref([])
+const users = ref([])
+const assets = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined })
@@ -135,9 +160,11 @@ const formRules = {
   carType: [{ required: true, message: '请选择类型', trigger: 'change' }],
   carStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
-const provinceOptions = ['京', '津', '沪', '渝', '冀', '豫', '云', '辽', '黑', '湘', '皖', '鲁', '新', '苏', '浙', '赣', '鄂', '桂', '甘', '晋', '蒙', '陕', '吉', '闽', '贵', '粤', '青', '藏', '川', '宁', '琼']
+const provinceOptions = ['\u4eac', '\u6d25', '\u6caa', '\u6e1d', '\u5180', '\u8c6b', '\u4e91', '\u8fbd', '\u9ed1', '\u6e58', '\u7696', '\u9c81', '\u65b0', '\u82cf', '\u6d59', '\u8d63', '\u9102', '\u6842', '\u7518', '\u664b', '\u8499', '\u9655', '\u5409', '\u95fd', '\u8d35', '\u7ca4', '\u9752', '\u85cf', '\u5ddd', '\u5b81', '\u743c']
 const plateBodyPattern = /^[A-Z][A-Z0-9]{4,6}$/
 const fullPlateNumber = computed(() => `${form.value.carProvince || ''}${form.value.carPlateBody || ''}`)
+const userOptions = computed(() => users.value.length ? users.value.map(user => ({ value: user.id, label: user.uid || String(user.id), userName: user.userName || '-' })) : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }])
+const assetOptions = computed(() => assets.value.length ? assets.value.map(asset => ({ value: asset.id, label: asset.assetName || asset.assetCode || String(asset.id), assetCode: asset.assetCode || '-' })) : [{ value: '__empty_assets__', label: '暂无匹配资产', assetCode: '', disabled: true, empty: true }])
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function carTypeNameText(id) { return types.value.find(type => type.carTypeId === id)?.carTypeName || valueText(id) }
@@ -167,6 +194,10 @@ function validatePlateNumber(rule, value, callback) {
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }
+async function fetchUsers(keyword = '') { const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true }); users.value = res.data?.records || [] }
+async function fetchAssets(keyword = '') { const res = await getAssetPage({ pageNum: 1, pageSize: 100, assetName: keyword || undefined }, { forceRefresh: true }); assets.value = res.data?.records || [] }
+function handleUserRemoteSearch(keyword) { fetchUsers(keyword) }
+function handleAssetRemoteSearch(keyword) { fetchAssets(keyword) }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
@@ -174,7 +205,7 @@ function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: ''
 function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
 async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteCar(row.id); ElMessage.success('删除成功'); fetchData(true) }
-onMounted(() => { fetchData(); fetchTypes() })
+onMounted(() => { fetchData(); fetchTypes(); fetchUsers(); fetchAssets() })
 </script>
 
 <style scoped>

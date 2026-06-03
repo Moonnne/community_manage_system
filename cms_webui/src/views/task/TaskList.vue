@@ -80,6 +80,15 @@
         <el-form-item label="类型" prop="taskType">
           <el-select v-model="form.taskType" placeholder="请选择"><el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" /></el-select>
         </el-form-item>
+        <el-form-item v-if="isEdit" label="状态" prop="taskStatus">
+          <el-select v-model="form.taskStatus" placeholder="请选择">
+            <el-option label="待处理" :value="1" />
+            <el-option label="受理中" :value="2" />
+            <el-option label="已完成" :value="0" />
+            <el-option label="已驳回" :value="3" />
+            <el-option label="已取消" :value="4" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="描述" prop="taskInfo"><el-input v-model="form.taskInfo" type="textarea" :rows="3" /></el-form-item>
         <el-form-item v-if="isEdit" label="回复"><el-input v-model="form.taskRemark" type="textarea" :rows="2" /></el-form-item>
         </template>
@@ -140,6 +149,7 @@ const wizardSteps = [
 const confirmRows = computed(() => [
   { label: '标题', value: valueText(form.value.taskTitle) },
   { label: '类型', type: 'tag', value: taskTypeNameText(form.value.taskType) },
+  { label: '状态', type: 'tag', tagType: taskStatusType(form.value.taskStatus), value: isEdit.value ? taskStatusText(form.value.taskStatus) : taskStatusText(1) },
   { label: '描述', value: valueText(form.value.taskInfo) },
   { label: '回复', value: isEdit.value ? valueText(form.value.taskRemark) : '提交后由处理人填写' }
 ])
@@ -185,8 +195,8 @@ function openBillAppealTask() {
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function taskTypeNameText(id) { return types.value.find(type => type.taskTypeId === id)?.taskTypeName || valueText(id) }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
-function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
-function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
+function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskStatus: 1, taskInfo: '', taskRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskStatus: row.taskStatus, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
 function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: userStore.userInfo?.id, remark: row.taskRemark || '' }; processVisible.value = true }
 
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }

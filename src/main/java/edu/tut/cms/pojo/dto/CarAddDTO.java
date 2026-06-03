@@ -15,8 +15,8 @@ public class CarAddDTO {
     private Long ownerId;
     private Long assetId;
     private Long visitorId;
-    @NotNull
-    private Integer carNumber;
+    @NotBlank
+    private String carNumber;
     @NotNull
     private Integer carType;
     @NotNull

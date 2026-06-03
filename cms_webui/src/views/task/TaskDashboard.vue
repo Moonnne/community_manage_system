@@ -152,7 +152,7 @@ async function fetchData(forceRefresh = false) {
   }
   const res = await getTaskDashboard(params, { forceRefresh })
   myTasks.value = res.data?.myTasks || []
-  processingTasks.value = res.data?.processingTasks || []
+  processingTasks.value = (res.data?.processingTasks || []).filter(task => [1, 2].includes(task.taskStatus))
 }
 
 async function fetchTypes() {

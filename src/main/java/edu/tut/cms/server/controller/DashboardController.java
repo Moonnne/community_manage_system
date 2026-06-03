@@ -133,6 +133,7 @@ public class DashboardController {
         List<TaskVO> processingTasks = canProcess
                 ? taskMapper.selectPage(ownerId, null, null, taskType, false).stream()
                     .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
+                    .filter(item -> Objects.equals(item.getTaskStatus(), 1) || Objects.equals(item.getTaskStatus(), 2))
                     .toList()
                 : List.of();
 

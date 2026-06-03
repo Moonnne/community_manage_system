@@ -16,7 +16,7 @@ public class CarVO {
     private String ownerName;
     private Long assetId;
     private Long visitorId;
-    private Integer carNumber;
+    private String carNumber;
     private Integer carType;
     private String carTypeName;
     private Integer carStatus;

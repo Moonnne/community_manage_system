@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : ECS MySQL
- Source Server Type    : MySQL
- Source Server Version : 80408
- Source Host           : 123.57.220.167:3636
- Source Schema         : cms
-
- Target Server Type    : MySQL
- Target Server Version : 80408
- File Encoding         : 65001
-
- Date: 03/06/2026 09:23:23
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -120,7 +104,7 @@ CREATE TABLE `bill_detail`  (
   INDEX `BILL_ID_FK`(`bill_id` ASC) USING BTREE,
   CONSTRAINT `BILL_DETAIL_TYPE_FK` FOREIGN KEY (`bill_detail_type`) REFERENCES `bill_type` (`bill_type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `BILL_ID_FK` FOREIGN KEY (`bill_id`) REFERENCES `bill` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of bill_detail
@@ -180,7 +164,7 @@ CREATE TABLE `car`  (
   `owner_id` bigint NULL DEFAULT NULL COMMENT '车辆所有人ID',
   `asset_id` bigint NULL DEFAULT NULL COMMENT '车辆所属车位ID',
   `visitor_id` bigint NULL DEFAULT NULL COMMENT '访客ID',
-  `car_number` int NOT NULL COMMENT '车辆牌照号',
+  `car_number` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车辆牌照号',
   `car_type` int NOT NULL COMMENT '车辆类型',
   `car_status` int NOT NULL COMMENT '车辆状态\r\n0 - 已入场\r\n1 - 已离场',
   PRIMARY KEY (`id`) USING BTREE,
@@ -348,7 +332,7 @@ CREATE TABLE `task`  (
 -- ----------------------------
 -- Records of task
 -- ----------------------------
-INSERT INTO `task` VALUES (1, 'T1780393262260', '测试工单', '测试工单系统是否正常工作', 1, NULL, 2, 3, '2026-06-02 17:41:02', '2026-06-02 19:28:46', NULL, '');
+INSERT INTO `task` VALUES (1, 'T1780393262260', '测试工单', '测试工单系统是否正常工作', 1, 1, 0, 3, '2026-06-02 17:41:02', '2026-06-03 11:21:01', '2026-06-03 11:21:01', '测试回复');
 INSERT INTO `task` VALUES (2, 'T1780399706039', '投诉测试', 'test', 1, NULL, 2, 1, '2026-06-02 19:28:26', '2026-06-02 19:31:39', NULL, '');
 
 -- ----------------------------

@@ -72,14 +72,36 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-        <el-form-item label="姓名" prop="visitorName"><el-input v-model="form.visitorName" /></el-form-item>
-        <el-form-item label="电话" prop="visitorPhone"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
+        <el-form-item label="访客姓名" prop="visitorName"><el-input v-model="form.visitorName" /></el-form-item>
+        <el-form-item label="访客电话" prop="visitorPhone"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
+        <el-form-item label="访客类型" prop="visitorType">
+          <el-select v-model="form.visitorType" placeholder="请选择"><el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" /></el-select>
+        </el-form-item>
         </template>
         <template v-else-if="activeStep === 1">
-        <el-form-item label="业主ID" prop="ownerId"><el-input v-model.number="form.ownerId" /></el-form-item>
-        <el-form-item label="资产ID"><el-input v-model.number="form.assetId" /></el-form-item>
-        <el-form-item label="类型" prop="visitorType">
-          <el-select v-model="form.visitorType" placeholder="请选择"><el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" /></el-select>
+        <el-form-item label="被访业主" prop="ownerId">
+          <DualSelectV2
+            v-model="form.ownerId"
+            :options="userOptions"
+            remote
+            :remote-method="handleUserRemoteSearch"
+            placeholder="输入以搜索用户"
+            primary-key="label"
+            secondary-key="userName"
+            @change="handleOwnerChange"
+          />
+        </el-form-item>
+        <el-form-item label="访问资产">
+          <DualSelectV2
+            v-model="form.assetId"
+            :options="assetOptions"
+            remote
+            :remote-method="handleAssetRemoteSearch"
+            :disabled="!form.ownerId"
+            placeholder="选择用户后搜索资产"
+            primary-key="label"
+            secondary-key="assetCode"
+          />
         </el-form-item>
         </template>
         <template v-else-if="isEdit && activeStep === 2">
@@ -107,8 +129,11 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getVisitorPage, getVisitorTypes, addVisitor, updateVisitor, deleteVisitor } from '@/api/visitor'
+import { getUserPage } from '@/api/user'
+import { getAssetPage } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { optionalPhoneRule, sanitizePhone } from '@/utils/validators'
 
 const userStore = useUserStore()
@@ -118,6 +143,8 @@ const submitLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const types = ref([])
+const users = ref([])
+const assets = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' })
@@ -149,6 +176,8 @@ const formRules = {
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],
   visitorType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
+const userOptions = computed(() => users.value.length ? users.value.map(user => ({ value: user.id, label: user.uid || String(user.id), userName: user.userName || '-' })) : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }])
+const assetOptions = computed(() => assets.value.length ? assets.value.map(asset => ({ value: asset.id, label: asset.assetName || asset.assetCode || String(asset.id), assetCode: asset.assetCode || '-' })) : [{ value: '__empty_assets__', label: '暂无匹配资产', assetCode: '', disabled: true, empty: true }])
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function visitorTypeNameText(id) { return types.value.find(type => type.visitorTypeId === id)?.visitorTypeName || valueText(id) }
@@ -165,6 +194,11 @@ async function fetchData(forceRefresh = false) {
   } finally { loading.value = false }
 }
 async function fetchTypes() { const res = await getVisitorTypes(); types.value = res.data }
+async function fetchUsers(keyword = '') { const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true }); users.value = res.data?.records || [] }
+async function fetchAssets(keyword = '') { const res = await getAssetPage({ pageNum: 1, pageSize: 100, assetOwnerId: form.value.ownerId || undefined, assetName: keyword || undefined }, { forceRefresh: true }); assets.value = res.data?.records || [] }
+function handleUserRemoteSearch(keyword) { fetchUsers(keyword) }
+function handleAssetRemoteSearch(keyword) { fetchAssets(keyword) }
+function handleOwnerChange() { form.value.assetId = ''; fetchAssets() }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
@@ -174,7 +208,7 @@ async function handleSubmit() { submitLoading.value = true; try { if (isEdit.val
 async function handleDelete(row) { await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }
 function visitorStatusType(status) { return ({ '0': 'success', '1': 'warning', '2': 'primary', '3': 'danger' })[String(status)] || 'info' }
-onMounted(() => { fetchData(); fetchTypes() })
+onMounted(() => { fetchData(); fetchTypes(); fetchUsers() })
 </script>
 
 <style scoped>

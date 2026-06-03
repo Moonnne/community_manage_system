@@ -56,8 +56,26 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-        <el-form-item label="车辆ID" prop="carId"><el-input v-model.number="form.carId" /></el-form-item>
-        <el-form-item label="门岗ID" prop="gateId"><el-input v-model.number="form.gateId" /></el-form-item>
+        <el-form-item label="车辆ID" prop="carId">
+          <DualSelectV2
+            v-model="form.carId"
+            :options="carOptions"
+            remote
+            :remote-method="handleCarRemoteSearch"
+            placeholder="按车牌号搜索车辆"
+            primary-key="label"
+            secondary-key="carCode"
+          />
+        </el-form-item>
+        <el-form-item label="门岗ID" prop="gateId">
+          <DualSelectV2
+            v-model="form.gateId"
+            :options="gateOptions"
+            placeholder="请选择门岗"
+            primary-key="label"
+            secondary-key="gateCode"
+          />
+        </el-form-item>
         </template>
         <template v-else-if="activeStep === 1">
         <el-form-item label="类型" prop="carHistoryType">
@@ -79,15 +97,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCarHistoryPage, addCarHistory } from '@/api/car'
+import { getCarHistoryPage, addCarHistory, getCarPage } from '@/api/car'
+import { getGateList } from '@/api/gate'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const dialogVisible = ref(false)
+const cars = ref([])
+const gates = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined })
 const form = ref({})
 const wizardSteps = [
@@ -106,6 +128,8 @@ const formRules = {
   gateId: [{ required: true, message: '请输入门岗ID', trigger: 'blur' }],
   carHistoryType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
+const carOptions = computed(() => cars.value.length ? cars.value.map(car => ({ value: car.id, label: car.carNumber || String(car.id), carCode: car.carCode || '-' })) : [{ value: '__empty_cars__', label: '暂无匹配车辆', carCode: '', disabled: true, empty: true }])
+const gateOptions = computed(() => gates.value.length ? gates.value.map(gate => ({ value: gate.id, label: gate.gateName || gate.gateCode || String(gate.id), gateCode: gate.gateCode || '-' })) : [{ value: '__empty_gates__', label: '暂无门岗', gateCode: '', disabled: true, empty: true }])
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 
@@ -114,10 +138,13 @@ function carHistoryTypeText(type) {
 }
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarHistoryPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+async function fetchCars(keyword = '') { const res = await getCarPage({ pageNum: 1, pageSize: 100 }, { forceRefresh: true }); const list = res.data?.records || []; const lower = String(keyword || '').toLowerCase(); cars.value = lower ? list.filter(car => String(car.carNumber || '').toLowerCase().includes(lower)) : list }
+async function fetchGates() { const res = await getGateList({ forceRefresh: true }); gates.value = res.data || [] }
+function handleCarRemoteSearch(keyword) { fetchCars(keyword) }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, carId: '', gateId: '', carHistoryType: undefined }; fetchData(true) }
 function openAdd() { form.value = { carId: '', gateId: '', carHistoryType: undefined, carHistoryRemark: '' }; dialogVisible.value = true }
 async function handleSubmit() { submitLoading.value = true; try { await addCarHistory(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-onMounted(fetchData)
+onMounted(() => { fetchData(); fetchCars(); fetchGates() })
 </script>
 
 <style scoped>

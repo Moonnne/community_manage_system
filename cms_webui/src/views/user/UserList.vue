@@ -165,14 +165,11 @@
             </div>
           </el-form-item>
 
-          <el-form-item label="ID">
-            <el-input v-model="form.id" disabled placeholder="保存后自动生成" />
-          </el-form-item>
           <el-form-item label="账户" prop="uid">
-            <el-input v-model="form.uid" :disabled="isEdit && !isSystemAdmin" />
+            <el-input v-model="form.uid" placeholder="账户将用于登录，不可重复" :disabled="isEdit && !isSystemAdmin" />
           </el-form-item>
           <el-form-item label="用户名" prop="userName">
-            <el-input v-model="form.userName" />
+            <el-input v-model="form.userName" placeholder="请输入用户名"/>
           </el-form-item>
           <el-form-item label="性别" prop="userGender">
             <el-radio-group v-model="form.userGender">
