@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +36,7 @@ public class CarServiceImpl implements CarService {
     @Transactional(rollbackFor = Exception.class)
     public void addCar(CarAddDTO dto) {
         Car car = Car.builder()
-                .carCode(dto.getCarCode())
+                .carCode(generateCarCode())
                 .ownerId(dto.getOwnerId())
                 .assetId(dto.getAssetId())
                 .visitorId(dto.getVisitorId())
@@ -95,5 +97,11 @@ public class CarServiceImpl implements CarService {
                 .carTypeName(t.getCarTypeName())
                 .carTypeRemark(t.getCarTypeRemark())
                 .build()).collect(Collectors.toList());
+    }
+
+    private String generateCarCode() {
+        String prefix = "C" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        int nextSequence = carMapper.selectMaxSequenceByPrefix(prefix) + 1;
+        return prefix + String.format("%04d", nextSequence);
     }
 }

@@ -21,15 +21,24 @@
           </el-select>
         </el-col>
         <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
-          <el-button type="primary" @click="search">搜索</el-button>
-          <el-button @click="resetQuery">重置</el-button>
+          <el-button type="primary" @click="search">
+            <el-icon><Search /></el-icon>
+            搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <el-icon><Refresh /></el-icon>
+            重置
+          </el-button>
         </el-col>
       </el-row>
     </el-card>
 
     <div class="toolbar">
       <el-button type="primary" @click="openAdd"><el-icon><Plus /></el-icon> 添加设施</el-button>
-      <el-button @click="fetchData(true)">刷新</el-button>
+      <el-button @click="fetchData(true)">
+        <el-icon><Refresh /></el-icon>
+        刷新
+      </el-button>
     </div>
 
     <el-card shadow="never" class="table-card">
@@ -51,7 +60,7 @@
         <el-table-column prop="facilityFloor" label="楼层" width="90" show-overflow-tooltip />
         <el-table-column prop="facilityPosition" label="位置" min-width="140" show-overflow-tooltip />
         <el-table-column prop="facilityCheckTime" label="检查时间" width="170" show-overflow-tooltip />
-        <el-table-column prop="facilityExpirationDate" label="保质期(月)" width="110" show-overflow-tooltip />
+        <el-table-column prop="facilityExpirationDate" label="检查周期" width="110" show-overflow-tooltip />
         <el-table-column prop="facilityRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
@@ -136,8 +145,11 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
-              <el-form-item label="保质期">
-                <el-input-number v-model="form.facilityExpirationDate" :min="0" controls-position="right" class="full-width" placeholder="月数" />
+              <el-form-item label="检查周期">
+                <div class="number-with-unit">
+                  <el-input-number v-model="form.facilityExpirationDate" :min="0" controls-position="right" class="full-width" placeholder="月数" />
+                  <span class="number-unit">月</span>
+                </div>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
@@ -273,7 +285,7 @@ const confirmRows = computed(() => [
   { label: '状态', type: 'tag', tagType: facilityStatusType(form.value.facilityStatus), value: facilityStatusText(form.value.facilityStatus) },
   { label: '负责人ID', value: valueText(form.value.facilityChiefId) },
   { label: '检查时间', value: valueText(form.value.facilityCheckTime) },
-  { label: '保质期(月)', value: valueText(form.value.facilityExpirationDate) },
+  { label: '检查周期', value: valueText(form.value.facilityExpirationDate) },
   { label: '楼栋', value: buildingNameText(form.value.facilityBuilding) },
   { label: '楼层', value: valueText(form.value.facilityFloor) },
   { label: '位置', value: valueText(form.value.facilityPosition) },
@@ -303,8 +315,16 @@ async function fetchBuildings() {
 }
 
 async function fetchUsers(keyword = '') {
-  const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true })
-  users.value = res.data?.records || []
+  const keywordText = String(keyword || '').trim()
+  const requests = keywordText
+    ? [
+        getUserPage({ pageNum: 1, pageSize: 1000, uid: keywordText }, { forceRefresh: true }),
+        getUserPage({ pageNum: 1, pageSize: 1000, userName: keywordText }, { forceRefresh: true })
+      ]
+    : [getUserPage({ pageNum: 1, pageSize: 1000 }, { forceRefresh: true })]
+  const responses = await Promise.all(requests)
+  const mergedUsers = responses.flatMap(res => res.data?.records || [])
+  users.value = Array.from(new Map(mergedUsers.map(user => [user.id, user])).values())
 }
 
 function handleUserRemoteSearch(keyword) {
@@ -403,15 +423,139 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-title { margin: 0 0 18px; color: var(--vp-c-text-1); font-size: 24px; font-weight: 800; }
-.filter-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
-.filter-actions, .toolbar { display: flex; gap: 10px; }
-.toolbar { margin: 16px 0; }
-.full-width { width: 100%; }
-.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 18px; }
-.form-tip { margin-bottom: 16px; }
+.page-title {
+  margin: 0 0 18px;
+  color: var(--vp-c-text-1);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.filter-card,
+.table-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+}
+
+.filter-card {
+  margin-bottom: 16px;
+}
+
+.filter-card :deep(.el-row) {
+  row-gap: 12px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.filter-actions .el-button {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-left: 0;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.form-tip {
+  margin-bottom: 16px;
+}
+
+.page-container :deep(.wizard-body .el-row) {
+  width: 100%;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+.page-container :deep(.wizard-body .el-col) {
+  max-width: 100%;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.page-container :deep(.wizard-body .el-form-item) {
+  margin-bottom: 18px;
+}
+
+.page-container :deep(.wizard-body .el-select),
+.page-container :deep(.wizard-body .el-select-v2),
+.page-container :deep(.wizard-body .el-input),
+.page-container :deep(.wizard-body .el-input-number),
+.page-container :deep(.wizard-body .el-date-editor),
+.page-container :deep(.wizard-body .el-textarea) {
+  width: 100%;
+}
+
+.number-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.number-with-unit .el-input-number {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.number-unit {
+  flex: 0 0 auto;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
-  .filter-actions, .toolbar { flex-direction: column; }
-  .filter-actions .el-button, .toolbar .el-button { width: 100%; margin-left: 0; }
+  .filter-card :deep(.el-card__body),
+  .table-card :deep(.el-card__body) {
+    padding: 16px 18px;
+  }
+
+  .filter-card :deep(.el-row) {
+    row-gap: 10px;
+  }
+
+  .filter-card :deep(.el-input),
+  .filter-card :deep(.el-select),
+  .filter-card :deep(.el-select-v2) {
+    width: 100%;
+  }
+
+  .filter-actions {
+    flex-direction: row;
+  }
+
+  .filter-actions .el-button {
+    width: 100%;
+  }
+
+  .toolbar {
+    flex-direction: row;
+  }
+
+  .toolbar .el-button {
+    width: auto;
+    margin-left: 0;
+  }
+
+  .pagination-wrap {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
 }
 </style>

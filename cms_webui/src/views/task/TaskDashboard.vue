@@ -227,7 +227,10 @@ onMounted(() => {
 :deep(.rounded-dialog .el-dialog) { border-radius: 16px; }
 @media (max-width: 768px) {
   .page-header, .section-head, .process-head { flex-direction: column; align-items: stretch; }
-  .header-actions, .process-filters { flex-direction: column; width: 100%; }
+  .header-actions { flex-direction: row; align-items: center; width: 100%; }
+  .header-actions .el-input { flex: 1 1 auto; min-width: 0; }
+  .header-actions .el-button { flex: 0 0 auto; margin-left: 0; white-space: nowrap; }
+  .process-filters { flex-direction: column; width: 100%; }
   .task-card-list { grid-template-columns: 1fr; }
   :deep(.rounded-dialog .el-dialog) { width: calc(100vw - 24px) !important; }
 }

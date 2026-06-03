@@ -3,19 +3,37 @@
     <h2 class="page-title">建筑物管理</h2>
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="12">
-        <el-col :xs="24" :sm="16" :md="8">
-          <el-input v-model="query.keyword" placeholder="按编号、名称、位置搜索" clearable @keyup.enter="search" />
+        <el-col :xs="24" :sm="12" :md="5">
+          <el-input v-model="query.buildingCode" placeholder="建筑编号" clearable @keyup.enter="search" />
         </el-col>
-        <el-col :xs="24" :sm="8" :md="6" class="filter-actions">
-          <el-button type="primary" @click="search">搜索</el-button>
-          <el-button @click="resetQuery">重置</el-button>
+        <el-col :xs="24" :sm="12" :md="5">
+          <el-input v-model="query.buildingName" placeholder="建筑名称" clearable @keyup.enter="search" />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="5">
+          <el-input v-model="query.buildingLocation" placeholder="位置" clearable @keyup.enter="search" />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="5">
+          <el-input v-model="query.buildingRemark" placeholder="备注" clearable @keyup.enter="search" />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="4" class="filter-actions">
+          <el-button type="primary" @click="search">
+            <el-icon><Search /></el-icon>
+            搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <el-icon><Refresh /></el-icon>
+            重置
+          </el-button>
         </el-col>
       </el-row>
     </el-card>
 
     <div class="toolbar">
       <el-button type="primary" @click="openAdd"><el-icon><Plus /></el-icon> 新增建筑物</el-button>
-      <el-button @click="fetchData(true)">刷新</el-button>
+      <el-button @click="fetchData(true)">
+        <el-icon><Refresh /></el-icon>
+        刷新
+      </el-button>
     </div>
 
     <el-card shadow="never" class="table-card">
@@ -49,45 +67,74 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑建筑物' : '新增建筑物'" width="560px" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="建筑编号">
-          <el-input :model-value="isEdit ? form.buildingCode : '保存时自动生成'" disabled />
-        </el-form-item>
-        <el-form-item label="建筑名称" prop="buildingName">
-          <el-input v-model="form.buildingName" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="最低楼层" prop="buildingMinFloor">
-              <el-input-number v-model="form.buildingMinFloor" controls-position="right" class="full-width" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="最高楼层" prop="buildingMaxFloor">
-              <el-input-number v-model="form.buildingMaxFloor" controls-position="right" class="full-width" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="位置">
-          <el-input v-model="form.buildingLocation" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.buildingRemark" type="textarea" :rows="3" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存</el-button>
+    <WizardFormDrawer
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑建筑物' : '新增建筑物'"
+      :mode="isEdit ? 'edit' : 'add'"
+      :steps="steps"
+      :model="form"
+      :rules="formRules"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+    >
+      <template #default="{ activeStep }">
+        <template v-if="activeStep === 0">
+          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">建筑编号将由系统保存时自动生成。</el-alert>
+          <el-form-item v-if="isEdit" label="建筑编号">
+            <el-input :model-value="form.buildingCode" disabled />
+          </el-form-item>
+          <el-form-item label="建筑名称" prop="buildingName">
+            <el-input v-model="form.buildingName" placeholder="请输入建筑名称" />
+          </el-form-item>
+          <el-form-item label="位置">
+            <el-input v-model="form.buildingLocation" placeholder="请输入建筑位置" />
+          </el-form-item>
+        </template>
+
+        <template v-else-if="activeStep === 1">
+          <el-row :gutter="14">
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="最低楼层" prop="buildingMinFloor">
+                <el-input-number
+                  v-model="form.buildingMinFloor"
+                  :max="form.buildingMaxFloor || undefined"
+                  controls-position="right"
+                  class="full-width"
+                  @change="normalizeBuildingFloors"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="最高楼层" prop="buildingMaxFloor">
+                <el-input-number
+                  v-model="form.buildingMaxFloor"
+                  :min="form.buildingMinFloor || undefined"
+                  controls-position="right"
+                  class="full-width"
+                  @change="normalizeBuildingFloors"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="备注">
+            <el-input v-model="form.buildingRemark" type="textarea" :rows="4" placeholder="请输入备注" />
+          </el-form-item>
+        </template>
+
+        <template v-else>
+          <ConfirmInfoTable :rows="confirmRows" />
+        </template>
       </template>
-    </el-dialog>
+    </WizardFormDrawer>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { addBuilding, deleteBuilding, getBuildingPage, updateBuilding } from '@/api/building'
+import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -95,14 +142,26 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const tableData = ref([])
 const total = ref(0)
-const formRef = ref(null)
-const query = ref({ pageNum: 1, pageSize: 10, keyword: '' })
+const query = ref(getDefaultQuery())
 const form = ref(getDefaultForm())
-const rules = {
+const steps = [
+  { title: '基础信息', fields: ['buildingName'] },
+  { title: '楼层位置', fields: ['buildingMinFloor', 'buildingMaxFloor'] },
+  { title: '确认信息', fields: [] }
+]
+const formRules = {
   buildingName: [{ required: true, message: '请输入建筑名称', trigger: 'blur' }],
-  buildingMinFloor: [{ required: true, message: '请输入最低楼层', trigger: 'blur' }],
-  buildingMaxFloor: [{ required: true, message: '请输入最高楼层', trigger: 'blur' }]
+  buildingMinFloor: [{ required: true, validator: validateMinFloor, trigger: 'blur' }],
+  buildingMaxFloor: [{ required: true, validator: validateMaxFloor, trigger: 'blur' }]
 }
+const confirmRows = computed(() => [
+  { label: '建筑编号', value: isEdit.value ? valueText(form.value.buildingCode) : '保存时自动生成' },
+  { label: '建筑名称', value: valueText(form.value.buildingName) },
+  { label: '最低楼层', value: valueText(form.value.buildingMinFloor) },
+  { label: '最高楼层', value: valueText(form.value.buildingMaxFloor) },
+  { label: '位置', value: valueText(form.value.buildingLocation) },
+  { label: '备注', value: valueText(form.value.buildingRemark) }
+])
 
 async function fetchData(forceRefresh = false) {
   loading.value = true
@@ -121,7 +180,7 @@ function search() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, keyword: '' }
+  query.value = getDefaultQuery()
   fetchData(true)
 }
 
@@ -138,8 +197,12 @@ function openEdit(row) {
 }
 
 async function handleSubmit() {
-  await formRef.value?.validate()
-  if (form.value.buildingMinFloor > form.value.buildingMaxFloor) {
+  normalizeBuildingFloors()
+  if (!isValidFloor(form.value.buildingMinFloor) || !isValidFloor(form.value.buildingMaxFloor)) {
+    ElMessage.warning('楼层不能为 0')
+    return
+  }
+  if (Number(form.value.buildingMinFloor) > Number(form.value.buildingMaxFloor)) {
     ElMessage.warning('最低楼层不能大于最高楼层')
     return
   }
@@ -168,18 +231,77 @@ function getDefaultForm() {
   return { buildingCode: '', buildingName: '', buildingMinFloor: 1, buildingMaxFloor: 1, buildingLocation: '', buildingRemark: '' }
 }
 
+function getDefaultQuery() {
+  return { pageNum: 1, pageSize: 10, buildingCode: '', buildingName: '', buildingLocation: '', buildingRemark: '' }
+}
+
+function valueText(value) {
+  return value === '' || value === null || value === undefined ? '-' : value
+}
+
+function isValidFloor(value) {
+  return value !== null && value !== undefined && Number(value) !== 0
+}
+
+function normalizeBuildingFloors() {
+  if (Number(form.value.buildingMinFloor) === 0) form.value.buildingMinFloor = -1
+  if (Number(form.value.buildingMaxFloor) === 0) form.value.buildingMaxFloor = 1
+  if (Number(form.value.buildingMinFloor) > Number(form.value.buildingMaxFloor)) {
+    form.value.buildingMaxFloor = form.value.buildingMinFloor
+  }
+}
+
+function validateMinFloor(rule, value, callback) {
+  if (!isValidFloor(value)) {
+    callback(new Error('最低楼层不能为 0'))
+    return
+  }
+  if (Number(value) > Number(form.value.buildingMaxFloor)) {
+    callback(new Error('最低楼层不能高于最高楼层'))
+    return
+  }
+  callback()
+}
+
+function validateMaxFloor(rule, value, callback) {
+  if (!isValidFloor(value)) {
+    callback(new Error('最高楼层不能为 0'))
+    return
+  }
+  if (Number(value) < Number(form.value.buildingMinFloor)) {
+    callback(new Error('最高楼层不能低于最低楼层'))
+    return
+  }
+  callback()
+}
+
 onMounted(() => fetchData())
 </script>
 
 <style scoped>
 .page-title { margin: 0 0 18px; color: var(--vp-c-text-1); font-size: 24px; font-weight: 800; }
 .filter-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
-.filter-actions, .toolbar { display: flex; gap: 10px; }
+.filter-actions, .toolbar { display: flex; align-items: center; gap: 10px; }
+.filter-actions .el-button { flex: 1 1 0; margin-left: 0; }
 .toolbar { margin: 16px 0; }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 18px; }
 .full-width { width: 100%; }
+.form-tip { margin-bottom: 18px; }
+:deep(.wizard-body .el-row) { width: 100%; margin-left: 0 !important; margin-right: 0 !important; }
+:deep(.wizard-body .el-col) { min-width: 0; padding-left: 0 !important; padding-right: 0 !important; }
+:deep(.wizard-body .el-input),
+:deep(.wizard-body .el-input-number),
+:deep(.wizard-body .el-textarea) { width: 100%; }
 @media (max-width: 768px) {
-  .filter-actions, .toolbar { flex-direction: column; }
-  .filter-actions .el-button, .toolbar .el-button { width: 100%; margin-left: 0; }
+  .filter-card :deep(.el-card__body),
+  .table-card :deep(.el-card__body) { padding: 16px 18px; }
+  .filter-card :deep(.el-row) { row-gap: 10px; }
+  .filter-card :deep(.el-input),
+  .filter-card :deep(.el-select),
+  .filter-card :deep(.el-select-v2) { width: 100%; }
+  .filter-actions, .toolbar { flex-direction: row; }
+  .filter-actions .el-button { width: 100%; margin-left: 0; }
+  .toolbar .el-button { width: auto; margin-left: 0; }
+  .pagination-wrap { justify-content: flex-start; overflow-x: auto; }
 }
 </style>

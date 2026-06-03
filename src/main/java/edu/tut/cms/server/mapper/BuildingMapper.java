@@ -33,5 +33,8 @@ public interface BuildingMapper {
     @Select("SELECT COUNT(1) FROM facility WHERE facility_building = #{id}")
     int countFacilities(Long id);
 
-    List<BuildingVO> selectPage(@Param("keyword") String keyword);
+    List<BuildingVO> selectPage(@Param("buildingCode") String buildingCode,
+                                @Param("buildingName") String buildingName,
+                                @Param("buildingLocation") String buildingLocation,
+                                @Param("buildingRemark") String buildingRemark);
 }

@@ -38,7 +38,7 @@
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
         <el-form-item label="名称" prop="gateName"><el-input v-model="form.gateName" /></el-form-item>
-        <el-form-item label="负责人ID" prop="gateChiefId">
+        <el-form-item label="门岗负责人" prop="gateChiefId">
           <DualSelectV2
             v-model="form.gateChiefId"
             :options="userOptions"

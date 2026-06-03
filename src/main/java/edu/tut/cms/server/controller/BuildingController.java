@@ -50,8 +50,11 @@ public class BuildingController {
     @RequireRole({0, 1})
     public Result<PageResult<BuildingVO>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                                @RequestParam(defaultValue = "10") Integer pageSize,
-                                               @RequestParam(required = false) String keyword) {
-        return Result.success(buildingService.pageBuildings(pageNum, pageSize, keyword));
+                                               @RequestParam(required = false) String buildingCode,
+                                               @RequestParam(required = false) String buildingName,
+                                               @RequestParam(required = false) String buildingLocation,
+                                               @RequestParam(required = false) String buildingRemark) {
+        return Result.success(buildingService.pageBuildings(pageNum, pageSize, buildingCode, buildingName, buildingLocation, buildingRemark));
     }
 
     @GetMapping("/list")

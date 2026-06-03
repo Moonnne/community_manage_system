@@ -201,7 +201,7 @@ function handleAssetRemoteSearch(keyword) { fetchAssets(keyword) }
 function handleOwnerChange() { form.value.assetId = ''; fetchAssets() }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
-function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); fetchAssets(); dialogVisible.value = true }
 function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorStatus: 1, visitorRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, visitorName: row.visitorName, visitorPhone: row.visitorPhone, ownerId: row.ownerId, assetId: row.assetId, visitorType: row.visitorType, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }

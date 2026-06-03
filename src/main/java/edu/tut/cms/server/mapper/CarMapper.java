@@ -21,6 +21,9 @@ public interface CarMapper {
     @Select("SELECT * FROM car WHERE id = #{id}")
     Car selectById(Long id);
 
+    @Select("SELECT COALESCE(MAX(CAST(SUBSTRING(car_code, 10) AS UNSIGNED)), 0) FROM car WHERE car_code LIKE CONCAT(#{prefix}, '%')")
+    Integer selectMaxSequenceByPrefix(String prefix);
+
     List<CarVO> selectPage(@Param("ownerId") Long ownerId,
                            @Param("carType") Integer carType,
                            @Param("carStatus") Integer carStatus);

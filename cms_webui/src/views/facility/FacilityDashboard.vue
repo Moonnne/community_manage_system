@@ -56,7 +56,9 @@ onMounted(() => fetchData())
   .facility-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
-  .page-header { align-items: flex-start; flex-direction: column; }
+  .page-header { align-items: stretch; flex-direction: column; }
+  .page-header .el-button { width: 100%; margin-left: 0; }
   .facility-stat-grid { grid-template-columns: 1fr; }
+  .facility-stat-card :deep(.el-card__body) { padding: 18px; }
 }
 </style>

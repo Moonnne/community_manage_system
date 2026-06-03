@@ -317,8 +317,8 @@ const sidebarConfig = {
     {
       title: '类型管理',
       children: [
-        { path: '/asset/type', label: '资产类型' },
-        { path: '/asset/building', label: '建筑物管理' }
+        { path: '/asset/building', label: '建筑物管理' },
+        { path: '/asset/type', label: '资产类型' }
       ],
       roles: [0, 1]
     }

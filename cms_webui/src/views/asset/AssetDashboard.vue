@@ -147,9 +147,10 @@ onMounted(() => fetchData())
   .asset-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 768px) {
-  .page-header { flex-direction: column; }
+  .page-header { align-items: stretch; flex-direction: column; }
   .search-input { width: 100%; }
   .summary-section, .asset-card-grid { grid-template-columns: 1fr; }
+  .summary-card :deep(.el-card__body), .asset-card :deep(.el-card__body) { padding: 18px; }
   :deep(.rounded-dialog .el-dialog) { width: calc(100vw - 24px) !important; }
 }
 </style>

@@ -19,10 +19,17 @@
         SELECT *
         FROM building
         <where>
-            <if test="keyword != null and keyword != ''">
-                AND (building_code LIKE CONCAT('%', #{keyword}, '%')
-                    OR building_name LIKE CONCAT('%', #{keyword}, '%')
-                    OR building_location LIKE CONCAT('%', #{keyword}, '%'))
+            <if test="buildingCode != null and buildingCode != ''">
+                AND building_code LIKE CONCAT('%', #{buildingCode}, '%')
+            </if>
+            <if test="buildingName != null and buildingName != ''">
+                AND building_name LIKE CONCAT('%', #{buildingName}, '%')
+            </if>
+            <if test="buildingLocation != null and buildingLocation != ''">
+                AND building_location LIKE CONCAT('%', #{buildingLocation}, '%')
+            </if>
+            <if test="buildingRemark != null and buildingRemark != ''">
+                AND building_remark LIKE CONCAT('%', #{buildingRemark}, '%')
             </if>
         </where>
         ORDER BY id ASC

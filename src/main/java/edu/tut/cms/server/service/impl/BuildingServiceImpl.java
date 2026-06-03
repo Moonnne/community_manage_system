@@ -66,9 +66,14 @@ public class BuildingServiceImpl implements BuildingService {
     }
 
     @Override
-    public PageResult<BuildingVO> pageBuildings(Integer pageNum, Integer pageSize, String keyword) {
+    public PageResult<BuildingVO> pageBuildings(Integer pageNum,
+                                                Integer pageSize,
+                                                String buildingCode,
+                                                String buildingName,
+                                                String buildingLocation,
+                                                String buildingRemark) {
         PageHelper.startPage(pageNum, pageSize);
-        List<BuildingVO> list = buildingMapper.selectPage(keyword);
+        List<BuildingVO> list = buildingMapper.selectPage(buildingCode, buildingName, buildingLocation, buildingRemark);
         PageInfo<BuildingVO> pageInfo = new PageInfo<>(list);
         PageResult<BuildingVO> result = new PageResult<>();
         result.setTotal(pageInfo.getTotal());
@@ -81,7 +86,7 @@ public class BuildingServiceImpl implements BuildingService {
 
     @Override
     public List<BuildingVO> listBuildings() {
-        return buildingMapper.selectPage(null);
+        return buildingMapper.selectPage(null, null, null, null);
     }
 
     private void validateFloors(Integer minFloor, Integer maxFloor) {

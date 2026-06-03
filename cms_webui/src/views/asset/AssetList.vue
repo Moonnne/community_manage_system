@@ -26,15 +26,24 @@
           />
         </el-col>
         <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
-          <el-button type="primary" @click="search">搜索</el-button>
-          <el-button @click="resetQuery">重置</el-button>
+          <el-button type="primary" @click="search">
+            <el-icon><Search /></el-icon>
+            搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <el-icon><Refresh /></el-icon>
+            重置
+          </el-button>
         </el-col>
       </el-row>
     </el-card>
 
     <div class="toolbar">
       <el-button type="primary" @click="openAdd"><el-icon><Plus /></el-icon> 添加{{ title.replace('管理', '') }}</el-button>
-      <el-button @click="fetchData(true)">刷新</el-button>
+      <el-button @click="fetchData(true)">
+        <el-icon><Refresh /></el-icon>
+        刷新
+      </el-button>
     </div>
 
     <el-card shadow="never" class="table-card">
@@ -127,7 +136,7 @@
                 />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="24">
+            <el-col :xs="12" :sm="12">
               <el-form-item label="状态" prop="assetStatus">
                 <el-select v-model="form.assetStatus" class="full-width">
                   <el-option label="正常" :value="0" />
@@ -137,9 +146,12 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="24">
+            <el-col :xs="12" :sm="12">
               <el-form-item label="面积">
-                <el-input-number v-model="form.assetArea" :min="0" controls-position="right" class="full-width" />
+                <div class="number-with-unit">
+                  <el-input-number v-model="form.assetArea" :min="0" controls-position="right" class="full-width" />
+                  <span class="number-unit">平方米</span>
+                </div>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24" v-if="isEdit">
@@ -322,8 +334,16 @@ async function fetchBuildings() {
 }
 
 async function fetchUsers(keyword = '') {
-  const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true })
-  users.value = res.data?.records || []
+  const keywordText = String(keyword || '').trim()
+  const requests = keywordText
+    ? [
+        getUserPage({ pageNum: 1, pageSize: 1000, uid: keywordText }, { forceRefresh: true }),
+        getUserPage({ pageNum: 1, pageSize: 1000, userName: keywordText }, { forceRefresh: true })
+      ]
+    : [getUserPage({ pageNum: 1, pageSize: 1000 }, { forceRefresh: true })]
+  const responses = await Promise.all(requests)
+  const mergedUsers = responses.flatMap(res => res.data?.records || [])
+  users.value = Array.from(new Map(mergedUsers.map(user => [user.id, user])).values())
 }
 
 function handleUserRemoteSearch(keyword) {
@@ -446,13 +466,33 @@ onMounted(() => {
 <style scoped>
 .page-title { margin: 0 0 18px; color: var(--vp-c-text-1); font-size: 24px; font-weight: 800; }
 .filter-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
-.filter-actions { display: flex; gap: 8px; }
+.filter-actions { display: flex; align-items: center; gap: 8px; }
+.filter-actions .el-button { flex: 1 1 0; margin-left: 0; }
 .toolbar { display: flex; gap: 10px; margin: 16px 0; }
 .full-width { width: 100%; }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 18px; }
 .form-tip { margin-bottom: 16px; }
+.page-container :deep(.wizard-body .el-row) { width: 100%; margin-right: 0 !important; margin-left: 0 !important; }
+.page-container :deep(.wizard-body .el-col) { max-width: 100%; padding-right: 0 !important; padding-left: 0 !important; }
+.page-container :deep(.wizard-body .el-select),
+.page-container :deep(.wizard-body .el-select-v2),
+.page-container :deep(.wizard-body .el-input),
+.page-container :deep(.wizard-body .el-input-number),
+.page-container :deep(.wizard-body .el-date-editor),
+.page-container :deep(.wizard-body .el-textarea) { width: 100%; }
+.number-with-unit { display: flex; align-items: center; gap: 8px; width: 100%; }
+.number-with-unit .el-input-number { flex: 1 1 auto; min-width: 0; }
+.number-unit { flex: 0 0 auto; color: var(--vp-c-text-2); font-size: 14px; }
 @media (max-width: 768px) {
-  .filter-actions, .toolbar { flex-direction: column; }
-  .filter-actions .el-button, .toolbar .el-button { width: 100%; margin-left: 0; }
+  .filter-card :deep(.el-card__body),
+  .table-card :deep(.el-card__body) { padding: 16px 18px; }
+  .filter-card :deep(.el-row) { row-gap: 10px; }
+  .filter-card :deep(.el-input),
+  .filter-card :deep(.el-select),
+  .filter-card :deep(.el-select-v2) { width: 100%; }
+  .filter-actions, .toolbar { flex-direction: row; }
+  .filter-actions .el-button { width: 100%; margin-left: 0; }
+  .toolbar .el-button { width: auto; margin-left: 0; }
+  .pagination-wrap { justify-content: flex-start; overflow-x: auto; }
 }
 </style>

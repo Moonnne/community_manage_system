@@ -68,7 +68,7 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-        <el-form-item label="车辆编号" prop="carCode" v-if="!isEdit"><el-input v-model="form.carCode" /></el-form-item>
+        <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">车辆编号将由系统保存时自动生成。</el-alert>
         <el-form-item label="车牌号" prop="carNumber">
           <div class="plate-input">
             <el-select v-model="form.carProvince" placeholder="省份" class="plate-province">
@@ -142,12 +142,12 @@ const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined })
 const form = ref({})
 const wizardSteps = [
-  { title: '车辆信息', fields: ['carCode', 'carNumber'] },
+  { title: '车辆信息', fields: ['carNumber'] },
   { title: '归属状态', fields: ['carType', 'carStatus'] },
   { title: '确认信息', fields: [] }
 ]
 const confirmRows = computed(() => [
-  { label: '车辆编号', value: valueText(form.value.carCode) },
+  { label: '车辆编号', value: isEdit.value ? valueText(form.value.carCode) : '保存时自动生成' },
   { label: '车牌号', value: valueText(fullPlateNumber.value) },
   { label: '业主ID', value: valueText(form.value.ownerId) },
   { label: '类型', type: 'tag', value: carTypeNameText(form.value.carType) },
@@ -155,7 +155,6 @@ const confirmRows = computed(() => [
   { label: '资产ID', value: valueText(form.value.assetId) }
 ])
 const formRules = {
-  carCode: [{ required: true, message: '请输入车辆编号', trigger: 'blur' }],
   carNumber: [{ validator: validatePlateNumber, trigger: 'blur' }],
   carType: [{ required: true, message: '请选择类型', trigger: 'change' }],
   carStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
@@ -194,16 +193,27 @@ function validatePlateNumber(rule, value, callback) {
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }
-async function fetchUsers(keyword = '') { const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true }); users.value = res.data?.records || [] }
+async function fetchUsers(keyword = '') {
+  const keywordText = String(keyword || '').trim()
+  const requests = keywordText
+    ? [
+        getUserPage({ pageNum: 1, pageSize: 1000, uid: keywordText }, { forceRefresh: true }),
+        getUserPage({ pageNum: 1, pageSize: 1000, userName: keywordText }, { forceRefresh: true })
+      ]
+    : [getUserPage({ pageNum: 1, pageSize: 1000 }, { forceRefresh: true })]
+  const responses = await Promise.all(requests)
+  const mergedUsers = responses.flatMap(res => res.data?.records || [])
+  users.value = Array.from(new Map(mergedUsers.map(user => [user.id, user])).values())
+}
 async function fetchAssets(keyword = '') { const res = await getAssetPage({ pageNum: 1, pageSize: 100, assetName: keyword || undefined }, { forceRefresh: true }); assets.value = res.data?.records || [] }
 function handleUserRemoteSearch(keyword) { fetchUsers(keyword) }
 function handleAssetRemoteSearch(keyword) { fetchAssets(keyword) }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
-function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: '', carPlateBody: '', ownerId: '', carType: undefined, carStatus: 1, assetId: '' } }
-function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
-async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: '', carPlateBody: '', ownerId: '', carType: undefined, carStatus: 0, assetId: '' } }
+function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carCode: row.carCode, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
+async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (!isEdit.value) delete payload.carCode; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteCar(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes(); fetchUsers(); fetchAssets() })
 </script>
@@ -216,6 +226,7 @@ onMounted(() => { fetchData(); fetchTypes(); fetchUsers(); fetchAssets() })
 .table-toolbar { margin-bottom: 12px; }
 .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+.form-tip { margin-bottom: 16px; }
 .plate-input { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; width: 100%; }
 .plate-province { width: 96px; }
 @media (max-width: 768px) {

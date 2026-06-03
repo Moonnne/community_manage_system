@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CarAddDTO {
-    @NotBlank
     private String carCode;
     private Long ownerId;
     private Long assetId;

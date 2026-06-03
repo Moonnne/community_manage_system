@@ -14,7 +14,12 @@ public interface BuildingService {
 
     void deleteBuilding(Long id);
 
-    PageResult<BuildingVO> pageBuildings(Integer pageNum, Integer pageSize, String keyword);
+    PageResult<BuildingVO> pageBuildings(Integer pageNum,
+                                         Integer pageSize,
+                                         String buildingCode,
+                                         String buildingName,
+                                         String buildingLocation,
+                                         String buildingRemark);
 
     List<BuildingVO> listBuildings();
 }
