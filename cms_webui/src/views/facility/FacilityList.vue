@@ -91,22 +91,22 @@
         <template v-if="activeStep === 0">
           <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">设施编号将由系统保存时自动生成。</el-alert>
           <el-row :gutter="14">
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24" v-if="isEdit">
               <el-form-item label="设施编号">
                 <el-input :model-value="isEdit ? form.facilityCode : '保存时自动生成'" disabled />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="名称" prop="facilityName"><el-input v-model="form.facilityName" /></el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="类型" prop="facilityType">
                 <el-select v-model="form.facilityType" class="full-width">
                   <el-option v-for="type in types" :key="type.facilityTypeId" :label="type.facilityTypeName" :value="type.facilityTypeId" />
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="状态" prop="facilityStatus">
                 <el-select v-model="form.facilityStatus" class="full-width">
                   <el-option label="正常" :value="0" />
@@ -116,20 +116,31 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
-              <el-form-item label="负责人ID"><el-input v-model.number="form.facilityChiefId" /></el-form-item>
+            <el-col :xs="24" :sm="24">
+              <el-form-item label="负责人">
+                <DualSelectV2
+                  v-model="form.facilityChiefId"
+                  :options="userOptions"
+                  remote
+                  :remote-method="handleUserRemoteSearch"
+                  placeholder="输入以搜索用户"
+                  primary-key="label"
+                  secondary-key="userName"
+                  @change="handleChiefChange"
+                />
+              </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="检查时间">
                 <el-date-picker v-model="form.facilityCheckTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" class="full-width" />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="保质期">
                 <el-input-number v-model="form.facilityExpirationDate" :min="0" controls-position="right" class="full-width" placeholder="月数" />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="所有方"><el-input v-model="form.facilityOwner" /></el-form-item>
             </el-col>
           </el-row>
@@ -137,29 +148,33 @@
 
         <template v-else-if="activeStep === 1">
           <el-row :gutter="14">
-            <el-col :xs="24" :sm="12">
+            <el-col :span="24">
+              <el-form-item label="名称">
+                <el-input v-model="form.facilityName" :placeholder="generatedFacilityName" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24">
               <el-form-item label="楼栋" prop="facilityBuilding">
-                <el-select-v2
+                <DualSelectV2
                   v-model="form.facilityBuilding"
                   :options="buildingOptions"
-                  filterable
-                  clearable
                   placeholder="请选择楼栋"
-                  class="full-width"
+                  primary-key="buildingCode"
+                  secondary-key="buildingName"
                   @change="handleBuildingChange"
                 />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="楼层" prop="facilityFloor">
-                <el-input-number
-                  v-model="floorNumber"
-                  :min="selectedBuilding?.buildingMinFloor ?? -99"
-                  :max="selectedBuilding?.buildingMaxFloor ?? 99"
-                  controls-position="right"
+                <el-select
+                  v-model="form.facilityFloor"
                   class="full-width"
+                  placeholder="请选择楼层"
                   :disabled="!form.facilityBuilding"
-                />
+                >
+                  <el-option v-for="floor in floorOptions" :key="floor.value" :label="floor.label" :value="floor.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="24">
@@ -191,8 +206,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { addFacility, deleteFacility, getFacilityPage, getFacilityTypes, updateFacility } from '@/api/facility'
 import { getBuildingList } from '@/api/building'
+import { getUserPage } from '@/api/user'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -202,15 +219,40 @@ const tableData = ref([])
 const total = ref(0)
 const types = ref([])
 const buildings = ref([])
+const users = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined })
 const form = ref(getDefaultForm())
-const buildingOptions = computed(() => buildings.value.map(item => ({ value: item.id, label: `${item.buildingCode} ${item.buildingName}`, ...item })))
+const buildingOptions = computed(() => buildings.value.map(item => ({
+  value: item.id,
+  label: item.buildingCode,
+  buildingCode: item.buildingCode,
+  buildingName: item.buildingName,
+  ...item
+})))
 const selectedBuilding = computed(() => buildings.value.find(item => item.id === form.value.facilityBuilding))
-const floorNumber = computed({
-  get: () => form.value.facilityFloor === '' || form.value.facilityFloor === null || form.value.facilityFloor === undefined ? undefined : Number(form.value.facilityFloor),
-  set: value => {
-    form.value.facilityFloor = value === undefined || value === null ? '' : String(value)
+const userOptions = computed(() => {
+  const list = users.value.map(user => ({
+    value: user.id,
+    label: user.uid || String(user.id),
+    userName: user.userName || user.uid || String(user.id)
+  }))
+  return list.length ? list : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }]
+})
+const floorOptions = computed(() => {
+  if (!selectedBuilding.value) return []
+  const min = Number(selectedBuilding.value.buildingMinFloor ?? -2)
+  const max = Number(selectedBuilding.value.buildingMaxFloor ?? 30)
+  const floors = []
+  for (let floor = min; floor <= max; floor += 1) {
+    if (floor === 0) continue
+    floors.push({ value: String(floor), label: floor > 0 ? `F${floor}` : `B${Math.abs(floor)}` })
   }
+  return floors
+})
+const generatedFacilityName = computed(() => {
+  const building = selectedBuilding.value?.buildingCode || ''
+  const floor = floorOptions.value.find(item => item.value === String(form.value.facilityFloor))?.label || ''
+  return [form.value.facilityName, building, floor, form.value.facilityPosition].filter(Boolean).join('-')
 })
 const steps = [
   { title: '基础信息', fields: ['facilityName', 'facilityType', 'facilityStatus'] },
@@ -258,6 +300,19 @@ async function fetchTypes() {
 async function fetchBuildings() {
   const res = await getBuildingList()
   buildings.value = res.data || []
+}
+
+async function fetchUsers(keyword = '') {
+  const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true })
+  users.value = res.data?.records || []
+}
+
+function handleUserRemoteSearch(keyword) {
+  fetchUsers(keyword)
+}
+
+function handleChiefChange(value) {
+  form.value.facilityChiefId = value
 }
 
 function search() {
@@ -342,6 +397,7 @@ function facilityStatusType(status) {
 onMounted(() => {
   fetchTypes()
   fetchBuildings()
+  fetchUsers()
   fetchData()
 })
 </script>

@@ -3,10 +3,15 @@
     <div class="page-header"><h2 class="page-title">设施类型</h2></div>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd" v-if="canEdit"><el-icon><Plus /></el-icon> 新增类型</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="类型ID" width="100" show-overflow-tooltip />
+        <el-table-column label="类型ID" width="100" show-overflow-tooltip>
+
+          <template #default="{ row }">{{ row.facilityTypeId ?? row.id ?? '-' }}</template>
+
+        </el-table-column>
         <el-table-column prop="facilityTypeName" label="类型名称" min-width="200" show-overflow-tooltip />
         <el-table-column prop="facilityTypeRemark" label="备注" min-width="300" show-overflow-tooltip />
         <el-table-column label="操作" width="100" fixed="right" v-if="canEdit">
@@ -71,7 +76,7 @@ function valueText(value) { return value === '' || value === undefined || value 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const res = await getFacilityTypes({ forceRefresh: !!forceRefresh }); tableData.value = res.data } finally { loading.value = false } }
 function openAdd() { form.value = { facilityTypeName: '', facilityTypeRemark: '' }; dialogVisible.value = true }
 async function handleSubmit() { submitLoading.value = true; try { await addFacilityType(form.value); ElMessage.success('添加成功'); dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleDelete(row) { await deleteFacilityType(row.id); ElMessage.success('删除成功'); fetchData(true) }
+async function handleDelete(row) { await deleteFacilityType(row.facilityTypeId ?? row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(fetchData)
 </script>
 

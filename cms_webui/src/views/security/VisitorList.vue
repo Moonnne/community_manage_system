@@ -26,6 +26,7 @@
     </el-card>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd" v-if="canEdit"><el-icon><Plus /></el-icon> 登记访客</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
@@ -65,23 +66,23 @@
       :mode="isEdit ? 'edit' : 'add'"
       :steps="isEdit ? editWizardSteps : addWizardSteps"
       :model="form"
-      :rules="isEdit ? {} : formRules"
+      :rules="formRules"
       :loading="submitLoading"
       @submit="handleSubmit"
     >
       <template #default="{ activeStep }">
-        <template v-if="!isEdit && activeStep === 0">
-        <el-form-item label="姓名" prop="visitorName" v-if="!isEdit"><el-input v-model="form.visitorName" /></el-form-item>
-        <el-form-item label="电话" prop="visitorPhone" v-if="!isEdit"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
+        <template v-if="activeStep === 0">
+        <el-form-item label="姓名" prop="visitorName"><el-input v-model="form.visitorName" /></el-form-item>
+        <el-form-item label="电话" prop="visitorPhone"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
         </template>
-        <template v-else-if="!isEdit && activeStep === 1">
-        <el-form-item label="业主ID" prop="ownerId" v-if="!isEdit"><el-input v-model.number="form.ownerId" /></el-form-item>
-        <el-form-item label="资产ID" v-if="!isEdit"><el-input v-model.number="form.assetId" /></el-form-item>
-        <el-form-item label="类型" prop="visitorType" v-if="!isEdit">
+        <template v-else-if="activeStep === 1">
+        <el-form-item label="业主ID" prop="ownerId"><el-input v-model.number="form.ownerId" /></el-form-item>
+        <el-form-item label="资产ID"><el-input v-model.number="form.assetId" /></el-form-item>
+        <el-form-item label="类型" prop="visitorType">
           <el-select v-model="form.visitorType" placeholder="请选择"><el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" /></el-select>
         </el-form-item>
         </template>
-        <template v-else-if="isEdit && activeStep === 0">
+        <template v-else-if="isEdit && activeStep === 2">
         <el-form-item label="状态" v-if="isEdit">
           <el-select v-model="form.visitorStatus" placeholder="请选择">
             <el-option label="待批准" value="1" />
@@ -128,18 +129,18 @@ const addWizardSteps = [
   { title: '确认信息', fields: [] }
 ]
 const editWizardSteps = [
+  { title: '访客信息', fields: ['visitorName', 'visitorPhone'] },
+  { title: '被访信息', fields: ['ownerId', 'visitorType'] },
   { title: '状态信息', fields: [] },
   { title: '确认信息', fields: [] }
 ]
-const confirmRows = computed(() => isEdit.value ? [
-  { label: '状态', type: 'tag', tagType: visitorStatusType(form.value.visitorStatus), value: visitorStatusText(form.value.visitorStatus) },
-  { label: '备注', value: valueText(form.value.visitorRemark) }
-] : [
+const confirmRows = computed(() => [
   { label: '姓名', value: valueText(form.value.visitorName) },
   { label: '电话', value: valueText(form.value.visitorPhone) },
   { label: '业主ID', value: valueText(form.value.ownerId) },
   { label: '资产ID', value: valueText(form.value.assetId) },
   { label: '类型', type: 'tag', value: visitorTypeNameText(form.value.visitorType) },
+  { label: '状态', type: 'tag', tagType: visitorStatusType(form.value.visitorStatus), value: visitorStatusText(form.value.visitorStatus) },
   { label: '备注', value: valueText(form.value.visitorRemark) }
 ])
 const formRules = {
@@ -167,8 +168,8 @@ async function fetchTypes() { const res = await getVisitorTypes(); types.value =
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
-function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorRemark: '' } }
-function mapRowToForm(row) { return { id: row.id, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
+function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorStatus: 1, visitorRemark: '' } }
+function mapRowToForm(row) { return { id: row.id, visitorName: row.visitorName, visitorPhone: row.visitorPhone, ownerId: row.ownerId, assetId: row.assetId, visitorType: row.visitorType, visitorStatus: row.visitorStatus, visitorRemark: row.visitorRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateVisitor(form.value); ElMessage.success('更新成功') } else { await addVisitor(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }

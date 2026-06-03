@@ -44,6 +44,7 @@
       <el-button type="primary" @click="openAdd" v-if="userStore.userRole === 0 && userStore.canOperate">
         <el-icon><Plus /></el-icon> 添加用户
       </el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
 
     <!-- Table -->

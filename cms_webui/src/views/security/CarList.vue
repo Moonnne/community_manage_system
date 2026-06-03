@@ -23,6 +23,7 @@
     </el-card>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd" v-if="canEdit"><el-icon><Plus /></el-icon> 登记车辆</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
@@ -68,7 +69,14 @@
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
         <el-form-item label="车辆编号" prop="carCode" v-if="!isEdit"><el-input v-model="form.carCode" /></el-form-item>
-        <el-form-item label="车牌号" prop="carNumber"><el-input v-model.number="form.carNumber" /></el-form-item>
+        <el-form-item label="车牌号" prop="carNumber">
+          <div class="plate-input">
+            <el-select v-model="form.carProvince" placeholder="省份" class="plate-province">
+              <el-option v-for="province in provinceOptions" :key="province" :label="province" :value="province" />
+            </el-select>
+            <el-input v-model="form.carPlateBody" maxlength="7" placeholder="请输入车牌号码" @input="handlePlateBodyInput" />
+          </div>
+        </el-form-item>
         <el-form-item label="业主ID"><el-input v-model.number="form.ownerId" /></el-form-item>
         </template>
         <template v-else-if="activeStep === 1">
@@ -115,7 +123,7 @@ const wizardSteps = [
 ]
 const confirmRows = computed(() => [
   { label: '车辆编号', value: valueText(form.value.carCode) },
-  { label: '车牌号', value: valueText(form.value.carNumber) },
+  { label: '车牌号', value: valueText(fullPlateNumber.value) },
   { label: '业主ID', value: valueText(form.value.ownerId) },
   { label: '类型', type: 'tag', value: carTypeNameText(form.value.carType) },
   { label: '状态', type: 'tag', tagType: form.value.carStatus === 0 ? 'success' : 'info', value: carStatusText(form.value.carStatus) },
@@ -123,23 +131,48 @@ const confirmRows = computed(() => [
 ])
 const formRules = {
   carCode: [{ required: true, message: '请输入车辆编号', trigger: 'blur' }],
-  carNumber: [{ required: true, message: '请输入车牌号', trigger: 'blur' }],
+  carNumber: [{ validator: validatePlateNumber, trigger: 'blur' }],
   carType: [{ required: true, message: '请选择类型', trigger: 'change' }],
   carStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
+const provinceOptions = ['京', '津', '沪', '渝', '冀', '豫', '云', '辽', '黑', '湘', '皖', '鲁', '新', '苏', '浙', '赣', '鄂', '桂', '甘', '晋', '蒙', '陕', '吉', '闽', '贵', '粤', '青', '藏', '川', '宁', '琼']
+const plateBodyPattern = /^[A-Z][A-Z0-9]{4,6}$/
+const fullPlateNumber = computed(() => `${form.value.carProvince || ''}${form.value.carPlateBody || ''}`)
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function carTypeNameText(id) { return types.value.find(type => type.carTypeId === id)?.carTypeName || valueText(id) }
 function carStatusText(status) { return status === 0 ? '已入场' : status === 1 ? '已离场' : '未知' }
+function splitPlateNumber(value) {
+  const text = String(value || '').toUpperCase()
+  const province = provinceOptions.includes(text.charAt(0)) ? text.charAt(0) : ''
+  return { province, body: province ? text.slice(1) : text }
+}
+function handlePlateBodyInput(value) {
+  form.value.carPlateBody = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7)
+  form.value.carNumber = fullPlateNumber.value
+}
+function validatePlateNumber(rule, value, callback) {
+  const plate = fullPlateNumber.value
+  if (!form.value.carProvince || !form.value.carPlateBody) {
+    callback(new Error('请输入车牌号'))
+    return
+  }
+  if (!plateBodyPattern.test(form.value.carPlateBody)) {
+    callback(new Error('请输入正确的车牌号'))
+    return
+  }
+  form.value.carNumber = plate
+  callback()
+}
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getCarPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getCarTypes(); types.value = res.data }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', carType: undefined, carStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
-function getDefaultForm() { return { carCode: '', carNumber: null, ownerId: '', carType: undefined, carStatus: 1, assetId: '' } }
-function mapRowToForm(row) { return { id: row.id, carNumber: row.carNumber, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
-async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateCar(form.value); ElMessage.success('更新成功') } else { await addCar(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: '', carPlateBody: '', ownerId: '', carType: undefined, carStatus: 1, assetId: '' } }
+function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
+async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteCar(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(() => { fetchData(); fetchTypes() })
 </script>
@@ -152,4 +185,10 @@ onMounted(() => { fetchData(); fetchTypes() })
 .table-toolbar { margin-bottom: 12px; }
 .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+.plate-input { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; width: 100%; }
+.plate-province { width: 96px; }
+@media (max-width: 768px) {
+  .plate-input { grid-template-columns: 84px minmax(0, 1fr); }
+  .plate-province { width: 84px; }
+}
 </style>

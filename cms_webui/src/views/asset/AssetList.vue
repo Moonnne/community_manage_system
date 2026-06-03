@@ -98,27 +98,36 @@
             资产编号将由系统保存时自动生成。
           </el-alert>
           <el-row :gutter="14">
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24" v-if="isEdit">
               <el-form-item label="资产编号">
                 <el-input :model-value="isEdit ? form.assetCode : '保存时自动生成'" disabled />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="名称" prop="assetName">
                 <el-input v-model="form.assetName" />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="类型">
                 <el-input :model-value="assetTypeName" disabled />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
-              <el-form-item label="业主ID">
-                <el-input v-model.number="form.assetOwnerId" />
+            <el-col :xs="24" :sm="24">
+              <el-form-item label="业主">
+                <DualSelectV2
+                  v-model="form.assetOwnerId"
+                  :options="userOptions"
+                  remote
+                  :remote-method="handleUserRemoteSearch"
+                  placeholder="输入以搜索用户"
+                  primary-key="label"
+                  secondary-key="userName"
+                  @change="handleOwnerChange"
+                />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="状态" prop="assetStatus">
                 <el-select v-model="form.assetStatus" class="full-width">
                   <el-option label="正常" :value="0" />
@@ -128,17 +137,17 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="面积">
                 <el-input-number v-model="form.assetArea" :min="0" controls-position="right" class="full-width" />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24" v-if="isEdit">
               <el-form-item label="登记时间">
                 <el-input :model-value="form.assetRegTime || '保存时自动记录'" disabled />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="过期时间">
                 <el-date-picker v-model="form.assetDueTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="为空代表无过期时间" class="full-width" />
               </el-form-item>
@@ -148,29 +157,33 @@
 
         <template v-else-if="activeStep === 1">
           <el-row :gutter="14">
-            <el-col :xs="24" :sm="12">
+            <el-col :span="24">
+              <el-form-item label="名称">
+                <el-input v-model="form.assetName" :placeholder="generatedAssetName" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24">
               <el-form-item label="楼栋" prop="assetBuilding">
-                <el-select-v2
+                <DualSelectV2
                   v-model="form.assetBuilding"
                   :options="buildingOptions"
-                  filterable
-                  clearable
                   placeholder="请选择楼栋"
-                  class="full-width"
+                  primary-key="buildingCode"
+                  secondary-key="buildingName"
                   @change="handleBuildingChange"
                 />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12">
+            <el-col :xs="24" :sm="24">
               <el-form-item label="楼层" prop="assetFloor">
-                <el-input-number
-                  v-model="floorNumber"
-                  :min="selectedBuilding?.buildingMinFloor ?? -99"
-                  :max="selectedBuilding?.buildingMaxFloor ?? 99"
-                  controls-position="right"
+                <el-select
+                  v-model="form.assetFloor"
                   class="full-width"
+                  placeholder="请选择楼层"
                   :disabled="!form.assetBuilding"
-                />
+                >
+                  <el-option v-for="floor in floorOptions" :key="floor.value" :label="floor.label" :value="floor.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="24">
@@ -206,7 +219,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { addAsset, deleteAsset, getAssetPage, updateAsset } from '@/api/asset'
+import { getUserPage } from '@/api/user'
 import { getBuildingList } from '@/api/building'
 
 const props = defineProps({
@@ -221,21 +236,42 @@ const isEdit = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const buildings = ref([])
+const users = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, assetOwnerId: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined })
 const form = ref(getDefaultForm())
 
 const assetTypeName = computed(() => props.assetType === 1 ? '房产' : '停车位')
 const buildingOptions = computed(() => buildings.value.map(item => ({
   value: item.id,
-  label: `${item.buildingCode} ${item.buildingName}`,
+  label: item.buildingCode,
+  buildingCode: item.buildingCode,
+  buildingName: item.buildingName,
   ...item
 })))
 const selectedBuilding = computed(() => buildings.value.find(item => item.id === form.value.assetBuilding))
-const floorNumber = computed({
-  get: () => form.value.assetFloor === '' || form.value.assetFloor === null || form.value.assetFloor === undefined ? undefined : Number(form.value.assetFloor),
-  set: value => {
-    form.value.assetFloor = value === undefined || value === null ? '' : String(value)
+const userOptions = computed(() => {
+  const list = users.value.map(user => ({
+    value: user.id,
+    label: user.uid || String(user.id),
+    userName: user.userName || user.uid || String(user.id)
+  }))
+  return list.length ? list : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }]
+})
+const floorOptions = computed(() => {
+  if (!selectedBuilding.value) return []
+  const min = Number(selectedBuilding.value.buildingMinFloor ?? -2)
+  const max = Number(selectedBuilding.value.buildingMaxFloor ?? 30)
+  const floors = []
+  for (let floor = min; floor <= max; floor += 1) {
+    if (floor === 0) continue
+    floors.push({ value: String(floor), label: floor > 0 ? `F${floor}` : `B${Math.abs(floor)}` })
   }
+  return floors
+})
+const generatedAssetName = computed(() => {
+  const building = selectedBuilding.value?.buildingCode || ''
+  const floor = floorOptions.value.find(item => item.value === String(form.value.assetFloor))?.label || ''
+  return [form.value.assetName, building, floor, form.value.assetPosition].filter(Boolean).join('-')
 })
 const steps = [
   { title: '基础信息', fields: ['assetName', 'assetStatus'] },
@@ -283,6 +319,19 @@ async function fetchData(forceRefresh = false) {
 async function fetchBuildings() {
   const res = await getBuildingList()
   buildings.value = res.data || []
+}
+
+async function fetchUsers(keyword = '') {
+  const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true })
+  users.value = res.data?.records || []
+}
+
+function handleUserRemoteSearch(keyword) {
+  fetchUsers(keyword)
+}
+
+function handleOwnerChange(value) {
+  form.value.assetOwnerId = value
 }
 
 function search() {
@@ -389,6 +438,7 @@ function assetStatusType(status) {
 
 onMounted(() => {
   fetchBuildings()
+  fetchUsers()
   fetchData()
 })
 </script>

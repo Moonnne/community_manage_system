@@ -21,6 +21,7 @@
     </el-card>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd"><el-icon><Plus /></el-icon> 新增记录</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">

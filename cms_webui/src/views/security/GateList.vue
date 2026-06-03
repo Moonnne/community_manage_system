@@ -3,6 +3,7 @@
     <div class="page-header"><h2 class="page-title">门岗管理</h2></div>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd" v-if="canEdit"><el-icon><Plus /></el-icon> 新增门岗</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">

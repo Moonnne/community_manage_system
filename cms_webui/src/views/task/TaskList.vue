@@ -27,6 +27,7 @@
     </el-card>
     <div class="table-toolbar">
       <el-button type="primary" @click="openAdd" v-if="userStore.canOperate"><el-icon><Plus /></el-icon> 提交工单</el-button>
+      <el-button @click="fetchData(true)">刷新</el-button>
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
@@ -97,7 +98,6 @@
             <el-option label="已取消" :value="4" />
           </el-select>
         </el-form-item>
-        <el-form-item label="处理人ID"><el-input v-model.number="processForm.operatorId" /></el-form-item>
         <el-form-item label="回复"><el-input v-model="processForm.remark" type="textarea" :rows="2" /></el-form-item>
       </el-form>
       <template #footer>
@@ -187,10 +187,10 @@ function taskTypeNameText(id) { return types.value.find(type => type.taskTypeId 
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
 function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskInfo: '', taskRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
-function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: row.taskOperatorId || '', remark: row.taskRemark || '' }; processVisible.value = true }
+function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: userStore.userInfo?.id, remark: row.taskRemark || '' }; processVisible.value = true }
 
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
-async function handleProcess() { processLoading.value = true; try { await processTask(processForm.value); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
+async function handleProcess() { processLoading.value = true; try { await processTask({ ...processForm.value, operatorId: userStore.userInfo?.id }); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
 async function handleDelete(row) { await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
 onMounted(async () => {
   fetchData()
