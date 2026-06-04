@@ -39,6 +39,7 @@ public interface UserMapper {
                           @Param("userName") String userName,
                           @Param("userPhone") String userPhone,
                           @Param("userEmail") String userEmail,
+                          @Param("contact") String contact,
                           @Param("userRole") Integer userRole,
                           @Param("userStatus") Integer userStatus);
 }

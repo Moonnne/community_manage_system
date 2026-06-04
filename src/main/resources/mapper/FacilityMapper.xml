@@ -44,6 +44,9 @@
             <if test="facilityName != null and facilityName != ''">
                 AND f.facility_name LIKE CONCAT('%', #{facilityName}, '%')
             </if>
+            <if test="facilityBuilding != null">
+                AND f.facility_building = #{facilityBuilding}
+            </if>
         </where>
         ORDER BY f.id ASC
     </select>

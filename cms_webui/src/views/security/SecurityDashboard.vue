@@ -49,53 +49,65 @@
       </el-card>
     </div>
     <div class="quick-grid">
-      <el-card shadow="never" class="panel-card">
+      <el-card shadow="never" class="panel-card quick-card">
         <template #header><strong>快速变更访客状态</strong></template>
-        <el-select v-model="visitorForm.id" filterable placeholder="选择访客" class="full-width">
-          <el-option
-            v-for="item in visitorOptions"
-            :key="item.id"
-            :label="`${formatValue(item.visitorName)} / ${formatValue(item.visitorCode)}`"
-            :value="item.id"
+        <div class="quick-card-content">
+          <DualSelectV2
+            v-model="visitorForm.id"
+            :options="visibleVisitorOptions"
+            :filters="visitorFilters"
+            remote
+            :remote-method="handleVisitorSearch"
+            primary-key="visitorName"
+            secondary-key="visitorCode"
+            placeholder="按访客姓名或编号搜索"
+            @filter-change="handleVisitorFilterChange"
           />
-        </el-select>
-        <el-select v-model="visitorForm.status" placeholder="访客状态" class="quick-input">
-          <el-option label="已结束" value="0" />
-          <el-option label="待批准" value="1" />
-          <el-option label="访问中" value="2" />
-          <el-option label="已驳回" value="3" />
-        </el-select>
-        <el-button type="primary" :disabled="!visitorForm.id || !visitorForm.status" @click="updateVisitorStatus">保存状态</el-button>
+          <div v-if="visitorActions.length" class="quick-actions" :style="visitorActionStyle">
+            <el-button
+              v-for="action in visitorActions"
+              :key="action.status"
+              :type="action.type"
+              :plain="action.plain"
+              @click="changeVisitorStatus(action.status)"
+            >
+              {{ action.label }}
+            </el-button>
+          </div>
+        </div>
       </el-card>
 
-      <el-card shadow="never" class="panel-card">
+      <el-card shadow="never" class="panel-card quick-card">
         <template #header><strong>快速变更车辆状态</strong></template>
-        <el-select
-          v-model="carForm.id"
-          filterable
-          placeholder="按车牌号搜索车辆"
-          class="full-width"
-          :filter-method="handleCarFilter"
-        >
-          <el-option
-            v-for="item in filteredCarOptions"
-            :key="item.id"
-            :label="`${formatValue(item.carNumber)} / ${formatValue(item.carCode)}`"
-            :value="item.id"
+        <div class="quick-card-content">
+          <DualSelectV2
+            v-model="carForm.id"
+            :options="visibleCarOptions"
+            :filters="carFilters"
+            remote
+            :remote-method="handleCarSearch"
+            primary-key="carNumber"
+            secondary-key="carCode"
+            placeholder="按车牌号、业主或车辆编号搜索"
+            @filter-change="handleCarFilterChange"
           />
-        </el-select>
-        <el-select v-model="carForm.status" placeholder="车辆状态" class="quick-input">
-          <el-option label="已入场" :value="0" />
-          <el-option label="已离场" :value="1" />
-        </el-select>
-        <el-button type="primary" :disabled="!carForm.id || carForm.status === ''" @click="updateCarStatus">保存状态</el-button>
+          <el-select v-model="carForm.gateId" placeholder="选择门岗" class="quick-input full-width" clearable>
+            <el-option v-for="gate in gateOptions" :key="gate.id" :label="`${gate.gateName}`" :value="gate.id" />
+          </el-select>
+          <div v-if="selectedCar" class="quick-actions" :style="carActionStyle">
+            <el-button type="primary" :disabled="!carForm.gateId" @click="toggleCarStatus">
+              {{ selectedCar.carStatus === 0 ? '车辆离场' : '车辆入场' }}
+            </el-button>
+          </div>
+        </div>
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useTransition } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -103,8 +115,10 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { getSecurityDashboard } from '@/api/dashboard'
-import { getVisitorPage, updateVisitor } from '@/api/visitor'
-import { getCarPage, updateCar } from '@/api/car'
+import { getVisitorPage, getVisitorTypes, updateVisitor } from '@/api/visitor'
+import { addCarHistory, getCarPage, getCarTypes } from '@/api/car'
+import { getGateList } from '@/api/gate'
+import DualSelectV2 from '@/components/DualSelectV2.vue'
 
 use([CanvasRenderer, LineChart, GridComponent, LegendComponent, TooltipComponent])
 
@@ -119,13 +133,72 @@ const rangeOptions = [
 const summary = ref({ flow: [] })
 const visitorOptions = ref([])
 const carOptions = ref([])
+const visitorTypeOptions = ref([])
+const carTypeOptions = ref([])
+const gateOptions = ref([])
+const visitorKeyword = ref('')
 const carKeyword = ref('')
-const visitorForm = ref({ id: '', status: '' })
-const carForm = ref({ id: '', status: '' })
-const filteredCarOptions = computed(() => {
+const visitorFilterValues = ref({ visitorType: undefined, visitorStatus: undefined })
+const carFilterValues = ref({ carType: undefined, carStatus: undefined })
+const visitorForm = ref({ id: '' })
+const carForm = ref({ id: '', gateId: '' })
+const selectedVisitor = computed(() => visitorOptions.value.find(item => item.id === visitorForm.value.id))
+const selectedCar = computed(() => carOptions.value.find(item => item.id === carForm.value.id))
+const visitorActions = computed(() => {
+  if (selectedVisitor.value?.visitorStatus === '1') {
+    return [
+      { label: '批准', status: '2', type: 'primary' },
+      { label: '驳回', status: '3', type: 'danger', plain: true }
+    ]
+  }
+  if (selectedVisitor.value?.visitorStatus === '2') {
+    return [{ label: '结束访问', status: '0', type: 'warning' }]
+  }
+  return []
+})
+const visitorActionSource = ref(0)
+const carActionSource = ref(0)
+const visitorActionProgress = useTransition(visitorActionSource, { duration: 240 })
+const carActionProgress = useTransition(carActionSource, { duration: 240 })
+const visitorActionStyle = computed(() => actionTransitionStyle(visitorActionProgress.value))
+const carActionStyle = computed(() => actionTransitionStyle(carActionProgress.value))
+const visitorFilters = computed(() => [
+  { key: 'visitorType', placeholder: '访客分类', options: visitorTypeOptions.value.map(item => ({ label: item.visitorTypeName, value: item.visitorTypeId })) },
+  { key: 'visitorStatus', placeholder: '访客状态', options: [
+    { label: '已结束', value: '0' },
+    { label: '待批准', value: '1' },
+    { label: '访问中', value: '2' },
+    { label: '已驳回', value: '3' }
+  ] }
+])
+const carFilters = computed(() => [
+  { key: 'carType', placeholder: '车辆类型', options: carTypeOptions.value.map(item => ({ label: item.carTypeName, value: item.carTypeId })) },
+  { key: 'carStatus', placeholder: '车辆状态', options: [
+    { label: '已入场', value: 0 },
+    { label: '已离场', value: 1 }
+  ] }
+])
+const visibleVisitorOptions = computed(() => {
+  const keyword = visitorKeyword.value.trim().toLowerCase()
+  const filtered = visitorOptions.value.filter(item => (
+    (!keyword || [item.visitorName, item.visitorCode].some(value => String(value || '').toLowerCase().includes(keyword)))
+    && (visitorFilterValues.value.visitorType === undefined || item.visitorType === visitorFilterValues.value.visitorType)
+    && (visitorFilterValues.value.visitorStatus === undefined || item.visitorStatus === visitorFilterValues.value.visitorStatus)
+  ))
+  return filtered.length
+    ? filtered.map(item => ({ ...item, value: item.id, label: item.visitorName }))
+    : [{ value: '__empty_visitors__', label: '暂无匹配访客', disabled: true, empty: true }]
+})
+const visibleCarOptions = computed(() => {
   const keyword = carKeyword.value.trim().toLowerCase()
-  if (!keyword) return carOptions.value
-  return carOptions.value.filter(item => String(item.carNumber || '').toLowerCase().includes(keyword))
+  const filtered = carOptions.value.filter(item => (
+    (!keyword || [item.carNumber, item.ownerName, item.carCode].some(value => String(value || '').toLowerCase().includes(keyword)))
+    && (carFilterValues.value.carType === undefined || item.carType === carFilterValues.value.carType)
+    && (carFilterValues.value.carStatus === undefined || item.carStatus === carFilterValues.value.carStatus)
+  ))
+  return filtered.length
+    ? filtered.map(item => ({ ...item, value: item.id, label: item.carNumber }))
+    : [{ value: '__empty_cars__', label: '暂无匹配车辆', disabled: true, empty: true }]
 })
 
 function createFlowOption(name, color, data) {
@@ -159,34 +232,73 @@ function formatValue(value) {
   return value === null || value === undefined || value === '' ? '-' : value
 }
 
-function handleCarFilter(keyword) {
+function actionTransitionStyle(progress) {
+  return {
+    opacity: progress,
+    transform: `translateY(${Math.round((1 - progress) * 8)}px)`
+  }
+}
+
+async function restartActionTransition(source, visible) {
+  source.value = 0
+  await nextTick()
+  source.value = visible ? 1 : 0
+}
+
+function handleVisitorSearch(keyword) {
+  visitorKeyword.value = keyword || ''
+}
+
+function handleVisitorFilterChange(filters) {
+  visitorFilterValues.value = filters
+}
+
+function handleCarSearch(keyword) {
   carKeyword.value = keyword || ''
 }
 
+function handleCarFilterChange(filters) {
+  carFilterValues.value = filters
+}
+
 async function fetchData(forceRefresh = false) {
-  const [dashboardRes, visitorRes, carRes] = await Promise.all([
+  const [dashboardRes, visitorRes, carRes, visitorTypeRes, carTypeRes, gateRes] = await Promise.all([
     getSecurityDashboard({ range: range.value }, { forceRefresh }),
     getVisitorPage({ pageNum: 1, pageSize: 100 }, { forceRefresh }),
-    getCarPage({ pageNum: 1, pageSize: 100 }, { forceRefresh })
+    getCarPage({ pageNum: 1, pageSize: 100 }, { forceRefresh }),
+    getVisitorTypes({ forceRefresh }),
+    getCarTypes({ forceRefresh }),
+    getGateList({ forceRefresh })
   ])
   summary.value = dashboardRes.data || { flow: [] }
   visitorOptions.value = visitorRes.data?.records || []
   carOptions.value = carRes.data?.records || []
+  visitorTypeOptions.value = visitorTypeRes.data || []
+  carTypeOptions.value = carTypeRes.data || []
+  gateOptions.value = gateRes.data || []
 }
 
-async function updateVisitorStatus() {
-  await updateVisitor({ id: visitorForm.value.id, visitorStatus: visitorForm.value.status })
+async function changeVisitorStatus(status) {
+  await updateVisitor({ id: visitorForm.value.id, visitorStatus: status })
   ElMessage.success('访客状态已更新')
-  visitorForm.value = { id: '', status: '' }
+  visitorForm.value = { id: '' }
   fetchData(true)
 }
 
-async function updateCarStatus() {
-  await updateCar({ id: carForm.value.id, carStatus: carForm.value.status })
+async function toggleCarStatus() {
+  const historyType = selectedCar.value?.carStatus === 0 ? 1 : 0
+  await addCarHistory({ carId: carForm.value.id, gateId: carForm.value.gateId, carHistoryType: historyType })
   ElMessage.success('车辆状态已更新')
-  carForm.value = { id: '', status: '' }
+  carForm.value = { id: '', gateId: '' }
   fetchData(true)
 }
+
+watch(() => [visitorForm.value.id, selectedVisitor.value?.visitorStatus], () => {
+  restartActionTransition(visitorActionSource, visitorActions.value.length > 0)
+})
+watch(() => [carForm.value.id, selectedCar.value?.carStatus], () => {
+  restartActionTransition(carActionSource, !!selectedCar.value)
+})
 
 onMounted(() => fetchData())
 </script>
@@ -221,7 +333,9 @@ onMounted(() => fetchData())
 .chart-toolbar :deep(.el-segmented__item.is-selected) { color: #fff; }
 .chart-toolbar :deep(.el-segmented__item-label) { line-height: 34px; }
 .stat-grid, .quick-grid, .flow-chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+.quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 16px; }
+.quick-grid > .quick-card { margin-top: 16px; }
+.quick-card-content { display: grid; grid-template-rows: auto auto auto; align-content: start; }
 .flow-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .stat-card, .panel-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .stat-card :deep(.el-card__body) { min-height: 118px; }
@@ -235,6 +349,8 @@ onMounted(() => fetchData())
 .flow-chart { width: 100%; height: 340px; }
 .full-width { width: 100%; }
 .quick-input { margin: 12px 0; }
+.quick-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; min-height: 32px; will-change: opacity, transform; }
+.quick-empty { color: var(--vp-c-text-3); font-size: 13px; }
 @media (max-width: 768px) {
   .page-header, .panel-header, .chart-toolbar { align-items: flex-start; flex-direction: column; }
   .chart-toolbar :deep(.el-segmented) { min-width: 0; width: 100%; }

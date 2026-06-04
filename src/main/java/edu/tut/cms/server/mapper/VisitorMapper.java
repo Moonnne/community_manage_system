@@ -4,6 +4,7 @@ import edu.tut.cms.pojo.entity.Visitor;
 import edu.tut.cms.pojo.vo.VisitorVO;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -22,7 +23,11 @@ public interface VisitorMapper {
     Visitor selectById(Long id);
 
     List<VisitorVO> selectPage(@Param("ownerId") Long ownerId,
+                               @Param("ownerUid") String ownerUid,
+                               @Param("assetId") Long assetId,
                                @Param("visitorType") Integer visitorType,
                                @Param("visitorStatus") String visitorStatus,
-                               @Param("visitorName") String visitorName);
+                               @Param("visitorName") String visitorName,
+                               @Param("rangeStart") LocalDateTime rangeStart,
+                               @Param("rangeEnd") LocalDateTime rangeEnd);
 }

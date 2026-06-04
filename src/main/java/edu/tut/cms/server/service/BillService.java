@@ -8,6 +8,7 @@ import edu.tut.cms.pojo.vo.BillTypeVO;
 import edu.tut.cms.pojo.vo.BillVO;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 public interface BillService {
 
@@ -64,7 +65,9 @@ public interface BillService {
      * @return 分页结果
      */
     PageResult<BillVO> pageBills(Integer pageNum, Integer pageSize,
-                                 Long ownerId, Integer billStatus, String billCode);
+                                 Long ownerId, Integer billStatus, String billCode,
+                                 String ownerUid, String createrUid,
+                                 LocalDateTime rangeStart, LocalDateTime rangeEnd);
 
     BillSummaryVO getMyBillSummary();
 

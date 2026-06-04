@@ -50,9 +50,11 @@ public class CarController {
     public Result<PageResult<CarVO>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                           @RequestParam(defaultValue = "10") Integer pageSize,
                                           @RequestParam(required = false) Long ownerId,
+                                          @RequestParam(required = false) String ownerUid,
+                                          @RequestParam(required = false) String carNumber,
                                           @RequestParam(required = false) Integer carType,
                                           @RequestParam(required = false) Integer carStatus) {
-        return Result.success(carService.pageCars(pageNum, pageSize, ownerId, carType, carStatus));
+        return Result.success(carService.pageCars(pageNum, pageSize, ownerId, ownerUid, carNumber, carType, carStatus));
     }
 
     @GetMapping("/types")

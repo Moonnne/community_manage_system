@@ -44,11 +44,11 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-        <el-form-item label="角色名称" prop="roleName">
-          <el-input v-model="form.roleName" />
+        <el-form-item label="角色组名" prop="roleName">
+          <el-input v-model="form.roleName" placeholder="请输入角色组名" />
         </el-form-item>
         <el-form-item label="权限等级" prop="rolePromission">
-          <el-select v-model="form.rolePromission" placeholder="请选择">
+          <el-select v-model="form.rolePromission" placeholder="请选择该角色组权限等级">
             <el-option label="只读权限" value="0" />
             <el-option label="操作权限" value="1" />
             <el-option label="管理权限" value="2" />
@@ -76,18 +76,18 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
-const form = ref({ roleName: '', rolePromission: '1' })
+const form = ref({ roleName: '', rolePromission: undefined })
 const wizardSteps = [
   { title: '基础信息', fields: ['roleName', 'rolePromission'] },
   { title: '确认信息', fields: [] }
 ]
 const confirmRows = computed(() => [
-  { label: '角色名称', value: valueText(form.value.roleName) },
+  { label: '角色组名', value: valueText(form.value.roleName) },
   { label: '权限等级', type: 'tag', tagType: permissionTagType(form.value.rolePromission), value: permissionText(form.value.rolePromission) }
 ])
 const formRules = {
-  roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-  rolePromission: [{ required: true, message: '请选择权限等级', trigger: 'change' }]
+  roleName: [{ required: true, message: '请输入角色组名', trigger: 'blur' }],
+  rolePromission: [{ required: true, message: '请选择角色组权限等级', trigger: 'change' }]
 }
 
 function valueText(value) {
@@ -106,7 +106,7 @@ async function fetchData(forceRefresh = false) {
 
 
 function openAdd() {
-  form.value = { roleName: '', rolePromission: '1' }
+  form.value = { roleName: '', rolePromission: undefined }
   dialogVisible.value = true
 }
 

@@ -7,7 +7,7 @@
     <div class="dashboard-summary">
       <el-card shadow="never" class="amount-summary-card">
         <p class="amount-kicker">待付款金额</p>
-        <div class="amount-value">￥{{ formatMoney(summary.unpaidAmount) }}</div>
+        <div class="amount-value">￥{{ formatMoney(animatedUnpaidAmount) }}</div>
         <p class="amount-desc">当前账户仍需处理的账单金额</p>
       </el-card>
     </div>
@@ -60,13 +60,34 @@
 
       <template v-if="currentBill">
         <el-descriptions :column="2" class="bill-detail-desc">
-          <el-descriptions-item label="业主">{{ formatValue(currentBill.ownerName) }}</el-descriptions-item>
-          <el-descriptions-item label="资产">{{ formatValue(currentBill.assetName) }}</el-descriptions-item>
-          <el-descriptions-item label="总金额">￥{{ formatMoney(currentBill.billTotal) }}</el-descriptions-item>
-          <el-descriptions-item label="已支付">￥{{ formatMoney(currentBill.billPaid) }}</el-descriptions-item>
-          <el-descriptions-item label="待付款">￥{{ amountDue(currentBill) }}</el-descriptions-item>
-          <el-descriptions-item label="截止时间">{{ formatValue(currentBill.billEndTime) }}</el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">{{ formatValue(currentBill.billRemark) }}</el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">业主</span></template>
+            <span class="detail-desc-value">{{ formatValue(currentBill.ownerName) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">资产</span></template>
+            <span class="detail-desc-value">{{ formatValue(currentBill.assetName) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">总金额</span></template>
+            <span class="detail-desc-value">￥{{ formatMoney(currentBill.billTotal) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">已支付</span></template>
+            <span class="detail-desc-value">￥{{ formatMoney(currentBill.billPaid) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">待付款</span></template>
+            <span class="detail-desc-value">￥{{ amountDue(currentBill) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label><span class="detail-desc-label">截止时间</span></template>
+            <span class="detail-desc-value">{{ formatValue(currentBill.billEndTime) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :span="2">
+            <template #label><span class="detail-desc-label">备注</span></template>
+            <span class="detail-desc-value">{{ formatValue(currentBill.billRemark) }}</span>
+          </el-descriptions-item>
         </el-descriptions>
 
         <el-table :data="details" stripe v-loading="detailLoading" class="bill-detail-table">
@@ -130,9 +151,10 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+import { useTransition } from '@vueuse/core'
 import { useUserStore } from '@/stores/user'
 import { getBill, getBillDetails, getBillPage, getMyBillSummary, payBill, payBillDetail } from '@/api/bill'
 
@@ -153,9 +175,11 @@ const summary = ref({
 const detailVisible = ref(false)
 const details = ref([])
 const currentBill = ref(null)
+const animatedUnpaidAmount = ref(0)
 const now = ref(Date.now())
 const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
 let timer = null
+let stopAmountTransition = null
 
 const completedStatuses = new Set([0, 4, 5])
 const displayLimit = computed(() => (viewportWidth.value <= 768 ? 3 : 6))
@@ -336,7 +360,15 @@ function updateViewportWidth() {
   viewportWidth.value = window.innerWidth
 }
 
+function initializeAmountTransition() {
+  const transitioned = useTransition(computed(() => Number(summary.value.unpaidAmount || 0)), { duration: 800 })
+  stopAmountTransition = watch(transitioned, value => {
+    animatedUnpaidAmount.value = Number(value || 0)
+  }, { immediate: true })
+}
+
 onMounted(() => {
+  initializeAmountTransition()
   fetchData()
   timer = window.setInterval(() => {
     now.value = Date.now()
@@ -346,6 +378,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (timer) window.clearInterval(timer)
+  if (stopAmountTransition) stopAmountTransition()
   window.removeEventListener('resize', updateViewportWidth)
 })
 </script>
@@ -409,6 +442,8 @@ onUnmounted(() => {
 .detail-card-header p { margin: 0 0 4px; color: var(--vp-c-brand-1); font-size: 13px; font-weight: 700; }
 .detail-card-header h3 { margin: 0; color: var(--vp-c-text-1); font-size: 24px; }
 .bill-detail-desc { margin-bottom: 18px; }
+.detail-desc-label { color: var(--vp-c-text-2); font-weight: 500; }
+.detail-desc-value { color: var(--vp-c-text-1); }
 .bill-detail-table { margin-top: 12px; }
 .remark-tooltip-trigger { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; white-space: nowrap; }
 .detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--vp-c-divider); }

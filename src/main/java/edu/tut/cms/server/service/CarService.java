@@ -42,7 +42,8 @@ public interface CarService {
      * @return 分页结果
      */
     PageResult<CarVO> pageCars(Integer pageNum, Integer pageSize,
-                               Long ownerId, Integer carType, Integer carStatus);
+                               Long ownerId, String ownerUid, String carNumber,
+                               Integer carType, Integer carStatus);
 
     /**
      * 获取所有车辆类型

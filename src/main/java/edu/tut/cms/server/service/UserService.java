@@ -83,7 +83,7 @@ public interface UserService {
      * @return 分页结果
      */
     PageResult<UserVO> pageUsers(Integer pageNum, Integer pageSize,
-                                 String uid, String userName, String userPhone, String userEmail,
+                                 String uid, String userName, String userPhone, String userEmail, String contact,
                                  Integer userRole, Integer userStatus);
 
     /**

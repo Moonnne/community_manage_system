@@ -38,7 +38,7 @@
 
     <el-card shadow="never" class="table-card">
       <el-table v-loading="loading" :data="tableData" row-key="id">
-        <el-table-column prop="buildingCode" label="建筑编号" width="140" />
+        <el-table-column prop="buildingCode" label="建筑编号" width="140" sortable/>
         <el-table-column prop="buildingName" label="建筑名称" min-width="160" show-overflow-tooltip />
         <el-table-column prop="buildingMinFloor" label="最低楼层" width="110" />
         <el-table-column prop="buildingMaxFloor" label="最高楼层" width="110" />

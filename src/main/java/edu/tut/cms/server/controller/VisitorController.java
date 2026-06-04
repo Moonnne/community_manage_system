@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -48,10 +49,15 @@ public class VisitorController {
     public Result<PageResult<VisitorVO>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                               @RequestParam(defaultValue = "10") Integer pageSize,
                                               @RequestParam(required = false) Long ownerId,
+                                              @RequestParam(required = false) String ownerUid,
+                                              @RequestParam(required = false) Long assetId,
                                               @RequestParam(required = false) Integer visitorType,
                                               @RequestParam(required = false) String visitorStatus,
-                                              @RequestParam(required = false) String visitorName) {
-        return Result.success(visitorService.pageVisitors(pageNum, pageSize, ownerId, visitorType, visitorStatus, visitorName));
+                                              @RequestParam(required = false) String visitorName,
+                                              @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime rangeStart,
+                                              @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime rangeEnd) {
+        return Result.success(visitorService.pageVisitors(pageNum, pageSize, ownerId, ownerUid, assetId,
+                visitorType, visitorStatus, visitorName, rangeStart, rangeEnd));
     }
 
     @GetMapping("/types")

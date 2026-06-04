@@ -131,9 +131,10 @@ public class UserController {
                                            @RequestParam(required = false) String userName,
                                            @RequestParam(required = false) String userPhone,
                                            @RequestParam(required = false) String userEmail,
+                                           @RequestParam(required = false) String contact,
                                            @RequestParam(required = false) Integer userRole,
                                            @RequestParam(required = false) Integer userStatus) {
-        return Result.success(userService.pageUsers(pageNum, pageSize, uid, userName, userPhone, userEmail,
+        return Result.success(userService.pageUsers(pageNum, pageSize, uid, userName, userPhone, userEmail, contact,
                 userRole, userStatus));
     }
 

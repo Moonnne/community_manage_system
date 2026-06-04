@@ -44,7 +44,7 @@ public interface FacilityService {
      */
     PageResult<FacilityVO> pageFacilities(Integer pageNum, Integer pageSize,
                                           Integer facilityType, Integer facilityStatus,
-                                          String facilityName);
+                                          String facilityName, Long facilityBuilding);
 
     /**
      * 获取即将到期的设施列表

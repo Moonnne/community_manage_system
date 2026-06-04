@@ -96,7 +96,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public PageResult<AssetVO> pageAssets(Integer pageNum, Integer pageSize,
-                                          Long assetOwnerId, Integer assetType,
+                                          Long assetOwnerId, String ownerUid, Integer assetType,
                                           Integer assetStatus, Long assetBuilding) {
         CurrentUser currentUser = UserContext.getCurrentUser();
         if (currentUser.getUserRole() != null && currentUser.getUserRole() >= 4) {
@@ -104,7 +104,7 @@ public class AssetServiceImpl implements AssetService {
         }
 
         PageHelper.startPage(pageNum, pageSize);
-        List<AssetVO> list = assetMapper.selectPage(assetOwnerId, assetType, assetStatus, assetBuilding);
+        List<AssetVO> list = assetMapper.selectPage(assetOwnerId, ownerUid, assetType, assetStatus, assetBuilding);
         PageInfo<AssetVO> pageInfo = new PageInfo<>(list);
 
         PageResult<AssetVO> result = new PageResult<>();

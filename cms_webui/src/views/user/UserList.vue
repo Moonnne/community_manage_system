@@ -14,7 +14,7 @@
           <el-input v-model="query.userName" placeholder="用户名" clearable />
         </el-col>
         <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
-          <el-input v-model="query.userPhone" placeholder="电话" maxlength="11" clearable @input="handleQueryPhoneInput" />
+          <el-input v-model="query.contact" placeholder="电话 / 邮箱" maxlength="64" clearable />
         </el-col>
         <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-select v-model="query.userRole" placeholder="角色" clearable>
@@ -184,12 +184,12 @@
           <el-form-item label="邮箱" prop="userEmail">
             <el-input v-model="form.userEmail" maxlength="64" placeholder="请输入邮箱地址" clearable />
           </el-form-item>
-          <el-form-item label="年龄">
+          <el-form-item label="出生日期">
             <el-date-picker
               v-model="form.userBirthday"
               type="date"
               value-format="YYYY-MM-DD"
-              placeholder="请选择生日"
+              placeholder="请选择出生日期"
             />
           </el-form-item>
         </section>
@@ -257,7 +257,7 @@ const query = ref({
   pageSize: 10,
   uid: '',
   userName: '',
-  userPhone: '',
+  contact: '',
   userRole: undefined,
   userStatus: undefined
 })
@@ -323,10 +323,6 @@ const formRules = {
   userStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
-function handleQueryPhoneInput(value) {
-  query.value.userPhone = sanitizePhone(value)
-}
-
 function handleFormPhoneInput(value) {
   form.value.userPhone = sanitizePhone(value)
 }
@@ -350,7 +346,7 @@ async function fetchRoles() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, uid: '', userName: '', userPhone: '', userRole: undefined, userStatus: undefined }
+  query.value = { pageNum: 1, pageSize: 10, uid: '', userName: '', contact: '', userRole: undefined, userStatus: undefined }
   fetchData(true)
 }
 

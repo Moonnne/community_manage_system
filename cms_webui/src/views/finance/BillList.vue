@@ -6,18 +6,33 @@
 
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :xs="24" :sm="12" :md="8" :lg="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <el-input v-model="query.billCode" placeholder="账单编号" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="5">
-          <el-input v-model="query.ownerId" placeholder="业主ID" clearable />
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-input v-model="query.ownerUid" placeholder="账单所有人" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-input v-model="query.createrUid" placeholder="账单创建人" clearable />
+        </el-col>
+      </el-row>
+      <el-row :gutter="16" class="search-second-row">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <el-select v-model="query.billStatus" placeholder="账单状态" clearable>
             <el-option v-for="item in billStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="24" :md="8" :lg="6">
+        <el-col :xs="24" :sm="24" :md="16" :lg="12">
+          <el-date-picker
+            v-model="query.timeRange"
+            type="datetimerange"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            start-placeholder="起始时间区间"
+            end-placeholder="截止时间区间"
+            class="full-width"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="24" :md="24" :lg="6" class="search-actions">
           <el-button type="primary" @click="fetchData(true)"><el-icon><Search /></el-icon>搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon>重置</el-button>
         </el-col>
@@ -44,9 +59,9 @@
       >
         <el-table-column type="selection" width="48" fixed="left" />
         <el-table-column prop="billCode" label="账单编号" width="200" sortable show-overflow-tooltip />
-        <el-table-column prop="ownerName" label="业主" width="140" show-overflow-tooltip />
+        <el-table-column prop="ownerName" label="账单所有人" width="140" show-overflow-tooltip />
         <el-table-column prop="createrName" label="创建人" width="140" show-overflow-tooltip />
-        <el-table-column prop="assetName" label="资产" width="200" show-overflow-tooltip />
+        <el-table-column prop="assetName" label="归属资产" width="200" show-overflow-tooltip />
         <el-table-column label="总金额" width="120" sortable show-overflow-tooltip>
           <template #default="{ row }">￥{{ formatMoney(row.billTotal) }}</template>
         </el-table-column>
@@ -56,7 +71,7 @@
         <el-table-column label="待付款" width="120" show-overflow-tooltip>
           <template #default="{ row }">￥{{ amountDue(row) }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="110" sortable>
+        <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <el-tag :type="billStatusType(row.billStatus)" effect="plain">{{ billStatusText(row.billStatus) }}</el-tag>
           </template>
@@ -354,13 +369,13 @@ const detailKeyword = ref('')
 const activeDetailPanels = ref([])
 const details = ref([])
 
-const query = ref({ pageNum: 1, pageSize: 10, billCode: '', ownerId: '', billStatus: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, billCode: '', ownerUid: '', createrUid: '', billStatus: undefined, timeRange: [] })
 const userFilters = ref({ uid: '', userRole: undefined, userStatus: undefined })
 const assetFilters = ref({ keyword: '', assetType: undefined, assetStatus: undefined })
 const form = ref(getDefaultForm())
 const wizardSteps = [
   { title: '账单信息', fields: ['ownerIds', 'assetIds', 'billStartTime', 'billEndTime'] },
-  { title: '账单款项', fields: [] },
+  { title: '账单款项', fields: [], validate: validateDetails },
   { title: '确认信息', fields: [] }
 ]
 const formRules = {
@@ -414,7 +429,7 @@ const confirmRows = computed(() => [
   { label: '截止时间', value: formatValue(form.value.billEndTime) },
   { label: '备注', value: formatValue(form.value.billRemark) },
   { label: '总金额', value: `￥${formatMoney(totalAmount.value)}` },
-  { label: '默认状态', type: 'tag', tagType: 'warning', value: '未支付/未完成' }
+  { label: '默认状态', type: 'tag', tagType: 'warning', value: '未完成' }
 ])
 const selectedUserNames = computed(() => userOptions.value
   .filter(item => normalizedOwnerIds.value.includes(item.id))
@@ -475,7 +490,13 @@ function getDefaultForm() {
 async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const res = await getBillPage(cleanParams(query.value), { forceRefresh: !!forceRefresh })
+    const params = cleanParams({ ...query.value })
+    if (query.value.timeRange?.length === 2) {
+      params.rangeStart = query.value.timeRange[0]
+      params.rangeEnd = query.value.timeRange[1]
+    }
+    delete params.timeRange
+    const res = await getBillPage(params, { forceRefresh: !!forceRefresh })
     tableData.value = res.data.records || []
     total.value = res.data.total || 0
   } finally {
@@ -484,7 +505,7 @@ async function fetchData(forceRefresh = false) {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, billCode: '', ownerId: '', billStatus: undefined }
+  query.value = { pageNum: 1, pageSize: 10, billCode: '', ownerUid: '', createrUid: '', billStatus: undefined, timeRange: [] }
   fetchData(true)
 }
 
@@ -639,7 +660,13 @@ function validateDetails() {
     ElMessage.warning('请至少添加一个账单款项')
     return false
   }
-  const invalid = details.value.some(item => !item.billDetailName || !item.billDetailType || !item.billDetailQuantity || Number(item.billDetailUnitPrice) < 0)
+  const invalid = details.value.some(item => (
+    !String(item.billDetailName || '').trim()
+    || item.billDetailType === undefined
+    || item.billDetailType === null
+    || Number(item.billDetailQuantity) <= 0
+    || Number(item.billDetailUnitPrice) <= 0
+  ))
   if (invalid) {
     ElMessage.warning('请完善账单款项信息')
     return false
@@ -739,6 +766,9 @@ onMounted(async () => {
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .page-title { margin: 0; color: var(--vp-c-text-1); font-size: 22px; font-weight: 800; }
 .search-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.search-card :deep(.el-date-editor--datetimerange) { width: 100%; max-width: none; }
+.search-second-row { margin-top: 12px; }
+.search-actions { display: flex; justify-content: flex-end; }
 .bill-toolbar { justify-content: space-between; }
 .full-width { width: 100%; }
 .form-tip { margin-bottom: 16px; }
@@ -759,6 +789,8 @@ onMounted(async () => {
 .bill-detail-table { margin-top: 12px; }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 768px) {
+  .search-actions { justify-content: stretch; }
+  .search-actions .el-button { flex: 1; }
   .bill-toolbar, .detail-toolbar { justify-content: flex-start; grid-template-columns: 1fr; }
   .user-select-header, .asset-select-header { grid-template-columns: 1fr; }
   :deep(.bill-detail-dialog) { width: calc(100vw - 24px) !important; }

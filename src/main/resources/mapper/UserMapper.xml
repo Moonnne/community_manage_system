@@ -39,6 +39,10 @@
             <if test="userEmail != null and userEmail != ''">
                 AND u.user_email LIKE CONCAT('%', #{userEmail}, '%')
             </if>
+            <if test="contact != null and contact != ''">
+                AND (u.user_phone LIKE CONCAT('%', #{contact}, '%')
+                    OR u.user_email LIKE CONCAT('%', #{contact}, '%'))
+            </if>
             <if test="userRole != null">
                 AND u.user_role = #{userRole}
             </if>

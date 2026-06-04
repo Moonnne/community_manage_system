@@ -13,14 +13,17 @@
         LEFT JOIN car c ON ch.car_id = c.id
         LEFT JOIN gate g ON ch.gate_id = g.id
         <where>
-            <if test="carId != null">
-                AND ch.car_id = #{carId}
+            <if test="carNumber != null and carNumber != ''">
+                AND c.car_number LIKE CONCAT('%', #{carNumber}, '%')
             </if>
             <if test="gateId != null">
                 AND ch.gate_id = #{gateId}
             </if>
             <if test="carHistoryType != null">
                 AND ch.car_history_type = #{carHistoryType}
+            </if>
+            <if test="rangeStart != null and rangeEnd != null">
+                AND ch.car_history_time BETWEEN #{rangeStart} AND #{rangeEnd}
             </if>
         </where>
         ORDER BY ch.id ASC

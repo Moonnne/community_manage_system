@@ -26,7 +26,8 @@ public interface FacilityMapper {
 
     List<FacilityVO> selectPage(@Param("facilityType") Integer facilityType,
                                 @Param("facilityStatus") Integer facilityStatus,
-                                @Param("facilityName") String facilityName);
+                                @Param("facilityName") String facilityName,
+                                @Param("facilityBuilding") Long facilityBuilding);
 
     List<FacilityVO> selectNearExpiration(@Param("months") int months);
 }

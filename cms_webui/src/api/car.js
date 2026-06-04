@@ -24,6 +24,18 @@ export function addCarHistory(data) {
   return request.post('/api/car-history/add', data)
 }
 
+export function updateCarHistory(data) {
+  return request.post('/api/car-history/update', data)
+}
+
+export function deleteCarHistory(id) {
+  return request.post('/api/car-history/delete', null, { params: { id } })
+}
+
+export function batchDeleteCarHistory(ids) {
+  return request.post('/api/car-history/delete/batch', { ids })
+}
+
 export function getCarHistoryPage(params, options = {}) {
   return request.get('/api/car-history/page', { params, ...options })
 }

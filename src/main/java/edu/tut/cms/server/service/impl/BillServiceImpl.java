@@ -186,7 +186,7 @@ public class BillServiceImpl implements BillService {
     public BillVO getBill(Long id) {
         Bill bill = requireBill(id);
         ensureBillVisibleToCurrentUser(bill);
-        List<BillVO> voList = billMapper.selectPage(bill.getOwnerId(), null, bill.getBillCode());
+        List<BillVO> voList = billMapper.selectPage(bill.getOwnerId(), null, bill.getBillCode(), null, null, null, null);
         BillVO vo = voList.stream()
                 .filter(item -> item.getId().equals(id))
                 .findFirst()
@@ -198,13 +198,15 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public PageResult<BillVO> pageBills(Integer pageNum, Integer pageSize,
-                                        Long ownerId, Integer billStatus, String billCode) {
+                                        Long ownerId, Integer billStatus, String billCode,
+                                        String ownerUid, String createrUid,
+                                        LocalDateTime rangeStart, LocalDateTime rangeEnd) {
         CurrentUser currentUser = requireCurrentUser();
         if (currentUser.getUserRole() != null && currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
         PageHelper.startPage(pageNum, pageSize);
-        List<BillVO> list = billMapper.selectPage(ownerId, billStatus, billCode);
+        List<BillVO> list = billMapper.selectPage(ownerId, billStatus, billCode, ownerUid, createrUid, rangeStart, rangeEnd);
         list.forEach(this::normalizeVOStatus);
         PageInfo<BillVO> pageInfo = new PageInfo<>(list);
         PageResult<BillVO> result = new PageResult<>();
@@ -303,7 +305,7 @@ public class BillServiceImpl implements BillService {
         if (currentUser.getUserRole() != null && currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
-        List<BillVO> bills = billMapper.selectPage(ownerId, billStatus, null);
+        List<BillVO> bills = billMapper.selectPage(ownerId, billStatus, null, null, null, null, null);
         bills.forEach(this::normalizeVOStatus);
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {

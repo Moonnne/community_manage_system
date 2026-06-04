@@ -30,7 +30,11 @@ public interface BillMapper {
 
     List<BillVO> selectPage(@Param("ownerId") Long ownerId,
                             @Param("billStatus") Integer billStatus,
-                            @Param("billCode") String billCode);
+                            @Param("billCode") String billCode,
+                            @Param("ownerUid") String ownerUid,
+                            @Param("createrUid") String createrUid,
+                            @Param("rangeStart") java.time.LocalDateTime rangeStart,
+                            @Param("rangeEnd") java.time.LocalDateTime rangeEnd);
 
     List<BillVO> selectUnpaidPage(@Param("ownerId") Long ownerId);
 

@@ -3,14 +3,39 @@
     <div class="page-header"><h2 class="page-title">访客管理</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.visitorName" placeholder="访客姓名" clearable /></el-col>
-        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.ownerId" placeholder="业主ID" clearable /></el-col>
-        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6"><el-input v-model="query.visitorName" placeholder="访客姓名" clearable /></el-col>
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <DualSelectV2
+            v-model="query.ownerUid"
+            :options="queryUserOptions"
+            remote
+            :remote-method="handleUserRemoteSearch"
+            placeholder="输入以搜索被访业主账户"
+            primary-key="label"
+            secondary-key="userName"
+            @change="handleQueryOwnerChange"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <DualSelectV2
+            v-model="query.assetId"
+            :options="queryAssetOptions"
+            remote
+            :remote-method="handleQueryAssetSearch"
+            :disabled="!query.ownerUid"
+            placeholder="选择被访资产"
+            primary-key="label"
+            secondary-key="assetCode"
+          />
+        </el-col>
+      </el-row>
+      <el-row :gutter="16" class="search-second-row">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.visitorType" placeholder="访客类型" clearable>
             <el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" />
           </el-select>
         </el-col>
-        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.visitorStatus" placeholder="状态" clearable>
             <el-option label="待批准" value="1" />
             <el-option label="访问中" value="2" />
@@ -18,8 +43,18 @@
             <el-option label="已驳回" value="3" />
           </el-select>
         </el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
-          <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
+        <el-col :xs="24" :sm="24" :md="16" :lg="10">
+          <el-date-picker
+            v-model="query.timeRange"
+            type="datetimerange"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            start-placeholder="访问开始时间"
+            end-placeholder="访问结束时间"
+            class="full-width"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="24" :md="24" :lg="6" class="search-actions">
+          <el-button type="primary" @click="fetchData(true)"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>
       </el-row>
@@ -30,7 +65,7 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="visitorCode" label="访客编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="visitorCode" label="访客编号" width="160" sortable show-overflow-tooltip />
         <el-table-column prop="visitorName" label="姓名" width="100" show-overflow-tooltip />
         <el-table-column prop="visitorPhone" label="电话" width="130" show-overflow-tooltip />
         <el-table-column prop="ownerName" label="被访业主" width="100" show-overflow-tooltip />
@@ -42,7 +77,10 @@
             <el-tag :type="visitorStatusType(row.visitorStatus)" effect="plain">{{ visitorStatusText(row.visitorStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="visitorCreateTime" label="登记时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="visitorCreateTime" label="登记时间" width="170" sortable show-overflow-tooltip />
+        <el-table-column prop="visitorFinishTime" label="访问结束时间" width="170" sortable show-overflow-tooltip>
+          <template #default="{ row }">{{ row.visitorFinishTime || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="visitorRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" v-if="canEdit">
           <template #default="{ row }">
@@ -72,7 +110,7 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-        <el-form-item label="访客姓名" prop="visitorName"><el-input v-model="form.visitorName" /></el-form-item>
+        <el-form-item label="访客姓名" prop="visitorName"><el-input v-model="form.visitorName" placeholder="请输入访客姓名"/></el-form-item>
         <el-form-item label="访客电话" prop="visitorPhone"><el-input v-model="form.visitorPhone" maxlength="11" placeholder="请输入手机号" clearable @input="handleVisitorPhoneInput" /></el-form-item>
         <el-form-item label="访客类型" prop="visitorType">
           <el-select v-model="form.visitorType" placeholder="请选择"><el-option v-for="t in types" :key="t.visitorTypeId" :label="t.visitorTypeName" :value="t.visitorTypeId" /></el-select>
@@ -145,9 +183,11 @@ const total = ref(0)
 const types = ref([])
 const users = ref([])
 const assets = ref([])
+const queryAssets = ref([])
+const queryAssetKeyword = ref('')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' })
+const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerUid: '', assetId: undefined, visitorType: undefined, visitorStatus: '', timeRange: [] })
 const form = ref({})
 const addWizardSteps = [
   { title: '访客信息', fields: ['visitorName', 'visitorPhone'] },
@@ -171,13 +211,21 @@ const confirmRows = computed(() => [
   { label: '备注', value: valueText(form.value.visitorRemark) }
 ])
 const formRules = {
-  visitorName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-  visitorPhone: [optionalPhoneRule()],
+  visitorName: [{ required: true, message: '请输入访客姓名', trigger: 'blur' }],
+  visitorPhone: [optionalPhoneRule(), {required: true, message: '请输入手机号', trigger: 'blur'}],
   ownerId: [{ required: true, message: '请输入业主ID', trigger: 'blur' }],
   visitorType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
 const userOptions = computed(() => users.value.length ? users.value.map(user => ({ value: user.id, label: user.uid || String(user.id), userName: user.userName || '-' })) : [{ value: '__empty_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }])
+const queryUserOptions = computed(() => users.value.length ? users.value.map(user => ({ value: user.uid, label: user.uid, userName: user.userName || '-' })) : [{ value: '__empty_query_users__', label: '暂无匹配用户', userName: '', disabled: true, empty: true }])
 const assetOptions = computed(() => assets.value.length ? assets.value.map(asset => ({ value: asset.id, label: asset.assetName || asset.assetCode || String(asset.id), assetCode: asset.assetCode || '-' })) : [{ value: '__empty_assets__', label: '暂无匹配资产', assetCode: '', disabled: true, empty: true }])
+const queryAssetOptions = computed(() => {
+  const keyword = queryAssetKeyword.value.trim().toLowerCase()
+  const filtered = queryAssets.value.filter(asset => !keyword || [asset.assetName, asset.assetCode].some(value => String(value || '').toLowerCase().includes(keyword)))
+  return filtered.length
+    ? filtered.map(asset => ({ value: asset.id, label: asset.assetName || asset.assetCode || String(asset.id), assetCode: asset.assetCode || '-' }))
+    : [{ value: '__empty_query_assets__', label: query.value.ownerUid ? '暂无匹配资产' : '请先输入被访业主账户', assetCode: '', disabled: true, empty: true }]
+})
 
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function visitorTypeNameText(id) { return types.value.find(type => type.visitorTypeId === id)?.visitorTypeName || valueText(id) }
@@ -189,17 +237,34 @@ function handleVisitorPhoneInput(value) {
 async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] })
+    const p = { ...query.value }
+    if (query.value.timeRange?.length === 2) {
+      p.rangeStart = query.value.timeRange[0]
+      p.rangeEnd = query.value.timeRange[1]
+    }
+    delete p.timeRange
+    Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] })
     const res = await getVisitorPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total
   } finally { loading.value = false }
 }
 async function fetchTypes() { const res = await getVisitorTypes(); types.value = res.data }
 async function fetchUsers(keyword = '') { const res = await getUserPage({ pageNum: 1, pageSize: 100, uid: keyword || undefined }, { forceRefresh: true }); users.value = res.data?.records || [] }
 async function fetchAssets(keyword = '') { const res = await getAssetPage({ pageNum: 1, pageSize: 100, assetOwnerId: form.value.ownerId || undefined, assetName: keyword || undefined }, { forceRefresh: true }); assets.value = res.data?.records || [] }
+async function fetchQueryAssets(keyword = '') {
+  queryAssetKeyword.value = keyword || ''
+  if (!query.value.ownerUid) {
+    queryAssets.value = []
+    return
+  }
+  const res = await getAssetPage({ pageNum: 1, pageSize: 100, ownerUid: query.value.ownerUid }, { forceRefresh: true })
+  queryAssets.value = res.data?.records || []
+}
 function handleUserRemoteSearch(keyword) { fetchUsers(keyword) }
 function handleAssetRemoteSearch(keyword) { fetchAssets(keyword) }
 function handleOwnerChange() { form.value.assetId = ''; fetchAssets() }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerId: '', visitorType: undefined, visitorStatus: '' }; fetchData(true) }
+function handleQueryAssetSearch(keyword) { fetchQueryAssets(keyword) }
+function handleQueryOwnerChange() { query.value.assetId = undefined; fetchQueryAssets() }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, visitorName: '', ownerUid: '', assetId: undefined, visitorType: undefined, visitorStatus: '', timeRange: [] }; queryAssets.value = []; queryAssetKeyword.value = ''; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); fetchAssets(); dialogVisible.value = true }
 function getDefaultForm() { return { visitorName: '', visitorPhone: '', ownerId: '', assetId: '', visitorType: undefined, visitorStatus: 1, visitorRemark: '' } }
@@ -216,7 +281,15 @@ onMounted(() => { fetchData(); fetchTypes(); fetchUsers() })
 .page-header { margin-bottom: 16px; }
 .page-title { font-size: 20px; font-weight: 700; color: var(--vp-c-text-1); margin: 0; }
 .search-card { margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.search-card :deep(.el-date-editor--datetimerange) { width: 100%; max-width: none; }
+.search-second-row { margin-top: 12px; }
+.search-actions { display: flex; justify-content: flex-end; }
+.full-width { width: 100%; }
 .table-toolbar { margin-bottom: 12px; }
 .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 768px) {
+  .search-actions { justify-content: stretch; }
+  .search-actions .el-button { flex: 1; }
+}
 </style>

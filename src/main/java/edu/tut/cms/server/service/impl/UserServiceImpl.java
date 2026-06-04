@@ -205,10 +205,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageResult<UserVO> pageUsers(Integer pageNum, Integer pageSize,
-                                        String uid, String userName, String userPhone, String userEmail,
+                                        String uid, String userName, String userPhone, String userEmail, String contact,
                                         Integer userRole, Integer userStatus) {
         PageHelper.startPage(pageNum, pageSize);
-        List<User> list = userMapper.selectPage(uid, userName, userPhone, userEmail, userRole, userStatus);
+        List<User> list = userMapper.selectPage(uid, userName, userPhone, userEmail, contact, userRole, userStatus);
         PageInfo<User> pageInfo = new PageInfo<>(list);
 
         List<UserVO> voList = list.stream().map(user -> {

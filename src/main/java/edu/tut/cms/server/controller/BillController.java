@@ -91,8 +91,12 @@ public class BillController {
                                            @RequestParam(defaultValue = "10") Integer pageSize,
                                            @RequestParam(required = false) Long ownerId,
                                            @RequestParam(required = false) Integer billStatus,
-                                           @RequestParam(required = false) String billCode) {
-        return Result.success(billService.pageBills(pageNum, pageSize, ownerId, billStatus, billCode));
+                                           @RequestParam(required = false) String billCode,
+                                           @RequestParam(required = false) String ownerUid,
+                                           @RequestParam(required = false) String createrUid,
+                                           @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime rangeStart,
+                                           @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime rangeEnd) {
+        return Result.success(billService.pageBills(pageNum, pageSize, ownerId, billStatus, billCode, ownerUid, createrUid, rangeStart, rangeEnd));
     }
 
     @GetMapping("/my/summary")

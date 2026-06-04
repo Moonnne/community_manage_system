@@ -75,15 +75,17 @@ public class VisitorServiceImpl implements VisitorService {
 
     @Override
     public PageResult<VisitorVO> pageVisitors(Integer pageNum, Integer pageSize,
-                                              Long ownerId, Integer visitorType,
-                                              String visitorStatus, String visitorName) {
+                                              Long ownerId, String ownerUid, Long assetId,
+                                              Integer visitorType, String visitorStatus,
+                                              String visitorName, LocalDateTime rangeStart, LocalDateTime rangeEnd) {
         CurrentUser currentUser = UserContext.getCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
 
         PageHelper.startPage(pageNum, pageSize);
-        List<VisitorVO> list = visitorMapper.selectPage(ownerId, visitorType, visitorStatus, visitorName);
+        List<VisitorVO> list = visitorMapper.selectPage(ownerId, ownerUid, assetId, visitorType,
+                visitorStatus, visitorName, rangeStart, rangeEnd);
         PageInfo<VisitorVO> pageInfo = new PageInfo<>(list);
 
         PageResult<VisitorVO> result = new PageResult<>();

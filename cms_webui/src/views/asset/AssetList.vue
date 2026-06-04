@@ -5,7 +5,7 @@
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="12">
         <el-col :xs="24" :sm="12" :md="6">
-          <el-input v-model="query.assetOwnerId" placeholder="业主ID" clearable />
+          <el-input v-model="query.ownerUid" placeholder="业主账户" clearable />
         </el-col>
         <el-col :xs="24" :sm="12" :md="6">
           <el-select v-model="query.assetStatus" placeholder="状态" clearable class="full-width">
@@ -16,13 +16,12 @@
           </el-select>
         </el-col>
         <el-col :xs="24" :sm="12" :md="6">
-          <el-select-v2
+          <DualSelectV2
             v-model="query.assetBuilding"
             :options="buildingOptions"
-            filterable
-            clearable
             placeholder="楼栋"
-            class="full-width"
+            primary-key="buildingName"
+            secondary-key="buildingCode"
           />
         </el-col>
         <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
@@ -249,13 +248,13 @@ const tableData = ref([])
 const total = ref(0)
 const buildings = ref([])
 const users = ref([])
-const query = ref({ pageNum: 1, pageSize: 10, assetOwnerId: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined })
 const form = ref(getDefaultForm())
 
 const assetTypeName = computed(() => props.assetType === 1 ? '房产' : '停车位')
 const buildingOptions = computed(() => buildings.value.map(item => ({
   value: item.id,
-  label: item.buildingCode,
+  label: item.buildingName,
   buildingCode: item.buildingCode,
   buildingName: item.buildingName,
   ...item
@@ -319,8 +318,7 @@ watch(() => props.assetType, () => {
 async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const params = { ...query.value, assetOwnerId: query.value.assetOwnerId || undefined }
-    const res = await getAssetPage(params, { forceRefresh })
+    const res = await getAssetPage(query.value, { forceRefresh })
     tableData.value = res.data.records || []
     total.value = res.data.total || 0
   } finally {
@@ -360,7 +358,7 @@ function search() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, assetOwnerId: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined }
+  query.value = { pageNum: 1, pageSize: 10, ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined }
   fetchData(true)
 }
 

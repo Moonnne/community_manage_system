@@ -44,7 +44,7 @@ public interface AssetService {
      * @return 分页结果
      */
     PageResult<AssetVO> pageAssets(Integer pageNum, Integer pageSize,
-                                   Long assetOwnerId, Integer assetType,
+                                   Long assetOwnerId, String ownerUid, Integer assetType,
                                    Integer assetStatus, Long assetBuilding);
 
     /**

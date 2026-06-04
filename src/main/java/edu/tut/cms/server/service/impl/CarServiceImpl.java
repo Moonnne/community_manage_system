@@ -70,14 +70,15 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public PageResult<CarVO> pageCars(Integer pageNum, Integer pageSize,
-                                      Long ownerId, Integer carType, Integer carStatus) {
+                                      Long ownerId, String ownerUid, String carNumber,
+                                      Integer carType, Integer carStatus) {
         CurrentUser currentUser = UserContext.getCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
         }
 
         PageHelper.startPage(pageNum, pageSize);
-        List<CarVO> list = carMapper.selectPage(ownerId, carType, carStatus);
+        List<CarVO> list = carMapper.selectPage(ownerId, ownerUid, carNumber, carType, carStatus);
         PageInfo<CarVO> pageInfo = new PageInfo<>(list);
 
         PageResult<CarVO> result = new PageResult<>();

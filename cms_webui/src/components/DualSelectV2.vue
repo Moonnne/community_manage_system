@@ -72,7 +72,9 @@ watch(
   () => props.filters,
   filters => {
     filters.forEach(filter => {
-      if (!(filter.key in filterModels)) {
+      if ('value' in filter && filterModels[filter.key] !== filter.value) {
+        filterModels[filter.key] = filter.value
+      } else if (!(filter.key in filterModels)) {
         filterModels[filter.key] = filter.value ?? undefined
       }
     })

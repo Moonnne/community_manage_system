@@ -55,10 +55,11 @@ public class AssetController {
     public Result<PageResult<AssetVO>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                             @RequestParam(defaultValue = "10") Integer pageSize,
                                             @RequestParam(required = false) Long assetOwnerId,
+                                            @RequestParam(required = false) String ownerUid,
                                             @RequestParam(required = false) Integer assetType,
                                             @RequestParam(required = false) Integer assetStatus,
                                             @RequestParam(required = false) Long assetBuilding) {
-        return Result.success(assetService.pageAssets(pageNum, pageSize, assetOwnerId, assetType, assetStatus, assetBuilding));
+        return Result.success(assetService.pageAssets(pageNum, pageSize, assetOwnerId, ownerUid, assetType, assetStatus, assetBuilding));
     }
 
     @GetMapping("/export")

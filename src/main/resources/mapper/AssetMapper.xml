@@ -38,6 +38,9 @@
             <if test="assetOwnerId != null">
                 AND a.asset_owner_id = #{assetOwnerId}
             </if>
+            <if test="ownerUid != null and ownerUid != ''">
+                AND u.uid LIKE CONCAT('%', #{ownerUid}, '%')
+            </if>
             <if test="assetType != null">
                 AND a.asset_type = #{assetType}
             </if>

@@ -19,13 +19,22 @@
     <select id="selectPage" resultType="edu.tut.cms.pojo.vo.CarVO">
         SELECT c.*,
                u.user_name AS owner_name,
+               u.uid AS owner_uid,
+               a.asset_name,
                ct.car_type_name
         FROM car c
         LEFT JOIN user u ON c.owner_id = u.id
+        LEFT JOIN asset a ON c.asset_id = a.id
         LEFT JOIN car_type ct ON c.car_type = ct.car_type_id
         <where>
             <if test="ownerId != null">
                 AND c.owner_id = #{ownerId}
+            </if>
+            <if test="ownerUid != null and ownerUid != ''">
+                AND u.uid LIKE CONCAT('%', #{ownerUid}, '%')
+            </if>
+            <if test="carNumber != null and carNumber != ''">
+                AND c.car_number LIKE CONCAT('%', #{carNumber}, '%')
             </if>
             <if test="carType != null">
                 AND c.car_type = #{carType}

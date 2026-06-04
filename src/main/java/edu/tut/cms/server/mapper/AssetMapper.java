@@ -28,6 +28,7 @@ public interface AssetMapper {
     int countByAssetTypeId(Integer assetTypeId);
 
     List<AssetVO> selectPage(@Param("assetOwnerId") Long assetOwnerId,
+                             @Param("ownerUid") String ownerUid,
                              @Param("assetType") Integer assetType,
                              @Param("assetStatus") Integer assetStatus,
                              @Param("assetBuilding") Long assetBuilding);

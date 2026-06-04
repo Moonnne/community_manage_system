@@ -39,6 +39,16 @@
             <if test="billCode != null and billCode != ''">
                 AND b.bill_code LIKE CONCAT('%', #{billCode}, '%')
             </if>
+            <if test="ownerUid != null and ownerUid != ''">
+                AND u1.uid LIKE CONCAT('%', #{ownerUid}, '%')
+            </if>
+            <if test="createrUid != null and createrUid != ''">
+                AND u2.uid LIKE CONCAT('%', #{createrUid}, '%')
+            </if>
+            <if test="rangeStart != null and rangeEnd != null">
+            AND b.bill_start_time &gt;= #{rangeStart}
+            AND b.bill_end_time &lt;= #{rangeEnd}
+            </if>
         </where>
         ORDER BY b.id ASC
     </select>

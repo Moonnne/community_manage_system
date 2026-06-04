@@ -7,6 +7,7 @@ import edu.tut.cms.pojo.dto.VisitorUpdateDTO;
 import edu.tut.cms.pojo.vo.VisitorTypeVO;
 import edu.tut.cms.pojo.vo.VisitorVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface VisitorService {
@@ -44,8 +45,9 @@ public interface VisitorService {
      * @return 分页结果
      */
     PageResult<VisitorVO> pageVisitors(Integer pageNum, Integer pageSize,
-                                       Long ownerId, Integer visitorType,
-                                       String visitorStatus, String visitorName);
+                                       Long ownerId, String ownerUid, Long assetId,
+                                       Integer visitorType, String visitorStatus,
+                                       String visitorName, LocalDateTime rangeStart, LocalDateTime rangeEnd);
 
     /**
      * 获取所有访客类型

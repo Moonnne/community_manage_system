@@ -50,8 +50,8 @@ public class DashboardController {
         LocalDateTime yesterdayEnd = todayStart;
         LocalDateTime rangeStart = resolveRangeStart(range, now);
 
-        List<VisitorVO> visitors = visitorMapper.selectPage(null, null, null, null);
-        List<CarHistoryVO> histories = carHistoryMapper.selectPage(null, null, null);
+        List<VisitorVO> visitors = visitorMapper.selectPage(null, null, null, null, null, null, null, null, null);
+        List<CarHistoryVO> histories = carHistoryMapper.selectPage(null, null, null, null, null);
 
         long todayVisitors = visitors.stream().filter(item -> inRange(item.getVisitorCreateTime(), todayStart, now)).count();
         long yesterdayVisitors = visitors.stream().filter(item -> inRange(item.getVisitorCreateTime(), yesterdayStart, yesterdayEnd)).count();
@@ -71,7 +71,7 @@ public class DashboardController {
 
     @GetMapping("/facility")
     public Result<Map<String, Object>> facility() {
-        List<FacilityVO> facilities = facilityMapper.selectPage(null, null, null);
+        List<FacilityVO> facilities = facilityMapper.selectPage(null, null, null, null);
         LocalDateTime now = LocalDateTime.now();
 
         long nearInspection = facilities.stream().filter(item -> {
@@ -98,7 +98,7 @@ public class DashboardController {
     public Result<Map<String, Object>> asset(@RequestParam(required = false) Long ownerId,
                                              @RequestParam(required = false) String assetName) {
         CurrentUser user = UserContext.getCurrentUser();
-        List<AssetVO> assets = assetMapper.selectPage(user.getId(), null, null, null).stream()
+        List<AssetVO> assets = assetMapper.selectPage(user.getId(), null, null, null, null).stream()
                 .filter(item -> !hasText(assetName) || contains(item.getAssetName(), assetName))
                 .toList();
         LocalDateTime now = LocalDateTime.now();

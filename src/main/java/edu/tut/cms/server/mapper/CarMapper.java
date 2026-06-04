@@ -25,6 +25,8 @@ public interface CarMapper {
     Integer selectMaxSequenceByPrefix(String prefix);
 
     List<CarVO> selectPage(@Param("ownerId") Long ownerId,
+                           @Param("ownerUid") String ownerUid,
+                           @Param("carNumber") String carNumber,
                            @Param("carType") Integer carType,
                            @Param("carStatus") Integer carStatus);
 }

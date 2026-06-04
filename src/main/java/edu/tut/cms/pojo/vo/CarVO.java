@@ -13,8 +13,10 @@ public class CarVO {
     private Long id;
     private String carCode;
     private Long ownerId;
+    private String ownerUid;
     private String ownerName;
     private Long assetId;
+    private String assetName;
     private Long visitorId;
     private String carNumber;
     private Integer carType;

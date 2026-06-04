@@ -2,6 +2,8 @@ package edu.tut.cms.server.service;
 
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.pojo.dto.CarHistoryAddDTO;
+import edu.tut.cms.pojo.dto.CarHistoryBatchDeleteDTO;
+import edu.tut.cms.pojo.dto.CarHistoryUpdateDTO;
 import edu.tut.cms.pojo.vo.CarHistoryVO;
 
 public interface CarHistoryService {
@@ -12,6 +14,12 @@ public interface CarHistoryService {
      * @param dto 出入记录信息
      */
     void addCarHistory(CarHistoryAddDTO dto);
+
+    void updateCarHistory(CarHistoryUpdateDTO dto);
+
+    void deleteCarHistory(Long id);
+
+    void batchDeleteCarHistory(CarHistoryBatchDeleteDTO dto);
 
     /**
      * 分页查询车辆出入记录
@@ -24,6 +32,8 @@ public interface CarHistoryService {
      * @return 分页结果
      */
     PageResult<CarHistoryVO> pageCarHistory(Integer pageNum, Integer pageSize,
-                                            Long carId, Integer gateId,
-                                            Integer carHistoryType);
+                                            String carNumber, Integer gateId,
+                                            Integer carHistoryType,
+                                            java.time.LocalDateTime rangeStart,
+                                            java.time.LocalDateTime rangeEnd);
 }

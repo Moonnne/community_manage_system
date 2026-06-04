@@ -97,8 +97,13 @@ async function validateFields(fields) {
 }
 
 async function nextStep() {
-  const fields = normalizedSteps.value[activeStep.value]?.fields || []
+  const step = normalizedSteps.value[activeStep.value] || {}
+  const fields = step.fields || []
   await validateFields(fields)
+  if (step.validate) {
+    const valid = await step.validate()
+    if (valid === false) return
+  }
   activeStep.value += 1
 }
 

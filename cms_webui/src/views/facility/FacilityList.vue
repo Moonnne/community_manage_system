@@ -4,15 +4,15 @@
 
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="12">
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="12" :md="5">
           <el-input v-model="query.facilityName" placeholder="设施名称" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="12" :md="5">
           <el-select v-model="query.facilityType" placeholder="设施类型" clearable class="full-width">
             <el-option v-for="type in types" :key="type.facilityTypeId" :label="type.facilityTypeName" :value="type.facilityTypeId" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="12" :md="5">
           <el-select v-model="query.facilityStatus" placeholder="状态" clearable class="full-width">
             <el-option label="正常" :value="0" />
             <el-option label="故障" :value="1" />
@@ -20,7 +20,16 @@
             <el-option label="缺失" :value="3" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
+        <el-col :xs="24" :sm="12" :md="5">
+          <DualSelectV2
+            v-model="query.facilityBuilding"
+            :options="buildingOptions"
+            placeholder="楼栋"
+            primary-key="buildingName"
+            secondary-key="buildingCode"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="4" class="filter-actions">
           <el-button type="primary" @click="search">
             <el-icon><Search /></el-icon>
             搜索
@@ -98,7 +107,7 @@
     >
       <template #default="{ activeStep }">
         <template v-if="activeStep === 0">
-          <el-alert v-if="!isEdit" type="info" show-icon :closable="false" class="form-tip">设施编号将由系统保存时自动生成。</el-alert>
+          <el-alert v-if="!isEdit" type="info" center show-icon :closable="false" class="form-tip">设施编号将由系统保存时自动生成</el-alert>
           <el-row :gutter="14">
             <el-col :xs="24" :sm="24" v-if="isEdit">
               <el-form-item label="设施编号">
@@ -106,11 +115,11 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
-              <el-form-item label="名称" prop="facilityName"><el-input v-model="form.facilityName" /></el-form-item>
+              <el-form-item label="名称" prop="facilityName"><el-input v-model="form.facilityName" placeholder="请输入设施名称" /></el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
               <el-form-item label="类型" prop="facilityType">
-                <el-select v-model="form.facilityType" class="full-width">
+                <el-select v-model="form.facilityType" class="full-width" placeholder="请选择设施类型">
                   <el-option v-for="type in types" :key="type.facilityTypeId" :label="type.facilityTypeName" :value="type.facilityTypeId" />
                 </el-select>
               </el-form-item>
@@ -141,19 +150,19 @@
             </el-col>
             <el-col :xs="24" :sm="24">
               <el-form-item label="检查时间">
-                <el-date-picker v-model="form.facilityCheckTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" class="full-width" />
+                <el-date-picker v-model="form.facilityCheckTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" class="full-width" placeholder="请输入上次检查日期"/>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
               <el-form-item label="检查周期">
                 <div class="number-with-unit">
-                  <el-input-number v-model="form.facilityExpirationDate" :min="0" controls-position="right" class="full-width" placeholder="月数" />
+                  <el-input-number v-model="form.facilityExpirationDate" :min="0" controls-position="right" class="full-width" placeholder="请输入检查周期" />
                   <span class="number-unit">月</span>
                 </div>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24">
-              <el-form-item label="所有方"><el-input v-model="form.facilityOwner" /></el-form-item>
+              <el-form-item label="所有方"><el-input v-model="form.facilityOwner" placeholder="请输入设施所有方" /></el-form-item>
             </el-col>
           </el-row>
         </template>
@@ -232,11 +241,11 @@ const total = ref(0)
 const types = ref([])
 const buildings = ref([])
 const users = ref([])
-const query = ref({ pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined })
 const form = ref(getDefaultForm())
 const buildingOptions = computed(() => buildings.value.map(item => ({
   value: item.id,
-  label: item.buildingCode,
+  label: item.buildingName,
   buildingCode: item.buildingCode,
   buildingName: item.buildingName,
   ...item
@@ -341,7 +350,7 @@ function search() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined }
+  query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined }
   fetchData(true)
 }
 

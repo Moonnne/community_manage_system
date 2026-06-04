@@ -29,6 +29,12 @@
             <if test="ownerId != null">
                 AND v.owner_id = #{ownerId}
             </if>
+            <if test="ownerUid != null and ownerUid != ''">
+                AND u1.uid LIKE CONCAT('%', #{ownerUid}, '%')
+            </if>
+            <if test="assetId != null">
+                AND v.asset_id = #{assetId}
+            </if>
             <if test="visitorType != null">
                 AND v.visitor_type = #{visitorType}
             </if>
@@ -37,6 +43,10 @@
             </if>
             <if test="visitorName != null and visitorName != ''">
                 AND v.visitor_name LIKE CONCAT('%', #{visitorName}, '%')
+            </if>
+            <if test="rangeStart != null and rangeEnd != null">
+                AND v.visitor_create_time &lt;= #{rangeEnd}
+                AND COALESCE(v.visitor_finish_time, NOW()) &gt;= #{rangeStart}
             </if>
         </where>
         ORDER BY v.id ASC
