@@ -97,10 +97,9 @@
               <el-form-item label="最低楼层" prop="buildingMinFloor">
                 <el-input-number
                   v-model="form.buildingMinFloor"
-                  :max="form.buildingMaxFloor || undefined"
                   controls-position="right"
                   class="full-width"
-                  @change="normalizeBuildingFloors"
+                  @change="handleMinFloorChange"
                 />
               </el-form-item>
             </el-col>
@@ -108,10 +107,9 @@
               <el-form-item label="最高楼层" prop="buildingMaxFloor">
                 <el-input-number
                   v-model="form.buildingMaxFloor"
-                  :min="form.buildingMinFloor || undefined"
                   controls-position="right"
                   class="full-width"
-                  @change="normalizeBuildingFloors"
+                  @change="handleMaxFloorChange"
                 />
               </el-form-item>
             </el-col>
@@ -197,7 +195,6 @@ function openEdit(row) {
 }
 
 async function handleSubmit() {
-  normalizeBuildingFloors()
   if (!isValidFloor(form.value.buildingMinFloor) || !isValidFloor(form.value.buildingMaxFloor)) {
     ElMessage.warning('楼层不能为 0')
     return
@@ -243,12 +240,23 @@ function isValidFloor(value) {
   return value !== null && value !== undefined && Number(value) !== 0
 }
 
-function normalizeBuildingFloors() {
-  if (Number(form.value.buildingMinFloor) === 0) form.value.buildingMinFloor = -1
-  if (Number(form.value.buildingMaxFloor) === 0) form.value.buildingMaxFloor = 1
-  if (Number(form.value.buildingMinFloor) > Number(form.value.buildingMaxFloor)) {
-    form.value.buildingMaxFloor = form.value.buildingMinFloor
-  }
+function skipZeroFloor(value, oldValue) {
+  if (Number(value) !== 0) return value
+  return Number(oldValue) < 0 ? 1 : -1
+}
+
+function handleMinFloorChange(value, oldValue) {
+  const nextValue = skipZeroFloor(value, oldValue)
+  form.value.buildingMinFloor = Number(nextValue) > Number(form.value.buildingMaxFloor)
+    ? form.value.buildingMaxFloor
+    : nextValue
+}
+
+function handleMaxFloorChange(value, oldValue) {
+  const nextValue = skipZeroFloor(value, oldValue)
+  form.value.buildingMaxFloor = Number(nextValue) < Number(form.value.buildingMinFloor)
+    ? form.value.buildingMinFloor
+    : nextValue
 }
 
 function validateMinFloor(rule, value, callback) {

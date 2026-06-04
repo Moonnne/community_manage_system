@@ -115,11 +115,13 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { addTask, getTaskTypes, processTask } from '@/api/task'
 import { getTaskDashboard } from '@/api/dashboard'
 
 const userStore = useUserStore()
+const route = useRoute()
 const query = ref({ title: '', taskType: undefined, ownerId: '' })
 const taskTypes = ref([])
 const myTasks = ref([])
@@ -165,6 +167,18 @@ function openSubmit() {
   submitVisible.value = true
 }
 
+function openForgotPasswordSubmit() {
+  const accountType = taskTypes.value.find(type => type.taskTypeName === '账户')
+    || taskTypes.value.find(type => type.taskTypeId === 5)
+    || taskTypes.value[0]
+  submitForm.value = {
+    taskTitle: '忘记原密码申请',
+    taskType: accountType?.taskTypeId,
+    taskInfo: `用户ID：${userStore.userInfo?.id || '-'}\n账户：${userStore.userInfo?.uid || '-'}\n请协助处理原密码遗忘问题。`
+  }
+  submitVisible.value = true
+}
+
 async function submitTask() {
   if (!submitForm.value.taskTitle || !submitForm.value.taskType || !submitForm.value.taskInfo) {
     ElMessage.warning('请完善工单信息')
@@ -195,9 +209,12 @@ async function submitProcess() {
   fetchData(true)
 }
 
-onMounted(() => {
-  fetchTypes()
+onMounted(async () => {
+  await fetchTypes()
   fetchData()
+  if (route.query.intent === 'forgot-password') {
+    openForgotPasswordSubmit()
+  }
 })
 </script>
 

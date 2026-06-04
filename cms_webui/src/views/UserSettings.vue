@@ -255,7 +255,7 @@ function refreshCaptcha() {
 }
 
 function goForgotPassword() {
-  router.push('/task/list?intent=forgot-password')
+  router.push('/task/dashboard?intent=forgot-password')
 }
 
 function valueText(value) {
@@ -348,7 +348,7 @@ onMounted(() => {
 .card-title { font-weight: 700; color: var(--vp-c-text-1); }
 .password-form { max-width: 760px; padding-top: 16px; }
 .captcha-row { display: flex; align-items: center; gap: 12px; width: 100%; }
-.captcha-img { width: 120px; height: 40px; border: 1px solid var(--vp-c-divider); border-radius: 6px; cursor: pointer; object-fit: cover; flex-shrink: 0; }
+.captcha-img { width: 120px; height: 40px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--el-fill-color-blank); cursor: pointer; object-fit: contain; flex-shrink: 0; }
 
 @media (max-width: 700px) {
   .settings-page {
@@ -395,6 +395,22 @@ onMounted(() => {
     display: inline;
   }
   .form-actions { padding-left: 0; }
-  .captcha-row { flex-direction: column; }
+  .captcha-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .captcha-row :deep(.otp-input) {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 5px;
+  }
+  .captcha-row :deep(.otp-input__box) {
+    width: min(40px, calc((100% - 15px) / 4));
+    min-width: 0;
+  }
+  .captcha-img {
+    width: 100px;
+    flex: 0 0 100px;
+  }
 }
 </style>
