@@ -50,7 +50,7 @@ public class DashboardController {
         LocalDateTime yesterdayEnd = todayStart;
         LocalDateTime rangeStart = resolveRangeStart(range, now);
 
-        List<VisitorVO> visitors = visitorMapper.selectPage(null, null, null, null, null, null, null, null, null);
+        List<VisitorVO> visitors = visitorMapper.selectPage(null, null, null, null, null, null, null, null);
         List<CarHistoryVO> histories = carHistoryMapper.selectPage(null, null, null, null, null);
 
         long todayVisitors = visitors.stream().filter(item -> inRange(item.getVisitorCreateTime(), todayStart, now)).count();
