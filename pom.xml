@@ -10,7 +10,7 @@
     </parent>
     <groupId>edu.tut</groupId>
     <artifactId>CommunityManageSystem</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0-RELEASE</version>
     <name>CommunityManageSystem</name>
     <description>CommunityManageSystem</description>
     <url/>
@@ -179,7 +179,6 @@
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
-            <version>${aspectj.version}</version>
         </dependency>
 
         <!-- Actuator -->
