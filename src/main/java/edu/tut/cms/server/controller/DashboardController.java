@@ -126,12 +126,12 @@ public class DashboardController {
         CurrentUser user = UserContext.getCurrentUser();
         boolean canProcess = user.getUserRole() != null && (user.getUserRole() == 0 || user.getUserRole() == 1);
 
-        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null, null, false).stream()
+        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null, null, null, null, false).stream()
                 .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                 .filter(item -> taskType == null || Objects.equals(item.getTaskType(), taskType))
                 .toList();
         List<TaskVO> processingTasks = canProcess
-                ? taskMapper.selectPage(ownerId, null, null, null, taskType, false).stream()
+                ? taskMapper.selectPage(ownerId, null, null, null, taskType, null, null, false).stream()
                     .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                     .filter(item -> Objects.equals(item.getTaskStatus(), 1) || Objects.equals(item.getTaskStatus(), 2))
                     .toList()
