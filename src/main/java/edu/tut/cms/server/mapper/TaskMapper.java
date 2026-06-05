@@ -29,6 +29,7 @@ public interface TaskMapper {
 
     List<TaskVO> selectPage(@Param("ownerId") Long ownerId,
                             @Param("taskOperatorId") Long taskOperatorId,
+                            @Param("taskCode") String taskCode,
                             @Param("taskStatus") Integer taskStatus,
                             @Param("taskType") Integer taskType,
                             @Param("excludeComplaint") Boolean excludeComplaint);

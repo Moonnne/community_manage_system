@@ -48,9 +48,10 @@ public class TaskController {
                                            @RequestParam(defaultValue = "10") Integer pageSize,
                                            @RequestParam(required = false) Long ownerId,
                                            @RequestParam(required = false) Long taskOperatorId,
+                                           @RequestParam(required = false) String taskCode,
                                            @RequestParam(required = false) Integer taskStatus,
                                            @RequestParam(required = false) Integer taskType) {
-        return Result.success(taskService.pageTasks(pageNum, pageSize, ownerId, taskOperatorId, taskStatus, taskType));
+        return Result.success(taskService.pageTasks(pageNum, pageSize, ownerId, taskOperatorId, taskCode, taskStatus, taskType));
     }
 
     @PostMapping("/process")

@@ -26,6 +26,7 @@ public interface FacilityMapper {
 
     List<FacilityVO> selectPage(@Param("facilityType") Integer facilityType,
                                 @Param("facilityStatus") Integer facilityStatus,
+                                @Param("facilityCode") String facilityCode,
                                 @Param("facilityName") String facilityName,
                                 @Param("facilityBuilding") Long facilityBuilding);
 

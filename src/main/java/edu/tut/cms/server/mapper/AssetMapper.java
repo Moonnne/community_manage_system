@@ -4,6 +4,7 @@ import edu.tut.cms.pojo.entity.Asset;
 import edu.tut.cms.pojo.vo.AssetVO;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -29,9 +30,12 @@ public interface AssetMapper {
 
     List<AssetVO> selectPage(@Param("assetOwnerId") Long assetOwnerId,
                              @Param("ownerUid") String ownerUid,
+                             @Param("assetCode") String assetCode,
                              @Param("assetType") Integer assetType,
                              @Param("assetStatus") Integer assetStatus,
-                             @Param("assetBuilding") Long assetBuilding);
+                             @Param("assetBuilding") Long assetBuilding,
+                             @Param("assetRegStart") LocalDateTime assetRegStart,
+                             @Param("assetRegEnd") LocalDateTime assetRegEnd);
 
     List<AssetVO> selectAll(@Param("assetOwnerId") Long assetOwnerId);
 }

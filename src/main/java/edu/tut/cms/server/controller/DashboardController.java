@@ -71,7 +71,7 @@ public class DashboardController {
 
     @GetMapping("/facility")
     public Result<Map<String, Object>> facility() {
-        List<FacilityVO> facilities = facilityMapper.selectPage(null, null, null, null);
+        List<FacilityVO> facilities = facilityMapper.selectPage(null, null, null, null, null);
         LocalDateTime now = LocalDateTime.now();
 
         long nearInspection = facilities.stream().filter(item -> {
@@ -98,7 +98,7 @@ public class DashboardController {
     public Result<Map<String, Object>> asset(@RequestParam(required = false) Long ownerId,
                                              @RequestParam(required = false) String assetName) {
         CurrentUser user = UserContext.getCurrentUser();
-        List<AssetVO> assets = assetMapper.selectPage(user.getId(), null, null, null, null).stream()
+        List<AssetVO> assets = assetMapper.selectPage(user.getId(), null, null, null, null, null, null, null).stream()
                 .filter(item -> !hasText(assetName) || contains(item.getAssetName(), assetName))
                 .toList();
         LocalDateTime now = LocalDateTime.now();
@@ -126,12 +126,12 @@ public class DashboardController {
         CurrentUser user = UserContext.getCurrentUser();
         boolean canProcess = user.getUserRole() != null && (user.getUserRole() == 0 || user.getUserRole() == 1);
 
-        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null, false).stream()
+        List<TaskVO> myTasks = taskMapper.selectPage(user.getId(), null, null, null, null, false).stream()
                 .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                 .filter(item -> taskType == null || Objects.equals(item.getTaskType(), taskType))
                 .toList();
         List<TaskVO> processingTasks = canProcess
-                ? taskMapper.selectPage(ownerId, null, null, taskType, false).stream()
+                ? taskMapper.selectPage(ownerId, null, null, null, taskType, false).stream()
                     .filter(item -> !hasText(title) || contains(item.getTaskTitle(), title))
                     .filter(item -> Objects.equals(item.getTaskStatus(), 1) || Objects.equals(item.getTaskStatus(), 2))
                     .toList()

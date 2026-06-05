@@ -45,7 +45,7 @@ public interface TaskService {
      */
     PageResult<TaskVO> pageTasks(Integer pageNum, Integer pageSize,
                                  Long ownerId, Long taskOperatorId,
-                                 Integer taskStatus, Integer taskType);
+                                 String taskCode, Integer taskStatus, Integer taskType);
 
     /**
      * 处理工单（分配处理人、变更状态）

@@ -3,8 +3,8 @@
     <div class="page-header"><h2 class="page-title">车辆管理</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.ownerUid" placeholder="业主账户" clearable /></el-col>
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.carNumber" placeholder="车牌号" clearable /></el-col>
+        <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5"><el-input v-model="query.ownerUid" placeholder="业主账户" clearable /></el-col>
         <el-col :span="5" :xs="24" :sm="12" :md="8" :lg="5" :xl="5">
           <el-select v-model="query.carType" placeholder="车辆类型" clearable>
             <el-option v-for="t in types" :key="t.carTypeId" :label="t.carTypeName" :value="t.carTypeId" />
@@ -28,7 +28,7 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="carCode" label="车辆编号" width="200" show-overflow-tooltip />
+        <el-table-column prop="carCode" label="车辆编号" width="200" sortable show-overflow-tooltip />
         <el-table-column prop="carNumber" label="车牌号" min-width="200" show-overflow-tooltip />
         <el-table-column prop="ownerName" label="车主" width="160" show-overflow-tooltip />
         <el-table-column prop="assetName" label="归属资产" min-width="180" show-overflow-tooltip>

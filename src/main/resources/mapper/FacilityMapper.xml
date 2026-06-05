@@ -41,6 +41,9 @@
             <if test="facilityStatus != null">
                 AND f.facility_status = #{facilityStatus}
             </if>
+            <if test="facilityCode != null and facilityCode != ''">
+                AND f.facility_code LIKE CONCAT('%', #{facilityCode}, '%')
+            </if>
             <if test="facilityName != null and facilityName != ''">
                 AND f.facility_name LIKE CONCAT('%', #{facilityName}, '%')
             </if>

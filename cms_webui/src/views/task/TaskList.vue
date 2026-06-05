@@ -3,8 +3,9 @@
     <div class="page-header"><h2 class="page-title">工单列表</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.ownerId" placeholder="提交人ID" clearable /></el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.taskOperatorId" placeholder="处理人ID" clearable /></el-col>
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.taskCode" placeholder="工单编号" clearable /></el-col>
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.ownerId" placeholder="工单所有人" clearable /></el-col>
+        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.taskOperatorId" placeholder="工单处理人" clearable /></el-col>
         <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
           <el-select v-model="query.taskType" placeholder="工单类型" clearable>
             <el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" />
@@ -31,7 +32,7 @@
     </div>
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="taskCode" label="工单编号" width="140" show-overflow-tooltip />
+        <el-table-column prop="taskCode" label="工单编号" width="140" sortable show-overflow-tooltip />
         <el-table-column prop="taskTitle" label="标题" width="160" show-overflow-tooltip />
         <el-table-column prop="taskTypeName" label="类型" width="100" show-overflow-tooltip>
           <template #default="{ row }"><el-tag effect="plain">{{ row.taskTypeName }}</el-tag></template>
@@ -43,7 +44,7 @@
             <el-tag :type="taskStatusType(row.taskStatus)" effect="plain">{{ taskStatusText(row.taskStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="taskCreateTime" label="创建时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="taskCreateTime" label="创建时间" width="170" sortable show-overflow-tooltip />
         <el-table-column prop="taskInfo" label="描述" min-width="160" show-overflow-tooltip />
         <el-table-column prop="taskRemark" label="回复" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
@@ -139,7 +140,7 @@ const dialogVisible = ref(false)
 const processVisible = ref(false)
 const isEdit = ref(false)
 const processFormRef = ref(null)
-const query = ref({ pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined })
 const form = ref({})
 const processForm = ref({})
 const wizardSteps = [
@@ -164,7 +165,7 @@ function taskStatusType(s) { return ({ 0: 'success', 1: 'warning', 2: 'primary',
 
 async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getTaskTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData(true) }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openForgotPasswordTask() {
   isEdit.value = false

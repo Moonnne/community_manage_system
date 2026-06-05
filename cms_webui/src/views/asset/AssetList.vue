@@ -5,6 +5,9 @@
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="12">
         <el-col :xs="24" :sm="12" :md="6">
+          <el-input v-model="query.assetCode" placeholder="资产编号" clearable />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
           <el-input v-model="query.ownerUid" placeholder="业主账户" clearable />
         </el-col>
         <el-col :xs="24" :sm="12" :md="6">
@@ -22,6 +25,16 @@
             placeholder="楼栋"
             primary-key="buildingName"
             secondary-key="buildingCode"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="24" :md="12">
+          <el-date-picker
+            v-model="query.assetRegRange"
+            type="datetimerange"
+            start-placeholder="登记开始时间"
+            end-placeholder="登记结束时间"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            class="full-width"
           />
         </el-col>
         <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
@@ -47,7 +60,7 @@
 
     <el-card shadow="never" class="table-card">
       <el-table v-loading="loading" :data="tableData" row-key="id">
-        <el-table-column prop="assetCode" label="资产编号" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="assetCode" label="资产编号" min-width="150" sortable show-overflow-tooltip />
         <el-table-column prop="assetName" label="名称" min-width="140" show-overflow-tooltip />
         <el-table-column label="类型" width="110">
           <template #default="{ row }">
@@ -60,11 +73,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="ownerName" label="业主" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="buildingName" label="楼栋" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="assetFloor" label="楼层" width="90" show-overflow-tooltip />
+        <el-table-column prop="buildingName" label="楼栋" min-width="140" sortable show-overflow-tooltip />
+        <el-table-column prop="assetFloor" label="楼层" width="90" sortable show-overflow-tooltip />
         <el-table-column prop="assetPosition" label="位置" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="assetRegTime" label="登记时间" width="170" show-overflow-tooltip />
-        <el-table-column prop="assetDueTime" label="过期时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="assetRegTime" label="登记时间" width="170" sortable show-overflow-tooltip />
+        <el-table-column prop="assetDueTime" label="过期时间" width="170" sortable show-overflow-tooltip />
         <el-table-column prop="assetRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
@@ -248,7 +261,7 @@ const tableData = ref([])
 const total = ref(0)
 const buildings = ref([])
 const users = ref([])
-const query = ref({ pageNum: 1, pageSize: 10, ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, assetCode: '', ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined, assetRegRange: [] })
 const form = ref(getDefaultForm())
 
 const assetTypeName = computed(() => props.assetType === 1 ? '房产' : '停车位')
@@ -318,7 +331,13 @@ watch(() => props.assetType, () => {
 async function fetchData(forceRefresh = false) {
   loading.value = true
   try {
-    const res = await getAssetPage(query.value, { forceRefresh })
+    const params = { ...query.value }
+    if (params.assetRegRange?.length === 2) {
+      params.assetRegStart = params.assetRegRange[0]
+      params.assetRegEnd = params.assetRegRange[1]
+    }
+    delete params.assetRegRange
+    const res = await getAssetPage(params, { forceRefresh })
     tableData.value = res.data.records || []
     total.value = res.data.total || 0
   } finally {
@@ -358,7 +377,7 @@ function search() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined }
+  query.value = { pageNum: 1, pageSize: 10, assetCode: '', ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined, assetRegRange: [] }
   fetchData(true)
 }
 

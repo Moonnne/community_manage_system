@@ -7,6 +7,7 @@ import edu.tut.cms.pojo.dto.AssetUpdateDTO;
 import edu.tut.cms.pojo.vo.AssetTypeVO;
 import edu.tut.cms.pojo.vo.AssetVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AssetService {
@@ -44,8 +45,9 @@ public interface AssetService {
      * @return 分页结果
      */
     PageResult<AssetVO> pageAssets(Integer pageNum, Integer pageSize,
-                                   Long assetOwnerId, String ownerUid, Integer assetType,
-                                   Integer assetStatus, Long assetBuilding);
+                                   Long assetOwnerId, String ownerUid, String assetCode, Integer assetType,
+                                   Integer assetStatus, Long assetBuilding,
+                                   LocalDateTime assetRegStart, LocalDateTime assetRegEnd);
 
     /**
      * 导出资产数据为Excel

@@ -83,7 +83,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public PageResult<TaskVO> pageTasks(Integer pageNum, Integer pageSize,
                                         Long ownerId, Long taskOperatorId,
-                                        Integer taskStatus, Integer taskType) {
+                                        String taskCode, Integer taskStatus, Integer taskType) {
         CurrentUser currentUser = UserContext.getCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
@@ -93,7 +93,7 @@ public class TaskServiceImpl implements TaskService {
         Boolean excludeComplaint = currentUser.getUserRole() != null
                 && (currentUser.getUserRole() == 2 || currentUser.getUserRole() == 3)
                 && !currentUser.getId().equals(ownerId);
-        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskStatus, taskType, excludeComplaint);
+        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskCode, taskStatus, taskType, excludeComplaint);
         PageInfo<TaskVO> pageInfo = new PageInfo<>(list);
 
         PageResult<TaskVO> result = new PageResult<>();

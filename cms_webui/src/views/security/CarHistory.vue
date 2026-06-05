@@ -38,7 +38,7 @@
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" stripe v-loading="loading" style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="48" fixed="left" />
-        <el-table-column prop="carHistoryCode" label="记录编号" width="200" show-overflow-tooltip />
+        <el-table-column prop="carHistoryCode" label="记录编号" width="200" sortable show-overflow-tooltip />
         <el-table-column prop="carNumber" label="车牌号" width="120" show-overflow-tooltip />
         <el-table-column prop="gateName" label="门岗" width="120" show-overflow-tooltip />
         <el-table-column label="类型" width="120" show-overflow-tooltip>
@@ -49,7 +49,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="operatorName" label="操作人" width="100" show-overflow-tooltip />
-        <el-table-column prop="carHistoryTime" label="操作时间" width="200" show-overflow-tooltip />
+        <el-table-column prop="carHistoryTime" label="操作时间" width="200" sortable show-overflow-tooltip />
         <el-table-column prop="carHistoryRemark" label="备注" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="130" fixed="right">
           <template #default="{ row }">

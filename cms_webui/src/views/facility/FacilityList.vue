@@ -5,6 +5,9 @@
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="12">
         <el-col :xs="24" :sm="12" :md="5">
+          <el-input v-model="query.facilityCode" placeholder="设施编号" clearable />
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="5">
           <el-input v-model="query.facilityName" placeholder="设施名称" clearable />
         </el-col>
         <el-col :xs="24" :sm="12" :md="5">
@@ -52,7 +55,7 @@
 
     <el-card shadow="never" class="table-card">
       <el-table v-loading="loading" :data="tableData" row-key="id">
-        <el-table-column prop="facilityCode" label="设施编号" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="facilityCode" label="设施编号" min-width="160" sortable show-overflow-tooltip />
         <el-table-column prop="facilityName" label="名称" min-width="140" show-overflow-tooltip />
         <el-table-column label="类型" width="120">
           <template #default="{ row }">
@@ -65,10 +68,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="chiefName" label="负责人" min-width="110" show-overflow-tooltip />
-        <el-table-column prop="buildingName" label="楼栋" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="facilityFloor" label="楼层" width="90" show-overflow-tooltip />
+        <el-table-column prop="buildingName" label="楼栋" min-width="140" sortable show-overflow-tooltip />
+        <el-table-column prop="facilityFloor" label="楼层" width="90" sortable show-overflow-tooltip />
         <el-table-column prop="facilityPosition" label="位置" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="facilityCheckTime" label="检查时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="facilityCheckTime" label="检查时间" width="170" sortable show-overflow-tooltip />
         <el-table-column prop="facilityExpirationDate" label="检查周期" width="110" show-overflow-tooltip />
         <el-table-column prop="facilityRemark" label="备注" min-width="140" show-overflow-tooltip />
         <el-table-column label="操作" width="140" fixed="right">
@@ -241,7 +244,7 @@ const total = ref(0)
 const types = ref([])
 const buildings = ref([])
 const users = ref([])
-const query = ref({ pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, facilityCode: '', facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined })
 const form = ref(getDefaultForm())
 const buildingOptions = computed(() => buildings.value.map(item => ({
   value: item.id,
@@ -350,7 +353,7 @@ function search() {
 }
 
 function resetQuery() {
-  query.value = { pageNum: 1, pageSize: 10, facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined }
+  query.value = { pageNum: 1, pageSize: 10, facilityCode: '', facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined }
   fetchData(true)
 }
 

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -56,10 +57,14 @@ public class AssetController {
                                             @RequestParam(defaultValue = "10") Integer pageSize,
                                             @RequestParam(required = false) Long assetOwnerId,
                                             @RequestParam(required = false) String ownerUid,
+                                            @RequestParam(required = false) String assetCode,
                                             @RequestParam(required = false) Integer assetType,
                                             @RequestParam(required = false) Integer assetStatus,
-                                            @RequestParam(required = false) Long assetBuilding) {
-        return Result.success(assetService.pageAssets(pageNum, pageSize, assetOwnerId, ownerUid, assetType, assetStatus, assetBuilding));
+                                            @RequestParam(required = false) Long assetBuilding,
+                                            @RequestParam(required = false) LocalDateTime assetRegStart,
+                                            @RequestParam(required = false) LocalDateTime assetRegEnd) {
+        return Result.success(assetService.pageAssets(pageNum, pageSize, assetOwnerId, ownerUid, assetCode,
+                assetType, assetStatus, assetBuilding, assetRegStart, assetRegEnd));
     }
 
     @GetMapping("/export")

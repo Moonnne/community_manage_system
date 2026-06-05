@@ -53,9 +53,11 @@ public class FacilityController {
                                                @RequestParam(defaultValue = "10") Integer pageSize,
                                                @RequestParam(required = false) Integer facilityType,
                                                @RequestParam(required = false) Integer facilityStatus,
+                                               @RequestParam(required = false) String facilityCode,
                                                @RequestParam(required = false) String facilityName,
                                                @RequestParam(required = false) Long facilityBuilding) {
-        return Result.success(facilityService.pageFacilities(pageNum, pageSize, facilityType, facilityStatus, facilityName, facilityBuilding));
+        return Result.success(facilityService.pageFacilities(pageNum, pageSize, facilityType, facilityStatus,
+                facilityCode, facilityName, facilityBuilding));
     }
 
     @GetMapping("/near-expiration")

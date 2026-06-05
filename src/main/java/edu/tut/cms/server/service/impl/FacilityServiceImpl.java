@@ -86,9 +86,9 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     public PageResult<FacilityVO> pageFacilities(Integer pageNum, Integer pageSize,
                                                  Integer facilityType, Integer facilityStatus,
-                                                 String facilityName, Long facilityBuilding) {
+                                                 String facilityCode, String facilityName, Long facilityBuilding) {
         PageHelper.startPage(pageNum, pageSize);
-        List<FacilityVO> list = facilityMapper.selectPage(facilityType, facilityStatus, facilityName, facilityBuilding);
+        List<FacilityVO> list = facilityMapper.selectPage(facilityType, facilityStatus, facilityCode, facilityName, facilityBuilding);
         PageInfo<FacilityVO> pageInfo = new PageInfo<>(list);
 
         PageResult<FacilityVO> result = new PageResult<>();

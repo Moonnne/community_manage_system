@@ -41,6 +41,9 @@
             <if test="ownerUid != null and ownerUid != ''">
                 AND u.uid LIKE CONCAT('%', #{ownerUid}, '%')
             </if>
+            <if test="assetCode != null and assetCode != ''">
+                AND a.asset_code LIKE CONCAT('%', #{assetCode}, '%')
+            </if>
             <if test="assetType != null">
                 AND a.asset_type = #{assetType}
             </if>
@@ -49,6 +52,12 @@
             </if>
             <if test="assetBuilding != null">
                 AND a.asset_building = #{assetBuilding}
+            </if>
+            <if test="assetRegStart != null">
+                AND a.asset_reg_time &gt;= #{assetRegStart}
+            </if>
+            <if test="assetRegEnd != null">
+                AND a.asset_reg_time &lt;= #{assetRegEnd}
             </if>
         </where>
         ORDER BY a.id ASC

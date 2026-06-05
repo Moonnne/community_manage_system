@@ -34,6 +34,9 @@
             <if test="taskOperatorId != null">
                 AND t.task_operator_id = #{taskOperatorId}
             </if>
+            <if test="taskCode != null and taskCode != ''">
+                AND t.task_code LIKE CONCAT('%', #{taskCode}, '%')
+            </if>
             <if test="taskStatus != null">
                 AND t.task_status = #{taskStatus}
             </if>
