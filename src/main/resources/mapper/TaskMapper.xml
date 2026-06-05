@@ -43,6 +43,9 @@
             <if test="taskType != null">
                 AND t.task_type = #{taskType}
             </if>
+            <if test="rangeStart != null and rangeEnd != null">
+                AND t.task_create_time BETWEEN #{rangeStart} AND #{rangeEnd}
+            </if>
             <if test="excludeComplaint != null and excludeComplaint">
                 AND t.task_type != 1
             </if>

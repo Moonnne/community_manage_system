@@ -3,15 +3,17 @@
     <div class="page-header"><h2 class="page-title">工单列表</h2></div>
     <el-card shadow="never" class="search-card">
       <el-row :gutter="16">
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.taskCode" placeholder="工单编号" clearable /></el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.ownerId" placeholder="工单所有人" clearable /></el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4"><el-input v-model="query.taskOperatorId" placeholder="工单处理人" clearable /></el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6"><el-input v-model="query.taskCode" placeholder="工单编号" clearable /></el-col>
+        <el-col :xs="24" :sm="12" :md="8" :lg="6"><el-input v-model="query.ownerId" placeholder="工单所有人" clearable /></el-col>
+        <el-col :xs="24" :sm="12" :md="8" :lg="6"><el-input v-model="query.taskOperatorId" placeholder="工单处理人" clearable /></el-col>
+      </el-row>
+      <el-row :gutter="16" class="search-second-row">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.taskType" placeholder="工单类型" clearable>
             <el-option v-for="t in types" :key="t.taskTypeId" :label="t.taskTypeName" :value="t.taskTypeId" />
           </el-select>
         </el-col>
-        <el-col :span="4" :xs="24" :sm="12" :md="8" :lg="4" :xl="4">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.taskStatus" placeholder="状态" clearable>
             <el-option label="待处理" :value="1" />
             <el-option label="受理中" :value="2" />
@@ -20,7 +22,17 @@
             <el-option label="已取消" :value="4" />
           </el-select>
         </el-col>
-        <el-col :span="6" :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
+        <el-col :xs="24" :sm="24" :md="16" :lg="10">
+          <el-date-picker
+            v-model="query.timeRange"
+            type="datetimerange"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            start-placeholder="创建开始时间"
+            end-placeholder="创建结束时间"
+            class="full-width"
+          />
+        </el-col>
+        <el-col :xs="24" :sm="24" :md="24" :lg="6" class="search-actions">
           <el-button type="primary" @click="fetchData"><el-icon><Search /></el-icon> 搜索</el-button>
           <el-button @click="resetQuery"><el-icon><Refresh /></el-icon> 重置</el-button>
         </el-col>
@@ -45,6 +57,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="taskCreateTime" label="创建时间" width="170" sortable show-overflow-tooltip />
+        <el-table-column prop="taskUpdateTime" label="更新时间" width="170" sortable show-overflow-tooltip />
+        <el-table-column prop="taskFinishTime" label="完成时间" width="170" sortable show-overflow-tooltip />
         <el-table-column prop="taskInfo" label="描述" min-width="160" show-overflow-tooltip />
         <el-table-column prop="taskRemark" label="回复" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
@@ -140,7 +154,7 @@ const dialogVisible = ref(false)
 const processVisible = ref(false)
 const isEdit = ref(false)
 const processFormRef = ref(null)
-const query = ref({ pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined })
+const query = ref({ pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined, timeRange: [] })
 const form = ref({})
 const processForm = ref({})
 const wizardSteps = [
@@ -163,9 +177,9 @@ const formRules = {
 function taskStatusText(s) { return ({ 0: '已完成', 1: '待处理', 2: '受理中', 3: '已驳回', 4: '已取消' })[s] || '未知' }
 function taskStatusType(s) { return ({ 0: 'success', 1: 'warning', 2: 'primary', 3: 'danger', 4: 'info' })[s] || 'info' }
 
-async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
+async function fetchData(forceRefresh = false) { loading.value = true; try { const p = { ...query.value }; if (p.timeRange?.length === 2) { p.rangeStart = p.timeRange[0]; p.rangeEnd = p.timeRange[1] }; delete p.timeRange; Object.keys(p).forEach(k => { if (p[k] === '' || p[k] === undefined) delete p[k] }); const res = await getTaskPage(p, { forceRefresh: !!forceRefresh }); tableData.value = res.data.records; total.value = res.data.total } finally { loading.value = false } }
 async function fetchTypes() { const res = await getTaskTypes(); types.value = res.data }
-function resetQuery() { query.value = { pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined }; fetchData(true) }
+function resetQuery() { query.value = { pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined, timeRange: [] }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openForgotPasswordTask() {
   isEdit.value = false
@@ -219,7 +233,15 @@ onMounted(async () => {
 .page-header { margin-bottom: 16px; }
 .page-title { font-size: 20px; font-weight: 700; color: var(--vp-c-text-1); margin: 0; }
 .search-card { margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.search-card :deep(.el-select), .search-card :deep(.el-date-editor--datetimerange) { width: 100%; max-width: none; }
+.search-second-row { margin-top: 12px; }
+.search-actions { display: flex; justify-content: flex-end; }
+.search-actions .el-button { flex: 1 1 0; margin-left: 0; }
 .table-toolbar { margin-bottom: 12px; }
 .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 768px) {
+  .search-card :deep(.el-row) { row-gap: 10px; }
+  .search-actions { justify-content: stretch; }
+}
 </style>

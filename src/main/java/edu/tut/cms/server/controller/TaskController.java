@@ -12,8 +12,10 @@ import edu.tut.cms.pojo.vo.TaskVO;
 import edu.tut.cms.server.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -50,8 +52,10 @@ public class TaskController {
                                            @RequestParam(required = false) Long taskOperatorId,
                                            @RequestParam(required = false) String taskCode,
                                            @RequestParam(required = false) Integer taskStatus,
-                                           @RequestParam(required = false) Integer taskType) {
-        return Result.success(taskService.pageTasks(pageNum, pageSize, ownerId, taskOperatorId, taskCode, taskStatus, taskType));
+                                           @RequestParam(required = false) Integer taskType,
+                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime rangeStart,
+                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime rangeEnd) {
+        return Result.success(taskService.pageTasks(pageNum, pageSize, ownerId, taskOperatorId, taskCode, taskStatus, taskType, rangeStart, rangeEnd));
     }
 
     @PostMapping("/process")

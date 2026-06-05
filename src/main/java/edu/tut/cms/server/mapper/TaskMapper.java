@@ -4,6 +4,7 @@ import edu.tut.cms.pojo.entity.Task;
 import edu.tut.cms.pojo.vo.TaskVO;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -32,5 +33,7 @@ public interface TaskMapper {
                             @Param("taskCode") String taskCode,
                             @Param("taskStatus") Integer taskStatus,
                             @Param("taskType") Integer taskType,
+                            @Param("rangeStart") LocalDateTime rangeStart,
+                            @Param("rangeEnd") LocalDateTime rangeEnd,
                             @Param("excludeComplaint") Boolean excludeComplaint);
 }

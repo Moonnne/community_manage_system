@@ -7,6 +7,7 @@ import edu.tut.cms.pojo.dto.TaskUpdateDTO;
 import edu.tut.cms.pojo.vo.TaskTypeVO;
 import edu.tut.cms.pojo.vo.TaskVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskService {
@@ -45,7 +46,8 @@ public interface TaskService {
      */
     PageResult<TaskVO> pageTasks(Integer pageNum, Integer pageSize,
                                  Long ownerId, Long taskOperatorId,
-                                 String taskCode, Integer taskStatus, Integer taskType);
+                                 String taskCode, Integer taskStatus, Integer taskType,
+                                 LocalDateTime rangeStart, LocalDateTime rangeEnd);
 
     /**
      * 处理工单（分配处理人、变更状态）

@@ -58,6 +58,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateTask(TaskUpdateDTO dto) {
+        Task existing = taskMapper.selectById(dto.getId());
+        if (existing == null) {
+            throw new BusinessException("工单不存在");
+        }
         Task task = Task.builder()
                 .id(dto.getId())
                 .taskTitle(dto.getTaskTitle())
@@ -68,7 +72,7 @@ public class TaskServiceImpl implements TaskService {
                 .taskUpdateTime(LocalDateTime.now())
                 .taskRemark(dto.getTaskRemark())
                 .build();
-        if (dto.getTaskStatus() != null && dto.getTaskStatus() == 0) {
+        if (shouldSetFinishTime(existing, dto.getTaskStatus())) {
             task.setTaskFinishTime(LocalDateTime.now());
         }
         taskMapper.updateById(task);
@@ -83,7 +87,8 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public PageResult<TaskVO> pageTasks(Integer pageNum, Integer pageSize,
                                         Long ownerId, Long taskOperatorId,
-                                        String taskCode, Integer taskStatus, Integer taskType) {
+                                        String taskCode, Integer taskStatus, Integer taskType,
+                                        LocalDateTime rangeStart, LocalDateTime rangeEnd) {
         CurrentUser currentUser = UserContext.getCurrentUser();
         if (currentUser.getUserRole() >= 4) {
             ownerId = currentUser.getId();
@@ -93,7 +98,7 @@ public class TaskServiceImpl implements TaskService {
         Boolean excludeComplaint = currentUser.getUserRole() != null
                 && (currentUser.getUserRole() == 2 || currentUser.getUserRole() == 3)
                 && !currentUser.getId().equals(ownerId);
-        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskCode, taskStatus, taskType, excludeComplaint);
+        List<TaskVO> list = taskMapper.selectPage(ownerId, taskOperatorId, taskCode, taskStatus, taskType, rangeStart, rangeEnd, excludeComplaint);
         PageInfo<TaskVO> pageInfo = new PageInfo<>(list);
 
         PageResult<TaskVO> result = new PageResult<>();
@@ -124,7 +129,7 @@ public class TaskServiceImpl implements TaskService {
                 .taskUpdateTime(LocalDateTime.now())
                 .taskRemark(remark)
                 .build();
-        if (status != null && status == 0) {
+        if (shouldSetFinishTime(existing, status)) {
             task.setTaskFinishTime(LocalDateTime.now());
         }
         taskMapper.updateById(task);
@@ -170,5 +175,16 @@ public class TaskServiceImpl implements TaskService {
             }
         }
         throw new BusinessException("工单编号生成失败，请重试");
+    }
+
+    private boolean isFinishedStatus(Integer status) {
+        return status != null && (status == 0 || status == 3 || status == 4);
+    }
+
+    private boolean shouldSetFinishTime(Task existing, Integer targetStatus) {
+        if (!isFinishedStatus(targetStatus)) {
+            return false;
+        }
+        return !isFinishedStatus(existing.getTaskStatus()) || existing.getTaskFinishTime() == null;
     }
 }

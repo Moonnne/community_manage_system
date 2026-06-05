@@ -2,20 +2,20 @@
   <div class="page-container">
     <h2 class="page-title">设施信息</h2>
 
-    <el-card shadow="never" class="filter-card">
-      <el-row :gutter="12">
-        <el-col :xs="24" :sm="12" :md="5">
+    <el-card shadow="never" class="search-card">
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-input v-model="query.facilityCode" placeholder="设施编号" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-input v-model="query.facilityName" placeholder="设施名称" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.facilityType" placeholder="设施类型" clearable class="full-width">
             <el-option v-for="type in types" :key="type.facilityTypeId" :label="type.facilityTypeName" :value="type.facilityTypeId" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <el-select v-model="query.facilityStatus" placeholder="状态" clearable class="full-width">
             <el-option label="正常" :value="0" />
             <el-option label="故障" :value="1" />
@@ -23,7 +23,7 @@
             <el-option label="缺失" :value="3" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="5">
+        <el-col :xs="24" :sm="12" :md="8" :lg="4">
           <DualSelectV2
             v-model="query.facilityBuilding"
             :options="buildingOptions"
@@ -32,7 +32,7 @@
             secondary-key="buildingCode"
           />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="4" class="filter-actions">
+        <el-col :xs="24" :sm="24" :md="8" :lg="4" class="search-actions">
           <el-button type="primary" @click="search">
             <el-icon><Search /></el-icon>
             搜索
@@ -442,28 +442,23 @@ onMounted(() => {
   font-weight: 800;
 }
 
-.filter-card,
+.search-card,
 .table-card {
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
 }
 
-.filter-card {
+.search-card {
   margin-bottom: 16px;
 }
 
-.filter-card :deep(.el-row) {
-  row-gap: 12px;
-}
-
-.filter-actions {
+.search-actions {
   display: flex;
-  align-items: center;
-  width: 100%;
+  justify-content: flex-end;
   gap: 10px;
 }
 
-.filter-actions .el-button {
+.search-actions .el-button {
   flex: 1 1 0;
   min-width: 0;
   margin-left: 0;
@@ -533,26 +528,27 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .filter-card :deep(.el-card__body),
+  .search-card :deep(.el-card__body),
   .table-card :deep(.el-card__body) {
     padding: 16px 18px;
   }
 
-  .filter-card :deep(.el-row) {
+  .search-card :deep(.el-row) {
     row-gap: 10px;
   }
 
-  .filter-card :deep(.el-input),
-  .filter-card :deep(.el-select),
-  .filter-card :deep(.el-select-v2) {
+  .search-card :deep(.el-input),
+  .search-card :deep(.el-select),
+  .search-card :deep(.el-select-v2) {
     width: 100%;
   }
 
-  .filter-actions {
+  .search-actions {
     flex-direction: row;
+    justify-content: stretch;
   }
 
-  .filter-actions .el-button {
+  .search-actions .el-button {
     width: 100%;
   }
 

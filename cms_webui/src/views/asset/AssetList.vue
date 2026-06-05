@@ -2,15 +2,15 @@
   <div class="page-container">
     <h2 class="page-title">{{ title }}</h2>
 
-    <el-card shadow="never" class="filter-card">
-      <el-row :gutter="12">
-        <el-col :xs="24" :sm="12" :md="6">
+    <el-card shadow="never" class="search-card">
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <el-input v-model="query.assetCode" placeholder="资产编号" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <el-input v-model="query.ownerUid" placeholder="业主账户" clearable />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <el-select v-model="query.assetStatus" placeholder="状态" clearable class="full-width">
             <el-option label="正常" :value="0" />
             <el-option label="过期" :value="1" />
@@ -18,7 +18,9 @@
             <el-option label="冻结" :value="3" />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+      </el-row>
+      <el-row :gutter="16" class="search-second-row">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6">
           <DualSelectV2
             v-model="query.assetBuilding"
             :options="buildingOptions"
@@ -27,7 +29,7 @@
             secondary-key="buildingCode"
           />
         </el-col>
-        <el-col :xs="24" :sm="24" :md="12">
+        <el-col :xs="24" :sm="24" :md="16" :lg="12">
           <el-date-picker
             v-model="query.assetRegRange"
             type="datetimerange"
@@ -37,7 +39,7 @@
             class="full-width"
           />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6" class="filter-actions">
+        <el-col :xs="24" :sm="24" :md="24" :lg="6" class="search-actions">
           <el-button type="primary" @click="search">
             <el-icon><Search /></el-icon>
             搜索
@@ -482,9 +484,11 @@ onMounted(() => {
 
 <style scoped>
 .page-title { margin: 0 0 18px; color: var(--vp-c-text-1); font-size: 24px; font-weight: 800; }
-.filter-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
-.filter-actions { display: flex; align-items: center; gap: 8px; }
-.filter-actions .el-button { flex: 1 1 0; margin-left: 0; }
+.search-card, .table-card { border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.search-card :deep(.el-date-editor--datetimerange) { width: 100%; max-width: none; }
+.search-second-row { margin-top: 12px; }
+.search-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.search-actions .el-button { flex: 1 1 0; margin-left: 0; }
 .toolbar { display: flex; gap: 10px; margin: 16px 0; }
 .full-width { width: 100%; }
 .pagination-wrap { display: flex; justify-content: flex-end; margin-top: 18px; }
@@ -501,14 +505,15 @@ onMounted(() => {
 .number-with-unit .el-input-number { flex: 1 1 auto; min-width: 0; }
 .number-unit { flex: 0 0 auto; color: var(--vp-c-text-2); font-size: 14px; }
 @media (max-width: 768px) {
-  .filter-card :deep(.el-card__body),
+  .search-card :deep(.el-card__body),
   .table-card :deep(.el-card__body) { padding: 16px 18px; }
-  .filter-card :deep(.el-row) { row-gap: 10px; }
-  .filter-card :deep(.el-input),
-  .filter-card :deep(.el-select),
-  .filter-card :deep(.el-select-v2) { width: 100%; }
-  .filter-actions, .toolbar { flex-direction: row; }
-  .filter-actions .el-button { width: 100%; margin-left: 0; }
+  .search-card :deep(.el-row) { row-gap: 10px; }
+  .search-card :deep(.el-input),
+  .search-card :deep(.el-select),
+  .search-card :deep(.el-select-v2) { width: 100%; }
+  .search-actions, .toolbar { flex-direction: row; }
+  .search-actions { justify-content: stretch; }
+  .search-actions .el-button { width: 100%; margin-left: 0; }
   .toolbar .el-button { width: auto; margin-left: 0; }
   .pagination-wrap { justify-content: flex-start; overflow-x: auto; }
 }
