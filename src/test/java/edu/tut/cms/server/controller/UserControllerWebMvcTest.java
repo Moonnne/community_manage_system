@@ -97,7 +97,7 @@ class UserControllerWebMvcTest {
 
     @Test
     void list_withOwnerToken_returns403Json() throws Exception {
-        when(userService.pageUsers(anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
+        when(userService.pageUsers(anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageResult<>());
         mockMvc.perform(get("/api/user/list")
                         .header("Authorization", bearerForRole(4)))
@@ -113,7 +113,7 @@ class UserControllerWebMvcTest {
         page.setPageSize(10);
         page.setPages(0);
         page.setRecords(List.of());
-        when(userService.pageUsers(eq(1), eq(10), eq("uidq"), eq("nameq"), eq("phoneq"), eq("mailq"), eq(2), eq(0)))
+        when(userService.pageUsers(eq(1), eq(10), eq("uidq"), eq("nameq"), eq("phoneq"), eq("mailq"), eq(null), eq(2), eq(0)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/user/list")
@@ -233,7 +233,7 @@ class UserControllerWebMvcTest {
     void changePassword_returns200() throws Exception {
         doNothing().when(userService).changePassword(any(UserPasswordDTO.class));
 
-        UserPasswordDTO dto = new UserPasswordDTO("oldpass1", "newpass12");
+        UserPasswordDTO dto = new UserPasswordDTO("oldpass1", "newpass12", "a1b2");
 
         mockMvc.perform(post("/api/user/password")
                         .header("Authorization", bearerForRole(4))
