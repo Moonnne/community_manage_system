@@ -8,12 +8,13 @@
       :value="chars[index] || ''"
       type="text"
       :inputmode="inputmode"
-      :maxlength="1"
+      :maxlength="length"
       autocomplete="one-time-code"
       autocapitalize="characters"
       autocorrect="off"
       spellcheck="false"
       enterkeyhint="done"
+      @beforeinput="handleBeforeInput(index, $event)"
       @input="handleInput(index, $event)"
       @keydown="handleKeydown(index, $event)"
       @compositionstart="isComposing = true"
@@ -70,10 +71,8 @@ function updateAt(index, value) {
   emit('update:modelValue', next.join('').slice(0, props.length))
 }
 
-function handleInput(index, event) {
-  if (isComposing.value || event.isComposing) return
-
-  const value = normalize(event.target.value)
+function applyValue(index, rawValue) {
+  const value = normalize(rawValue)
   if (!value) {
     updateAt(index, '')
     return
@@ -85,7 +84,12 @@ function handleInput(index, event) {
       if (index + offset < props.length) next[index + offset] = char
     })
     emit('update:modelValue', next.join('').slice(0, props.length))
-    focusInput(Math.min(index + value.length, props.length - 1))
+    const nextIndex = Math.min(index + value.length, props.length - 1)
+    if (index + value.length >= props.length) {
+      blurInput(nextIndex)
+    } else {
+      focusInput(nextIndex)
+    }
     return
   }
 
@@ -97,9 +101,20 @@ function handleInput(index, event) {
   }
 }
 
+function handleBeforeInput(index, event) {
+  if (event.inputType !== 'insertText' || !event.data || event.isComposing || isComposing.value) return
+  event.preventDefault()
+  applyValue(index, event.data)
+}
+
+function handleInput(index, event) {
+  if (isComposing.value || event.isComposing) return
+  applyValue(index, event.target.value)
+}
+
 function handleCompositionEnd(index, event) {
   isComposing.value = false
-  handleInput(index, event)
+  applyValue(index, event.data || event.target.value)
 }
 
 function handleKeydown(index, event) {
