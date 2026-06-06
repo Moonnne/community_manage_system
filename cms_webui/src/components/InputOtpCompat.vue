@@ -6,12 +6,19 @@
       ref="inputRefs"
       class="otp-input__box"
       :value="chars[index] || ''"
-      inputmode="none"
+      type="text"
+      :inputmode="inputmode"
       :maxlength="1"
       autocomplete="one-time-code"
+      autocapitalize="characters"
+      autocorrect="off"
+      spellcheck="false"
+      enterkeyhint="done"
       @input="handleInput(index, $event)"
       @keydown="handleKeydown(index, $event)"
-      @focus="$event.target.select()"
+      @compositionstart="isComposing = true"
+      @compositionend="handleCompositionEnd(index, $event)"
+      @focus="handleFocus"
     />
   </div>
 </template>
@@ -28,6 +35,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 const inputRefs = ref([])
+const isComposing = ref(false)
 const boxes = computed(() => Array.from({ length: props.length }))
 const chars = computed(() => String(props.modelValue || '').slice(0, props.length).split(''))
 
@@ -48,6 +56,14 @@ function focusInput(index) {
   nextTick(() => inputRefs.value[index]?.focus?.())
 }
 
+function blurInput(index) {
+  nextTick(() => inputRefs.value[index]?.blur?.())
+}
+
+function handleFocus(event) {
+  nextTick(() => event.target?.select?.())
+}
+
 function updateAt(index, value) {
   const next = chars.value.slice()
   next[index] = value
@@ -55,6 +71,8 @@ function updateAt(index, value) {
 }
 
 function handleInput(index, event) {
+  if (isComposing.value || event.isComposing) return
+
   const value = normalize(event.target.value)
   if (!value) {
     updateAt(index, '')
@@ -72,7 +90,16 @@ function handleInput(index, event) {
   }
 
   updateAt(index, value)
-  if (index < props.length - 1) focusInput(index + 1)
+  if (index < props.length - 1) {
+    focusInput(index + 1)
+  } else {
+    blurInput(index)
+  }
+}
+
+function handleCompositionEnd(index, event) {
+  isComposing.value = false
+  handleInput(index, event)
 }
 
 function handleKeydown(index, event) {
