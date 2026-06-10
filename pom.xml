@@ -10,7 +10,7 @@
     </parent>
     <groupId>edu.tut</groupId>
     <artifactId>CommunityManageSystem</artifactId>
-    <version>1.0.0-RELEASE</version>
+    <version>1.1.0-RELEASE</version>
     <name>CommunityManageSystem</name>
     <description>CommunityManageSystem</description>
     <url/>

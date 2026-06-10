@@ -8,11 +8,11 @@ spring:
     import: optional:classpath:env.yaml
   ai:
     deepseek:
-      base-url: ${spring.ai.deepseek.base-url:}
-      api-key: ${spring.ai.deepseek.api-key:}
+      base-url: ${deepseek.base-url:}
+      api-key: ${deepseek.api-key:}
       chat:
+        model: ${deepseek.chat.model:deepseek-v4-flash}
         options:
-          model: ${spring.ai.deepseek.chat.options.model:deepseek-v4-pro}
           stream: true
           reasoning-effort: high
           thinking:
