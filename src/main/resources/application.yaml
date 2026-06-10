@@ -12,7 +12,13 @@ spring:
       api-key: ${spring.ai.deepseek.api-key:}
       chat:
         options:
-          model: ${spring.ai.deepseek.chat.options.model:deepseek-chat}
+          model: ${spring.ai.deepseek.chat.options.model:deepseek-v4-pro}
+          stream: true
+          reasoning-effort: high
+          thinking:
+            type: enabled
+          response-format:
+            type: json_object
   datasource:
     url: ${datasource.url}
     username: ${datasource.username}
