@@ -12,9 +12,11 @@ import edu.tut.cms.common.filter.JwtAuthenticationFilter;
 import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.common.result.Result;
 import edu.tut.cms.common.utils.JwtUtils;
+import edu.tut.cms.pojo.entity.User;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.UserRoleVO;
 import edu.tut.cms.pojo.vo.UserVO;
+import edu.tut.cms.server.mapper.UserMapper;
 import edu.tut.cms.server.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +71,9 @@ class UserControllerWebMvcTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private UserMapper userMapper;
+
     private String bearerForRole(int roleId) {
         CurrentUser u = CurrentUser.builder()
                 .id(1L)
@@ -76,6 +81,13 @@ class UserControllerWebMvcTest {
                 .userName("nick")
                 .userRole(roleId)
                 .build();
+        when(userMapper.selectById(1L)).thenReturn(User.builder()
+                .id(1L)
+                .uid("u-test-1")
+                .userName("nick")
+                .userRole(roleId)
+                .userStatus(0)
+                .build());
         return "Bearer " + jwtUtils.generateToken(u);
     }
 
