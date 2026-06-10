@@ -6,6 +6,13 @@ spring:
     name: CommunityManageSystem
   config:
     import: optional:classpath:env.yaml
+  ai:
+    deepseek:
+      base-url: ${spring.ai.deepseek.base-url:}
+      api-key: ${spring.ai.deepseek.api-key:}
+      chat:
+        options:
+          model: ${spring.ai.deepseek.chat.options.model:deepseek-chat}
   datasource:
     url: ${datasource.url}
     username: ${datasource.username}
@@ -26,3 +33,8 @@ jwt:
 logging:
   level:
     edu.tut.cms: debug
+
+cms:
+  agent:
+    page-size: 5
+    max-history-messages: 8

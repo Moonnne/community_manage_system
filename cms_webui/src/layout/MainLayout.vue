@@ -137,6 +137,7 @@
     </div>
 
     <AccountInitializationDialog />
+    <AgentChatWindow />
   </div>
 </template>
 
@@ -146,6 +147,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
 import AccountInitializationDialog from '@/components/AccountInitializationDialog.vue'
+import AgentChatWindow from '@/components/AgentChatWindow.vue'
 
 const route = useRoute()
 const router = useRouter()
