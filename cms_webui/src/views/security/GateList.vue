@@ -71,6 +71,7 @@ import { getUserPage } from '@/api/user'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import DualSelectV2 from '@/components/DualSelectV2.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1].includes(userStore.userRole) && userStore.canOperate)
@@ -120,10 +121,18 @@ function handleUserFilterChange(filters) { userFilters.value = { ...filters }; f
 function handleGateCodeInput(value) { const normalized = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); const letters = (normalized.match(/[A-Z]/g) || []).join('').slice(0, 2); const digits = (normalized.match(/\d/g) || []).join('').slice(0, 2); form.value.gateCode = letters + digits }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function openAgentEdit(id) { const row = tableData.value.find(item => String(item.id) === String(id)); if (row) openEdit(row) }
 function getDefaultForm() { return { gateCode: '', gateName: '', gateChiefId: '', gateRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, gateCode: row.gateCode, gateName: row.gateName, gateChiefId: row.gateChiefId, gateRemark: row.gateRemark } }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { const payload = { ...form.value }; delete payload.gateCode; await updateGate(payload); ElMessage.success('更新成功') } else { await addGate(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteGate(row.id); ElMessage.success('删除成功'); fetchData(true) }
+
+useAgentPageControl({
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
+})
+
 onMounted(() => { fetchData(); fetchUsers() })
 </script>
 

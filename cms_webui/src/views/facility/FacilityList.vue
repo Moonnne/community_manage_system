@@ -371,6 +371,11 @@ function openEdit(row) {
   drawerVisible.value = true
 }
 
+function openAgentEdit(id) {
+  const row = tableData.value.find(item => String(item.id) === String(id))
+  if (row) openEdit(row)
+}
+
 async function handleSubmit() {
   submitLoading.value = true
   try {
@@ -434,7 +439,8 @@ useAgentPageControl({
   numericKeys: ['facilityType', 'facilityStatus', 'facilityBuilding'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(() => {

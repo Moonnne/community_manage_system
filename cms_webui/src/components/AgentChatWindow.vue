@@ -213,7 +213,8 @@ function handleAction(action, message) {
   if (routePath) {
     router.push(buildAgentRoute(routePath, {
       ...action,
-      type: normalizeAgentActionType(action)
+      type: normalizeAgentActionType(action),
+      targetId: action.targetId || action.data?.targetId || action.payload?.id
     }))
     message.content += '\n已把操作发送到页面。'
     scrollToBottom()

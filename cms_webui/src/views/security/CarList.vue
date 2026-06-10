@@ -259,6 +259,7 @@ function handleOwnerChange() {
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, ownerUid: '', carNumber: '', carType: undefined, carStatus: undefined }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = getDefaultForm(); assets.value = []; assetFilterValues.value = { assetType: 2, assetStatus: undefined }; dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); assetFilterValues.value = { assetType: 2, assetStatus: undefined }; fetchAssets(); dialogVisible.value = true }
+function openAgentEdit(id) { const row = tableData.value.find(item => String(item.id) === String(id)); if (row) openEdit(row) }
 function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: '', carPlateBody: '', ownerId: '', carType: undefined, carStatus: 0, assetId: '' } }
 function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carCode: row.carCode, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
 async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (!isEdit.value) delete payload.carCode; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
@@ -270,7 +271,8 @@ useAgentPageControl({
   numericKeys: ['carType', 'carStatus'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(() => { fetchData(); fetchTypes(); fetchAssetTypes(); fetchUsers() })

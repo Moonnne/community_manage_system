@@ -196,6 +196,11 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+function openAgentEdit(id) {
+  const row = tableData.value.find(item => String(item.id) === String(id))
+  if (row) openEdit(row)
+}
+
 async function handleSubmit() {
   if (!isValidFloor(form.value.buildingMinFloor) || !isValidFloor(form.value.buildingMaxFloor)) {
     ElMessage.warning('楼层不能为 0')
@@ -290,7 +295,8 @@ useAgentPageControl({
   queryKeys: agentQueryKeys,
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(() => fetchData())

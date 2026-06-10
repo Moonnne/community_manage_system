@@ -212,6 +212,7 @@ function openBillAppealTask() {
 function valueText(value) { return value === '' || value === undefined || value === null ? '-' : value }
 function taskTypeNameText(id) { return types.value.find(type => type.taskTypeId === id)?.taskTypeName || valueText(id) }
 function openEdit(row) { isEdit.value = true; form.value = mapRowToForm(row); dialogVisible.value = true }
+function openAgentEdit(id) { const row = tableData.value.find(item => String(item.id) === String(id)); if (row) openEdit(row) }
 function getDefaultForm() { return { taskTitle: '', taskType: undefined, taskStatus: 1, taskInfo: '', taskRemark: '' } }
 function mapRowToForm(row) { return { id: row.id, taskTitle: row.taskTitle, taskType: row.taskType, taskStatus: row.taskStatus, taskInfo: row.taskInfo, taskRemark: row.taskRemark } }
 function openProcess(row) { processForm.value = { id: row.id, status: row.taskStatus === 1 ? 2 : row.taskStatus, operatorId: userStore.userInfo?.id, remark: row.taskRemark || '' }; processVisible.value = true }
@@ -226,7 +227,8 @@ useAgentPageControl({
   numericKeys: ['ownerId', 'taskOperatorId', 'taskType', 'taskStatus'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(async () => {

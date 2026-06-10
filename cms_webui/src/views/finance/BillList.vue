@@ -604,6 +604,11 @@ async function openEdit(row) {
   dialogVisible.value = true
 }
 
+function openAgentEdit(id) {
+  const row = tableData.value.find(item => String(item.id) === String(id))
+  if (row) openEdit(row)
+}
+
 function createDetailItem() {
   return {
     localId: `detail-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -764,7 +769,8 @@ useAgentPageControl({
   numericKeys: ['billStatus'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(async () => {

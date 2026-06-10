@@ -8,6 +8,7 @@ import edu.tut.cms.common.context.UserContext;
 import edu.tut.cms.common.exception.BusinessException;
 import edu.tut.cms.common.exception.ForbiddenException;
 import edu.tut.cms.common.exception.UnauthorizedException;
+import edu.tut.cms.common.result.PageResult;
 import edu.tut.cms.pojo.dto.*;
 import edu.tut.cms.pojo.vo.AgentActionVO;
 import edu.tut.cms.server.service.*;
@@ -132,23 +133,29 @@ public class AgentServiceImpl implements AgentService {
             sendMessage(emitter, "我还没有理解你的具体意图，可以换一种说法吗？");
             return;
         }
-        streamText(emitter, plan.response);
         if (!StringUtils.hasText(plan.actionName)) {
+            streamText(emitter, plan.response);
             return;
         }
 
         AgentActionDefinition definition = getDefinition(plan.actionName);
         assertAllowed(definition);
         Map<String, Object> payload = defaultPayload(plan.payload);
+        applyDefaultPayload(definition.actionName, payload);
         if (definition.requiresConfirmation) {
+            streamText(emitter, plan.response);
             send(emitter, "pending_action", buildPendingAction(definition, payload, plan.response));
             return;
         }
-        Object data = definition.actionName.equals("navigate") ? definition.executor.apply(payload) : null;
-        applyDefaultPayload(definition.actionName, payload);
+        Object data = definition.executor.apply(payload);
+        if (definition.readOnly && !"navigate".equals(definition.actionName) && !isOperateMode(plan)) {
+            streamText(emitter, buildResultResponse(definition, payload, data, plan.response));
+            return;
+        }
+        streamText(emitter, plan.response);
         String routePath = routePathFor(definition, payload, data);
         send(emitter, "action", AgentActionVO.builder()
-                .type(definition.actionName.equals("navigate") ? "navigate" : "search")
+                .type(actionTypeFor(definition))
                 .actionName(definition.actionName)
                 .title(definition.title)
                 .summary(definition.actionName.equals("navigate") ? "正在打开页面" : "已将筛选条件发送到页面")
@@ -158,6 +165,13 @@ public class AgentServiceImpl implements AgentService {
                 .payload(payload)
                 .data(data)
                 .build());
+    }
+
+    private String actionTypeFor(AgentActionDefinition definition) {
+        if ("navigate".equals(definition.actionName)) return "navigate";
+        if (definition.actionName.startsWith("add_")) return "open_add";
+        if (definition.actionName.startsWith("update_")) return "open_edit";
+        return "search";
     }
 
     private AgentActionVO buildPendingAction(AgentActionDefinition definition, Map<String, Object> payload, String summary) {
@@ -184,35 +198,44 @@ public class AgentServiceImpl implements AgentService {
         if ("navigate".equals(definition.actionName) && data instanceof Map<?, ?> map) {
             return asString(map.get("routePath"));
         }
-        if ("search_assets".equals(definition.actionName) && Objects.equals(asInteger(payload.get("assetType")), 2)) {
+        if (Set.of("search_assets", "add_asset", "update_asset").contains(definition.actionName)
+                && Objects.equals(asInteger(payload.get("assetType")), 2)) {
             return "/asset/parking";
         }
         return definition.routePath;
     }
 
     private ActionPlan buildActionPlan(AgentChatDTO dto) {
-        ActionPlan localPlan = buildLocalPlan(dto.getMessage());
-        if (localPlan != null) {
-            return localPlan;
+        ActionPlan rejected = buildDangerousPlan(dto.getMessage());
+        if (rejected != null) {
+            return rejected;
         }
         ActionPlan plan = tryBuildPlanWithSpringAi(dto);
         if (plan != null) {
             return plan;
         }
+        ActionPlan localPlan = buildLocalPlan(dto.getMessage());
+        if (localPlan != null) {
+            return localPlan;
+        }
         return buildHeuristicPlan(dto.getMessage());
+    }
+
+    private ActionPlan buildDangerousPlan(String message) {
+        if (containsAny(message, "删除", "删掉", "批量删除", "密码", "退出", "注销", "导出", "上传")) {
+            return new ActionPlan("抱歉，这类操作风险较高，我不能执行删除、修改密码、退出登录、上传或导出类操作。", null, Map.of(), "dialog");
+        }
+        return null;
     }
 
     private ActionPlan buildLocalPlan(String message) {
         if (!StringUtils.hasText(message)) {
             return null;
         }
-        if (containsAny(message, "删除", "删掉", "批量删除", "密码", "退出", "注销", "导出", "上传")) {
-            return new ActionPlan("抱歉，这类操作由Agent执行风险较高，请手动执行", null, Map.of());
-        }
         if (containsAny(message, "跳转", "打开", "进入", "前往")) {
             String route = inferRoute(message);
             if (route != null) {
-                return new ActionPlan("正在为你打开对应页面。", "navigate", Map.of("routePath", route));
+                return new ActionPlan("正在为你打开对应页面。", "navigate", Map.of("routePath", route), "operate");
             }
         }
         ActionPlan searchPlan = buildLocalSearchPlan(message);
@@ -223,7 +246,7 @@ public class AgentServiceImpl implements AgentService {
     }
 
     private ActionPlan buildLocalSearchPlan(String message) {
-        if (!containsAny(message, "查", "查询", "查找", "搜索", "筛选", "找")) {
+        if (!containsAny(message, "查", "查询", "查找", "搜索", "筛选", "找", "多少", "几个", "数量", "统计", "有哪些")) {
             return null;
         }
         if (containsAny(message, "用户")) {
@@ -234,37 +257,40 @@ public class AgentServiceImpl implements AgentService {
             if (status != null) payload.put("userStatus", status);
             String userName = inferKeywordAfter(message, "用户名", "姓名", "叫");
             if (StringUtils.hasText(userName)) payload.put("userName", userName);
-            return new ActionPlan("正在为你筛选用户列表。", "search_users", payload);
+            return new ActionPlan(localReadResponse(message, "用户"), "search_users", payload, inferReadMode(message));
         }
         if (containsAny(message, "未支付", "未缴费", "待支付")) {
-            return new ActionPlan("正在为你筛选未支付账单。", "search_my_unpaid_bills", Map.of("billStatus", 1));
+            return new ActionPlan(localReadResponse(message, "未支付账单"), "search_my_unpaid_bills", Map.of("billStatus", 1), inferReadMode(message));
         }
         if (containsAny(message, "账单", "缴费", "费用")) {
             Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("billCode", message));
             Integer status = inferBillStatus(message);
             if (status != null) payload.put("billStatus", status);
-            return new ActionPlan("正在为你筛选账单列表。", "search_bills", payload);
+            return new ActionPlan(localReadResponse(message, "账单"), "search_bills", payload, inferReadMode(message));
         }
         if (containsAny(message, "车辆", "车牌")) {
             Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("carNumber", message));
             Integer status = inferCarStatus(message);
             if (status != null) payload.put("carStatus", status);
-            return new ActionPlan("正在为你筛选车辆列表。", "search_cars", payload);
+            return new ActionPlan(localReadResponse(message, "车辆"), "search_cars", payload, inferReadMode(message));
         }
         if (containsAny(message, "通行", "出入")) {
             Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("carNumber", message));
             Integer type = inferCarHistoryType(message);
             if (type != null) payload.put("carHistoryType", type);
-            return new ActionPlan("正在为你筛选通行记录。", "search_car_history", payload);
+            return new ActionPlan(localReadResponse(message, "通行记录"), "search_car_history", payload, inferReadMode(message));
+        }
+        if (containsAny(message, "门岗")) {
+            return new ActionPlan(localReadResponse(message, "门岗"), "search_gates", Map.of(), inferReadMode(message));
         }
         if (containsAny(message, "访客")) {
-            return new ActionPlan("正在为你筛选访客列表。", "search_visitors", keywordPayload("visitorName", message));
+            return new ActionPlan(localReadResponse(message, "访客"), "search_visitors", keywordPayload("visitorName", message), inferReadMode(message));
         }
         if (containsAny(message, "设施", "设备")) {
             Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("facilityName", message));
             Integer status = inferFacilityStatus(message);
             if (status != null) payload.put("facilityStatus", status);
-            return new ActionPlan("正在为你筛选设施列表。", "search_facilities", payload);
+            return new ActionPlan(localReadResponse(message, "设施"), "search_facilities", payload, inferReadMode(message));
         }
         if (containsAny(message, "房产", "停车位", "资产")) {
             Map<String, Object> payload = new LinkedHashMap<>();
@@ -272,16 +298,16 @@ public class AgentServiceImpl implements AgentService {
             if (containsAny(message, "房产")) payload.put("assetType", 1);
             Integer status = inferAssetStatus(message);
             if (status != null) payload.put("assetStatus", status);
-            return new ActionPlan("正在为你筛选资产列表。", "search_assets", payload);
+            return new ActionPlan(localReadResponse(message, "资产"), "search_assets", payload, inferReadMode(message));
         }
         if (containsAny(message, "楼栋", "建筑")) {
-            return new ActionPlan("正在为你筛选楼栋列表。", "search_buildings", keywordPayload("buildingName", message));
+            return new ActionPlan(localReadResponse(message, "楼栋"), "search_buildings", keywordPayload("buildingName", message), inferReadMode(message));
         }
         if (containsAny(message, "工单", "报修", "投诉")) {
             Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("taskCode", message));
             Integer status = inferTaskStatus(message);
             if (status != null) payload.put("taskStatus", status);
-            return new ActionPlan("正在为你筛选工单列表。", "search_tasks", payload);
+            return new ActionPlan(localReadResponse(message, "工单"), "search_tasks", payload, inferReadMode(message));
         }
         return null;
     }
@@ -296,7 +322,7 @@ public class AgentServiceImpl implements AgentService {
             Object call = invoke(prompt, "call");
             Object content = invoke(call, "content");
             if (content instanceof String text && StringUtils.hasText(text)) {
-                return parsePlan(text);
+                return parsePlan(text, dto.getMessage());
             }
         } catch (Exception e) {
             log.debug("Spring AI ChatClient is not available or did not return a valid plan: {}", e.getMessage());
@@ -342,20 +368,50 @@ public class AgentServiceImpl implements AgentService {
 
     private String buildSystemPrompt() {
         return """
-                你是社区物业管理系统的安全 Agent。你只能输出 JSON，不要输出 Markdown。
-                JSON 格式为 {"response":"给用户看的中文回复","actionName":"动作名或空","payload":{...}}。
-                所有写操作只生成计划，不能说已经完成，前端会让用户确认。
-                如果用户要求删除、批量删除、修改密码、退出登录、删除角色、删除类型、上传、导出或绕过权限，actionName 必须为空，并明确拒绝。
-                如果参数不足，actionName 必须为空，并追问缺少的字段。
-                允许动作名：
+                你是社区物业管理系统中的受控 AI Agent。你必须把用户意图解析成“对话回答”或“页面操作”，只能输出 JSON，不要输出 Markdown。
+
+                输出格式固定为：
+                {"mode":"answer|operate|dialog","response":"给用户看的简短中文说明","actionName":"动作名或空字符串","payload":{...}}
+
+                mode 规则：
+                1. answer：用户问数量、统计、有哪些、当前有多少、帮我查一下并告诉我结果。此时你要选择查询方法，后端会执行查询并把结果汇总到对话框，不跳转页面。
+                   示例：用户问“当前系统中有多少用户”，输出 {"mode":"answer","response":"我来查询当前可见用户数量。","actionName":"search_users","payload":{"pageNum":1,"pageSize":5}}。
+                2. operate：用户明确要求跳转、打开页面、在页面中搜索、筛选、按条件显示、打开新增弹层、打开编辑弹层。此时你要选择对应方法，前端会跳转并自动执行页面动作。
+                   示例：用户说“按用户角色为员工搜索用户”，输出 {"mode":"operate","response":"我会打开用户页面并按员工角色筛选。","actionName":"search_users","payload":{"userRole":2}}。
+                   示例：用户说“帮我新增一个访客”，输出 {"mode":"operate","response":"我会打开访客登记弹层。","actionName":"add_visitor","payload":{}}。
+                   示例：用户说“编辑 id 为 5 的车辆”，输出 {"mode":"operate","response":"我会打开车辆编辑弹层。","actionName":"update_car","payload":{"id":5}}。
+                3. dialog：普通闲聊、能力说明、参数不足追问、危险操作拒绝，不执行动作。
+
+                安全规则：
+                - 你只能选择白名单方法。不要臆造方法名、接口名、SQL 或 URL。
+                - 删除、批量删除、修改密码、退出登录、删除角色、删除类型、上传、导出、绕过权限，一律 mode=dialog、actionName="" 并拒绝。
+                - add_* 和 update_* 不会由 AI 写库，只能打开对应页面弹层。可以把用户提供的字段放入 payload 作为页面预填建议。
+                - 状态更新、支付、工单处理等真实写操作只能生成待确认计划，不能说已经完成。
+                - 当前用户权限由后端二次校验；不要承诺能查看或修改无权限数据。
+                - 参数缺失且无法从上下文推断时，mode=dialog 并追问。
+
+                角色枚举：系统管理员=0，物业经理=1，物业员工/员工=2，安保/保安=3，业主=4，租户=5。
+                用户状态：正常=0，冻结=1，禁用=2。
+                账单状态：已完成/已支付=0，未完成/未支付/待支付=1，部分完成=2，逾期=3，补缴=4，取消=5。
+                车辆状态：已入场=0，已离场=1。通行类型：入场=0，离场=1。
+                设施状态：正常=0，故障=1，损坏=2，缺失=3。
+                资产状态：正常=0，过期=1，未使用/空置=2，冻结=3；房产 assetType=1，停车位 assetType=2。
+                工单状态：已完成=0，待处理=1，受理中=2，已驳回=3，已取消=4。
+
+                允许方法名：
                 navigate,
                 search_users, search_assets, search_buildings, search_bills, search_my_unpaid_bills,
-                search_visitors, search_cars, search_car_history, search_facilities, search_tasks,
+                search_visitors, search_cars, search_car_history, search_gates, search_facilities, search_tasks,
                 add_asset, update_asset, add_building, update_building, add_bill, update_bill, update_bill_status,
                 pay_bill, pay_bill_detail, add_bill_detail, update_bill_detail, add_visitor, update_visitor,
                 add_car, update_car, add_car_history, update_car_history, add_facility, update_facility,
                 add_gate, update_gate, add_task, update_task, process_task, update_user_status。
-                跳转 routePath 必须放在 payload.routePath，且只能使用系统允许的路由。
+
+                navigate 的 payload.routePath 只能是：
+                /welcome, /settings, /user/list, /finance/dashboard, /finance/bill,
+                /security/dashboard, /security/visitor, /security/car, /security/car-history, /security/gate,
+                /facility/dashboard, /facility/list, /asset/dashboard, /asset/property, /asset/parking,
+                /asset/building, /task/dashboard, /task/list。
                 """;
     }
 
@@ -365,17 +421,30 @@ public class AgentServiceImpl implements AgentService {
         prompt.put("currentPath", dto.getCurrentPath());
         prompt.put("history", dto.getHistory() == null ? List.of() : dto.getHistory());
         prompt.put("defaultPageSize", agentProperties.getPageSize());
+        CurrentUser user = requireCurrentUser();
+        Map<String, Object> currentUser = new LinkedHashMap<>();
+        currentUser.put("id", user.getId());
+        currentUser.put("uid", user.getUid());
+        currentUser.put("role", user.getUserRole());
+        currentUser.put("permissionLevel", PERMISSION_MAP.getOrDefault(user.getUserRole(), 0));
+        prompt.put("currentUser", currentUser);
         return JSON.toJSONString(prompt);
     }
 
-    private ActionPlan parsePlan(String text) {
+    private ActionPlan parsePlan(String text, String message) {
         String json = extractJson(text);
         JSONObject object = JSON.parseObject(json);
         Map<String, Object> payload = object.getObject("payload", Map.class);
+        String actionName = object.getString("actionName");
+        String mode = object.getString("mode");
+        if (!StringUtils.hasText(mode)) {
+            mode = inferMode(message, actionName);
+        }
         return new ActionPlan(
                 firstText(object, "response", "message", "content"),
-                object.getString("actionName"),
-                payload == null ? Map.of() : payload
+                actionName,
+                payload == null ? Map.of() : payload,
+                mode
         );
     }
 
@@ -403,6 +472,109 @@ public class AgentServiceImpl implements AgentService {
             }
         }
         return "我已理解你的请求。";
+    }
+
+    private boolean isOperateMode(ActionPlan plan) {
+        return plan != null && "operate".equalsIgnoreCase(plan.mode);
+    }
+
+    private String inferMode(String message, String actionName) {
+        if (!StringUtils.hasText(actionName)) return "dialog";
+        if ("navigate".equals(actionName)) return "operate";
+        return inferReadMode(message);
+    }
+
+    private String inferReadMode(String message) {
+        if (containsAny(message, "跳转", "打开", "进入", "前往", "页面", "搜索", "筛选", "显示")) {
+            return "operate";
+        }
+        if (containsAny(message, "多少", "几个", "数量", "统计", "告诉我", "有哪些", "列表", "查一下", "查询")) {
+            return "answer";
+        }
+        return "answer";
+    }
+
+    private String localReadResponse(String message, String target) {
+        return "operate".equals(inferReadMode(message))
+                ? "我会打开对应页面并应用" + target + "筛选条件。"
+                : "我来查询当前权限范围内的" + target + "数据。";
+    }
+
+    private String buildResultResponse(AgentActionDefinition definition, Map<String, Object> payload, Object data, String planResponse) {
+        Long total = extractTotal(data);
+        List<?> records = extractRecords(data);
+        StringBuilder builder = new StringBuilder();
+        if (StringUtils.hasText(planResponse)) {
+            builder.append(planResponse.trim());
+            if (!planResponse.endsWith("。") && !planResponse.endsWith(".")) {
+                builder.append("。");
+            }
+            builder.append("\n");
+        }
+        builder.append(definition.title).append("完成");
+        if (hasEffectivePayload(payload)) {
+            builder.append("，已按条件筛选");
+        }
+        if (total != null) {
+            builder.append("，符合条件的数据共有 ").append(total).append(" 条");
+        }
+        builder.append("。");
+        if (!records.isEmpty()) {
+            builder.append("\n前 ").append(Math.min(records.size(), 3)).append(" 条摘要：");
+            records.stream().limit(3).forEach(record -> builder.append("\n- ").append(recordSummary(record)));
+        }
+        return builder.toString();
+    }
+
+    private boolean hasEffectivePayload(Map<String, Object> payload) {
+        return payload != null && payload.entrySet().stream()
+                .anyMatch(entry -> !Set.of("pageNum", "pageSize").contains(entry.getKey())
+                        && entry.getValue() != null
+                        && StringUtils.hasText(String.valueOf(entry.getValue())));
+    }
+
+    private Long extractTotal(Object data) {
+        if (data instanceof PageResult<?> pageResult) {
+            return pageResult.getTotal();
+        }
+        if (data instanceof Map<?, ?> map && map.get("total") != null) {
+            Object total = map.get("total");
+            if (total instanceof Number number) return number.longValue();
+            return Long.valueOf(String.valueOf(total));
+        }
+        return null;
+    }
+
+    private List<?> extractRecords(Object data) {
+        if (data instanceof PageResult<?> pageResult && pageResult.getRecords() != null) {
+            return pageResult.getRecords();
+        }
+        if (data instanceof Map<?, ?> map && map.get("records") instanceof List<?> list) {
+            return list;
+        }
+        if (data instanceof List<?> list) {
+            return list;
+        }
+        return List.of();
+    }
+
+    private String recordSummary(Object record) {
+        JSONObject object = JSON.parseObject(JSON.toJSONString(record));
+        List<String> parts = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : object.entrySet()) {
+            if (parts.size() >= 4) break;
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value == null || !StringUtils.hasText(String.valueOf(value))) continue;
+            if (key.toLowerCase(Locale.ROOT).contains("password")
+                    || key.toLowerCase(Locale.ROOT).contains("avatar")
+                    || key.toLowerCase(Locale.ROOT).contains("url")) {
+                continue;
+            }
+            if (value instanceof Collection<?> || value instanceof Map<?, ?>) continue;
+            parts.add(key + "=" + value);
+        }
+        return parts.isEmpty() ? String.valueOf(record) : String.join("，", parts);
     }
 
     private ActionPlan buildHeuristicPlan(String message) {
@@ -610,6 +782,8 @@ public class AgentServiceImpl implements AgentService {
                 payload -> carHistoryService.pageCarHistory(pageNum(payload), pageSize(payload),
                         asString(payload.get("carNumber")), asInteger(payload.get("gateId")),
                         asInteger(payload.get("carHistoryType")), null, null)));
+        register(actions, read("search_gates", "查询门岗", "/security/gate", new int[]{0, 1, 3}, null,
+                payload -> gateService.listGates()));
         register(actions, read("search_facilities", "查询设施", "/facility/list", new int[]{0, 1, 2}, null,
                 payload -> facilityService.pageFacilities(pageNum(payload), pageSize(payload),
                         asInteger(payload.get("facilityType")), asInteger(payload.get("facilityStatus")),
@@ -621,52 +795,32 @@ public class AgentServiceImpl implements AgentService {
                         asString(payload.get("taskCode")), asInteger(payload.get("taskStatus")),
                         asInteger(payload.get("taskType")), null, null)));
 
-        register(actions, write("add_asset", "新增资产", "/asset/property", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> assetService.addAsset(toDto(payload, AssetAddDTO.class)))));
-        register(actions, write("update_asset", "编辑资产", "/asset/property", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> assetService.updateAsset(toDto(payload, AssetUpdateDTO.class)))));
-        register(actions, write("add_building", "新增楼栋", "/asset/building", new int[]{0, 1}, null,
-                payload -> run(() -> buildingService.addBuilding(toDto(payload, BuildingAddDTO.class)))));
-        register(actions, write("update_building", "编辑楼栋", "/asset/building", new int[]{0, 1}, null,
-                payload -> run(() -> buildingService.updateBuilding(toDto(payload, BuildingUpdateDTO.class)))));
-        register(actions, write("add_bill", "新增账单", "/finance/bill", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> billService.addBill(toDto(payload, BillAddDTO.class)))));
-        register(actions, write("update_bill", "编辑账单", "/finance/bill", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> billService.updateBill(toDto(payload, BillUpdateDTO.class)))));
+        register(actions, pageAction("add_asset", "打开新增资产弹层", "/asset/property", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("update_asset", "打开编辑资产弹层", "/asset/property", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("add_building", "打开新增楼栋弹层", "/asset/building", new int[]{0, 1}, null));
+        register(actions, pageAction("update_building", "打开编辑楼栋弹层", "/asset/building", new int[]{0, 1}, null));
+        register(actions, pageAction("add_bill", "打开新增账单弹层", "/finance/bill", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("update_bill", "打开编辑账单弹层", "/finance/bill", new int[]{0, 1, 2}, 1));
         register(actions, write("update_bill_status", "更新账单状态", "/finance/bill", new int[]{0, 1, 2}, 1,
                 payload -> run(() -> billService.updateBillStatus(toDto(payload, BillStatusDTO.class)))));
         register(actions, write("pay_bill", "支付账单", "/finance/bill", null, 0,
                 payload -> run(() -> billService.payBill(toDto(payload, BillPayDTO.class)))));
         register(actions, write("pay_bill_detail", "支付账单明细", "/finance/bill", null, 0,
                 payload -> run(() -> billService.payBillDetail(toDto(payload, BillDetailPayDTO.class)))));
-        register(actions, write("add_bill_detail", "新增账单明细", "/finance/bill", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> billService.addBillDetail(toDto(payload, BillDetailAddDTO.class)))));
-        register(actions, write("update_bill_detail", "编辑账单明细", "/finance/bill", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> billService.updateBillDetail(toDto(payload, BillDetailUpdateDTO.class)))));
-        register(actions, write("add_visitor", "新增访客", "/security/visitor", new int[]{0, 1, 3}, null,
-                payload -> run(() -> visitorService.addVisitor(toDto(payload, VisitorAddDTO.class)))));
-        register(actions, write("update_visitor", "编辑访客", "/security/visitor", new int[]{0, 1, 3}, null,
-                payload -> run(() -> visitorService.updateVisitor(toDto(payload, VisitorUpdateDTO.class)))));
-        register(actions, write("add_car", "新增车辆", "/security/car", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> carService.addCar(toDto(payload, CarAddDTO.class)))));
-        register(actions, write("update_car", "编辑车辆", "/security/car", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> carService.updateCar(toDto(payload, CarUpdateDTO.class)))));
-        register(actions, write("add_car_history", "新增通行记录", "/security/car-history", new int[]{0, 1, 3}, null,
-                payload -> run(() -> carHistoryService.addCarHistory(toDto(payload, CarHistoryAddDTO.class)))));
-        register(actions, write("update_car_history", "编辑通行记录", "/security/car-history", new int[]{0, 1, 3}, null,
-                payload -> run(() -> carHistoryService.updateCarHistory(toDto(payload, CarHistoryUpdateDTO.class)))));
-        register(actions, write("add_facility", "新增设施", "/facility/list", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> facilityService.addFacility(toDto(payload, FacilityAddDTO.class)))));
-        register(actions, write("update_facility", "编辑设施", "/facility/list", new int[]{0, 1, 2}, 1,
-                payload -> run(() -> facilityService.updateFacility(toDto(payload, FacilityUpdateDTO.class)))));
-        register(actions, write("add_gate", "新增门岗", "/security/gate", new int[]{0, 1}, null,
-                payload -> run(() -> gateService.addGate(toDto(payload, GateAddDTO.class)))));
-        register(actions, write("update_gate", "编辑门岗", "/security/gate", new int[]{0, 1}, null,
-                payload -> run(() -> gateService.updateGate(toDto(payload, GateUpdateDTO.class)))));
-        register(actions, write("add_task", "新增工单", "/task/list", null, null,
-                payload -> run(() -> taskService.addTask(toDto(payload, TaskAddDTO.class)))));
-        register(actions, write("update_task", "编辑工单", "/task/list", null, 1,
-                payload -> run(() -> taskService.updateTask(toDto(payload, TaskUpdateDTO.class)))));
+        register(actions, pageAction("add_bill_detail", "打开新增账单明细弹层", "/finance/bill", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("update_bill_detail", "打开编辑账单明细弹层", "/finance/bill", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("add_visitor", "打开登记访客弹层", "/security/visitor", new int[]{0, 1, 3}, null));
+        register(actions, pageAction("update_visitor", "打开编辑访客弹层", "/security/visitor", new int[]{0, 1, 3}, null));
+        register(actions, pageAction("add_car", "打开登记车辆弹层", "/security/car", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("update_car", "打开编辑车辆弹层", "/security/car", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("add_car_history", "打开新增通行记录弹层", "/security/car-history", new int[]{0, 1, 3}, null));
+        register(actions, pageAction("update_car_history", "打开编辑通行记录弹层", "/security/car-history", new int[]{0, 1, 3}, null));
+        register(actions, pageAction("add_facility", "打开新增设施弹层", "/facility/list", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("update_facility", "打开编辑设施弹层", "/facility/list", new int[]{0, 1, 2}, 1));
+        register(actions, pageAction("add_gate", "打开新增门岗弹层", "/security/gate", new int[]{0, 1}, null));
+        register(actions, pageAction("update_gate", "打开编辑门岗弹层", "/security/gate", new int[]{0, 1}, null));
+        register(actions, pageAction("add_task", "打开提交工单弹层", "/task/list", null, null));
+        register(actions, pageAction("update_task", "打开编辑工单弹层", "/task/list", null, 1));
         register(actions, write("process_task", "处理工单", "/task/list", null, 1,
                 payload -> run(() -> taskService.processTask(asLongRequired(payload.get("id")), asInteger(payload.get("status")),
                         asLong(payload.get("operatorId")), asString(payload.get("remark"))))));
@@ -689,6 +843,12 @@ public class AgentServiceImpl implements AgentService {
     private AgentActionDefinition read(String actionName, String title, String routePath, int[] requiredRoles,
                                        Integer requiredPermissionLevel, Function<Map<String, Object>, Object> executor) {
         return new AgentActionDefinition(actionName, title, routePath, true, false, requiredRoles, requiredPermissionLevel, executor);
+    }
+
+    private AgentActionDefinition pageAction(String actionName, String title, String routePath, int[] requiredRoles,
+                                             Integer requiredPermissionLevel) {
+        return new AgentActionDefinition(actionName, title, routePath, true, false, requiredRoles, requiredPermissionLevel,
+                payload -> Map.of("targetId", payload.get("id") == null ? "" : payload.get("id")));
     }
 
     private AgentActionDefinition write(String actionName, String title, String routePath, int[] requiredRoles,
@@ -797,7 +957,10 @@ public class AgentServiceImpl implements AgentService {
         emitter.send(SseEmitter.event().name(event).data(data));
     }
 
-    private record ActionPlan(String response, String actionName, Map<String, Object> payload) {
+    private record ActionPlan(String response, String actionName, Map<String, Object> payload, String mode) {
+        private ActionPlan(String response, String actionName, Map<String, Object> payload) {
+            this(response, actionName, payload, StringUtils.hasText(actionName) ? "operate" : "dialog");
+        }
     }
 
     private record AgentActionDefinition(

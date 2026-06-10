@@ -365,6 +365,11 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 
+function openAgentEdit(id) {
+  const row = tableData.value.find(item => String(item.id) === String(id))
+  if (row) openEdit(row)
+}
+
 function getDefaultForm() {
   return {
     id: '',
@@ -503,7 +508,8 @@ useAgentPageControl({
   numericKeys: ['userRole', 'userStatus'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(() => {

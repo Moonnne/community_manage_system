@@ -197,6 +197,7 @@ function handleGateRemoteSearch(keyword) { fetchGates(keyword) }
 function resetQuery() { query.value = { pageNum: 1, pageSize: 10, carNumber: '', gateId: '', carHistoryType: undefined, timeRange: [] }; fetchData(true) }
 function openAdd() { isEdit.value = false; form.value = { carId: '', gateId: '', carHistoryType: undefined, carHistoryRemark: '' }; dialogVisible.value = true }
 function openEdit(row) { isEdit.value = true; form.value = { id: row.id, carId: row.carId, gateId: row.gateId, carHistoryType: row.carHistoryType, carHistoryRemark: row.carHistoryRemark }; dialogVisible.value = true }
+function openAgentEdit(id) { const row = tableData.value.find(item => String(item.id) === String(id)); if (row) openEdit(row) }
 function handleSelectionChange(rows) { selectedRows.value = rows }
 async function handleDelete(row) { await deleteCarHistory(row.id); ElMessage.success('删除成功'); fetchData(true) }
 async function handleBatchDelete() { if (!selectedRows.value.length) return; await ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 条通行记录吗？`, '批量删除', { type: 'warning' }); await batchDeleteCarHistory(selectedRows.value.map(row => row.id)); selectedRows.value = []; ElMessage.success('批量删除成功'); fetchData(true) }
@@ -208,7 +209,8 @@ useAgentPageControl({
   numericKeys: ['gateId', 'carHistoryType'],
   onSearch: () => fetchData(true),
   onRefresh: () => fetchData(true),
-  onOpenAdd: () => openAdd()
+  onOpenAdd: () => openAdd(),
+  onOpenEdit: id => openAgentEdit(id)
 })
 
 onMounted(() => { fetchData(); fetchCars(); fetchGates() })
