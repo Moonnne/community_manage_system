@@ -41,6 +41,11 @@
           <div class="message-stack">
             <div class="message-bubble">
               <p v-if="message.content">{{ message.content }}</p>
+              <div v-if="message.streaming" class="streaming-indicator" aria-label="AI 正在输出">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
 
               <div v-if="message.action" class="action-card">
                 <div class="action-card-head">
@@ -93,7 +98,7 @@
           placeholder="输入要查询、跳转或操作的内容"
           @keydown.enter.exact.prevent="sendMessage"
         />
-        <el-button class="send-button" type="primary" :loading="loading" :disabled="!input.trim()" native-type="submit" circle>
+        <el-button class="send-button" type="primary" :disabled="loading || !input.trim()" native-type="submit" circle>
           <el-icon><Right /></el-icon>
         </el-button>
       </form>
@@ -163,6 +168,7 @@ async function sendMessage() {
     id: crypto.randomUUID(),
     role: 'assistant',
     content: '',
+    streaming: true,
     createdAt: Date.now()
   }
   messages.value.push({ id: crypto.randomUUID(), role: 'user', content: text, createdAt: Date.now() })
@@ -197,6 +203,7 @@ async function sendMessage() {
     assistantMessage.content += error.message || 'AI服务暂时不可用'
   } finally {
     loading.value = false
+    assistantMessage.streaming = false
     await scrollToBottom()
   }
 }
@@ -471,6 +478,42 @@ function clamp(value, min, max) {
 
 .message-bubble p {
   margin: 0;
+}
+
+.streaming-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 36px;
+  min-height: 20px;
+  vertical-align: middle;
+}
+
+.streaming-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vp-c-text-3);
+  animation: streaming-dot 1s infinite ease-in-out;
+}
+
+.streaming-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.streaming-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes streaming-dot {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
 .action-card,
