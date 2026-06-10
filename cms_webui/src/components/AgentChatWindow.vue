@@ -121,7 +121,7 @@ const messages = ref([
   {
     id: crypto.randomUUID(),
     role: 'assistant',
-    content: '你好，我可以帮你查询、跳转页面，或在确认后执行安全操作。'
+    content: '你好，我可以帮你查询、跳转页面，或执行确认后的操作。'
   }
 ])
 
