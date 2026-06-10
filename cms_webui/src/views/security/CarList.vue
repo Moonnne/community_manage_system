@@ -135,6 +135,7 @@ import { getAssetPage, getAssetTypes } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import DualSelectV2 from '@/components/DualSelectV2.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -151,6 +152,7 @@ const assetFilterValues = ref({ assetType: 2, assetStatus: undefined })
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, ownerUid: '', carNumber: '', carType: undefined, carStatus: undefined })
+const agentQueryKeys = ['ownerUid', 'carNumber', 'carType', 'carStatus']
 const form = ref({})
 const wizardSteps = [
   { title: '车辆信息', fields: ['carNumber', 'carType', 'carStatus'] },
@@ -261,6 +263,16 @@ function getDefaultForm() { return { carCode: '', carNumber: '', carProvince: ''
 function mapRowToForm(row) { const plate = splitPlateNumber(row.carNumber); return { id: row.id, carCode: row.carCode, carNumber: row.carNumber, carProvince: plate.province, carPlateBody: plate.body, ownerId: row.ownerId, carType: row.carType, carStatus: row.carStatus, assetId: row.assetId } }
 async function handleSubmit() { submitLoading.value = true; try { const payload = { ...form.value, carNumber: fullPlateNumber.value }; delete payload.carProvince; delete payload.carPlateBody; if (!isEdit.value) delete payload.carCode; if (isEdit.value) { await updateCar(payload); ElMessage.success('更新成功') } else { await addCar(payload); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleDelete(row) { await deleteCar(row.id); ElMessage.success('删除成功'); fetchData(true) }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['carType', 'carStatus'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
+
 onMounted(() => { fetchData(); fetchTypes(); fetchAssetTypes(); fetchUsers() })
 </script>
 

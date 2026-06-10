@@ -240,6 +240,7 @@ import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import AvatarEditor from '@/components/AvatarEditor.vue'
 import { genderRequiredRule, optionalEmailRule, optionalPhoneRule, sanitizePhone } from '@/utils/validators'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const canEditSelf = computed(() => userStore.canOperate)
@@ -261,6 +262,8 @@ const query = ref({
   userRole: undefined,
   userStatus: undefined
 })
+
+const agentQueryKeys = ['uid', 'userName', 'contact', 'userRole', 'userStatus']
 
 const form = ref({})
 const addWizardSteps = [
@@ -493,6 +496,15 @@ function userAge(birthday) {
 
   return age >= 0 ? age : '-'
 }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['userRole', 'userStatus'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
 
 onMounted(() => {
   fetchData(true)

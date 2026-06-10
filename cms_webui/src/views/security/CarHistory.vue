@@ -123,6 +123,7 @@ import { getGateList } from '@/api/gate'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import DualSelectV2 from '@/components/DualSelectV2.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -134,6 +135,7 @@ const selectedRows = ref([])
 const cars = ref([])
 const gates = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, carNumber: '', gateId: '', carHistoryType: undefined, timeRange: [] })
+const agentQueryKeys = ['carNumber', 'gateId', 'carHistoryType']
 const form = ref({})
 const wizardSteps = [
   { title: '通行信息', fields: ['carId', 'gateId', 'carHistoryType'] },
@@ -199,6 +201,16 @@ function handleSelectionChange(rows) { selectedRows.value = rows }
 async function handleDelete(row) { await deleteCarHistory(row.id); ElMessage.success('删除成功'); fetchData(true) }
 async function handleBatchDelete() { if (!selectedRows.value.length) return; await ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 条通行记录吗？`, '批量删除', { type: 'warning' }); await batchDeleteCarHistory(selectedRows.value.map(row => row.id)); selectedRows.value = []; ElMessage.success('批量删除成功'); fetchData(true) }
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateCarHistory(form.value); ElMessage.success('更新成功') } else { await addCarHistory(form.value); ElMessage.success('添加成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['gateId', 'carHistoryType'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
+
 onMounted(() => { fetchData(); fetchCars(); fetchGates() })
 </script>
 

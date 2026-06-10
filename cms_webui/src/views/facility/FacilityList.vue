@@ -234,6 +234,7 @@ import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { addFacility, deleteFacility, getFacilityPage, getFacilityTypes, updateFacility } from '@/api/facility'
 import { getBuildingList } from '@/api/building'
 import { getUserPage } from '@/api/user'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -245,6 +246,7 @@ const types = ref([])
 const buildings = ref([])
 const users = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, facilityCode: '', facilityName: '', facilityType: undefined, facilityStatus: undefined, facilityBuilding: undefined })
+const agentQueryKeys = ['facilityCode', 'facilityName', 'facilityType', 'facilityStatus', 'facilityBuilding']
 const form = ref(getDefaultForm())
 const buildingOptions = computed(() => buildings.value.map(item => ({
   value: item.id,
@@ -425,6 +427,15 @@ function facilityStatusText(status) {
 function facilityStatusType(status) {
   return ({ 0: 'success', 1: 'warning', 2: 'danger', 3: 'info' })[status] || 'info'
 }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['facilityType', 'facilityStatus', 'facilityBuilding'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
 
 onMounted(() => {
   fetchTypes()

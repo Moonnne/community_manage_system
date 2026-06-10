@@ -173,6 +173,7 @@ import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { optionalPhoneRule, sanitizePhone } from '@/utils/validators'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 3].includes(userStore.userRole) && userStore.canOperate)
@@ -188,6 +189,7 @@ const queryAssetKeyword = ref('')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const query = ref({ pageNum: 1, pageSize: 10, visitorName: '', ownerUid: '', assetId: undefined, visitorType: undefined, visitorStatus: '', timeRange: [] })
+const agentQueryKeys = ['visitorName', 'ownerUid', 'assetId', 'visitorType', 'visitorStatus']
 const form = ref({})
 const addWizardSteps = [
   { title: '访客信息', fields: ['visitorName', 'visitorPhone'] },
@@ -273,6 +275,19 @@ async function handleSubmit() { submitLoading.value = true; try { if (isEdit.val
 async function handleDelete(row) { await deleteVisitor(row.id); ElMessage.success('删除成功'); fetchData(true) }
 function visitorStatusText(status) { return ({ '0': '已结束', '1': '待批准', '2': '访问中', '3': '已驳回' })[String(status)] || '未知' }
 function visitorStatusType(status) { return ({ '0': 'success', '1': 'warning', '2': 'primary', '3': 'danger' })[String(status)] || 'info' }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['assetId', 'visitorType'],
+  onSearch: async () => {
+    if (query.value.ownerUid) await fetchQueryAssets()
+    await fetchData(true)
+  },
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
+
 onMounted(() => { fetchData(); fetchTypes(); fetchUsers() })
 </script>
 

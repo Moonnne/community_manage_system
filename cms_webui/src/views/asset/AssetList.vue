@@ -249,6 +249,7 @@ import DualSelectV2 from '@/components/DualSelectV2.vue'
 import { addAsset, deleteAsset, getAssetPage, updateAsset } from '@/api/asset'
 import { getUserPage } from '@/api/user'
 import { getBuildingList } from '@/api/building'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const props = defineProps({
   assetType: { type: Number, required: true },
@@ -264,6 +265,7 @@ const total = ref(0)
 const buildings = ref([])
 const users = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, assetCode: '', ownerUid: '', assetType: props.assetType, assetStatus: undefined, assetBuilding: undefined, assetRegRange: [] })
+const agentQueryKeys = ['assetCode', 'ownerUid', 'assetStatus', 'assetBuilding']
 const form = ref(getDefaultForm())
 
 const assetTypeName = computed(() => props.assetType === 1 ? '房产' : '停车位')
@@ -474,6 +476,15 @@ function assetStatusText(status) {
 function assetStatusType(status) {
   return ({ 0: 'success', 1: 'danger', 2: 'info', 3: 'warning' })[status] || 'info'
 }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['assetStatus', 'assetBuilding'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
 
 onMounted(() => {
   fetchBuildings()

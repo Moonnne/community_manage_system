@@ -133,6 +133,7 @@ import { ElMessage } from 'element-plus'
 import { addBuilding, deleteBuilding, getBuildingPage, updateBuilding } from '@/api/building'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -141,6 +142,7 @@ const isEdit = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const query = ref(getDefaultQuery())
+const agentQueryKeys = ['buildingCode', 'buildingName', 'buildingLocation', 'buildingRemark']
 const form = ref(getDefaultForm())
 const steps = [
   { title: '基础信息', fields: ['buildingName'] },
@@ -282,6 +284,14 @@ function validateMaxFloor(rule, value, callback) {
   }
   callback()
 }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
 
 onMounted(() => fetchData())
 </script>

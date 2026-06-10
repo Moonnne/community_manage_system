@@ -110,6 +110,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { sendAgentMessage, executeAgentAction } from '@/api/agent'
 import { useUserStore } from '@/stores/user'
 import { usePageCacheStore } from '@/stores/pageCache'
+import { buildAgentRoute } from '@/utils/agentControl'
 
 const router = useRouter()
 const route = useRoute()
@@ -202,11 +203,23 @@ async function sendMessage() {
 
 function handleAction(action, message) {
   if (!action) return
-  if (action.type === 'navigate' && action.data?.routePath) {
-    router.push(action.data.routePath)
+  const routePath = action.routePath || action.data?.routePath || action.payload?.routePath
+  if (action.type === 'navigate' && routePath) {
+    router.push(routePath)
+    message.content += '\n已为你打开页面。'
+    scrollToBottom()
     return
   }
-  message.result = action
+  if (routePath) {
+    router.push(buildAgentRoute(routePath, {
+      ...action,
+      type: normalizeAgentActionType(action)
+    }))
+    message.content += '\n已把操作发送到页面。'
+    scrollToBottom()
+    return
+  }
+  message.content += '\n操作已完成。'
   scrollToBottom()
 }
 
@@ -220,10 +233,14 @@ async function confirmAction(message) {
     })
     pageCacheStore.clearAll()
     message.action = null
-    message.result = res.data
     if (res.data?.routePath) {
-      router.push(res.data.routePath)
+      router.push(buildAgentRoute(res.data.routePath, {
+        type: 'refresh',
+        actionName: res.data.actionName,
+        payload: res.data.payload || {}
+      }))
     }
+    message.content += '\n操作已完成，相关页面已刷新。'
     ElMessage.success('操作已完成')
   } catch (error) {
     ElMessage.error(error.message || '操作失败')
@@ -245,6 +262,11 @@ function payloadEntries(payload = {}) {
       key,
       value: typeof value === 'object' ? JSON.stringify(value) : String(value)
     }))
+}
+
+function normalizeAgentActionType(action) {
+  if (action.type === 'open_add' || action.type === 'open_edit' || action.type === 'refresh') return action.type
+  return 'search'
 }
 
 function formatResult(data) {

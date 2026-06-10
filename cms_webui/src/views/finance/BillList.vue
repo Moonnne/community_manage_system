@@ -336,6 +336,7 @@ import { getUserPage, getUserRoles } from '@/api/user'
 import { getAssetPage, getAssetTypes } from '@/api/asset'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const canEdit = computed(() => [0, 1, 2].includes(userStore.userRole) && userStore.canOperate)
@@ -370,6 +371,7 @@ const activeDetailPanels = ref([])
 const details = ref([])
 
 const query = ref({ pageNum: 1, pageSize: 10, billCode: '', ownerUid: '', createrUid: '', billStatus: undefined, timeRange: [] })
+const agentQueryKeys = ['billCode', 'ownerUid', 'createrUid', 'billStatus']
 const userFilters = ref({ uid: '', userRole: undefined, userStatus: undefined })
 const assetFilters = ref({ keyword: '', assetType: undefined, assetStatus: undefined })
 const form = ref(getDefaultForm())
@@ -755,6 +757,15 @@ async function openBillDetail(row) {
     detailLoading.value = false
   }
 }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['billStatus'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
 
 onMounted(async () => {
   await Promise.all([fetchData(), loadUsers(), loadRoles(), loadBillTypes(), loadAssetTypes()])

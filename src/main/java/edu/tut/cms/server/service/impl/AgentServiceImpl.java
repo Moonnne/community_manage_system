@@ -33,17 +33,22 @@ public class AgentServiceImpl implements AgentService {
     private static final long SSE_TIMEOUT = 120_000L;
     private static final Set<String> SAFE_ROUTES = Set.of(
             "/welcome",
+            "/settings",
             "/user/list",
             "/finance/dashboard",
             "/finance/bill",
+            "/security/dashboard",
             "/security/visitor",
             "/security/car",
             "/security/car-history",
             "/security/gate",
+            "/facility/dashboard",
             "/facility/list",
+            "/asset/dashboard",
             "/asset/property",
             "/asset/parking",
             "/asset/building",
+            "/task/dashboard",
             "/task/list"
     );
     private static final Map<Integer, Integer> PERMISSION_MAP = Map.of(
@@ -139,13 +144,15 @@ public class AgentServiceImpl implements AgentService {
             send(emitter, "pending_action", buildPendingAction(definition, payload, plan.response));
             return;
         }
-        Object data = definition.executor.apply(payload);
+        Object data = definition.actionName.equals("navigate") ? definition.executor.apply(payload) : null;
+        applyDefaultPayload(definition.actionName, payload);
+        String routePath = routePathFor(definition, payload, data);
         send(emitter, "action", AgentActionVO.builder()
-                .type(definition.actionName.equals("navigate") ? "navigate" : "show_results")
+                .type(definition.actionName.equals("navigate") ? "navigate" : "search")
                 .actionName(definition.actionName)
                 .title(definition.title)
-                .summary(definition.readOnly ? "已完成查询" : "已完成操作")
-                .routePath(definition.routePath)
+                .summary(definition.actionName.equals("navigate") ? "正在打开页面" : "已将筛选条件发送到页面")
+                .routePath(routePath)
                 .readOnly(definition.readOnly)
                 .requiresConfirmation(false)
                 .payload(payload)
@@ -154,6 +161,7 @@ public class AgentServiceImpl implements AgentService {
     }
 
     private AgentActionVO buildPendingAction(AgentActionDefinition definition, Map<String, Object> payload, String summary) {
+        applyDefaultPayload(definition.actionName, payload);
         return AgentActionVO.builder()
                 .type("pending_action")
                 .actionName(definition.actionName)
@@ -166,12 +174,116 @@ public class AgentServiceImpl implements AgentService {
                 .build();
     }
 
+    private void applyDefaultPayload(String actionName, Map<String, Object> payload) {
+        if ("search_my_unpaid_bills".equals(actionName)) {
+            payload.putIfAbsent("billStatus", 1);
+        }
+    }
+
+    private String routePathFor(AgentActionDefinition definition, Map<String, Object> payload, Object data) {
+        if ("navigate".equals(definition.actionName) && data instanceof Map<?, ?> map) {
+            return asString(map.get("routePath"));
+        }
+        if ("search_assets".equals(definition.actionName) && Objects.equals(asInteger(payload.get("assetType")), 2)) {
+            return "/asset/parking";
+        }
+        return definition.routePath;
+    }
+
     private ActionPlan buildActionPlan(AgentChatDTO dto) {
+        ActionPlan localPlan = buildLocalPlan(dto.getMessage());
+        if (localPlan != null) {
+            return localPlan;
+        }
         ActionPlan plan = tryBuildPlanWithSpringAi(dto);
         if (plan != null) {
             return plan;
         }
         return buildHeuristicPlan(dto.getMessage());
+    }
+
+    private ActionPlan buildLocalPlan(String message) {
+        if (!StringUtils.hasText(message)) {
+            return null;
+        }
+        if (containsAny(message, "删除", "删掉", "批量删除", "密码", "退出", "注销", "导出", "上传")) {
+            return new ActionPlan("抱歉，这类操作由Agent执行风险较高，请手动执行", null, Map.of());
+        }
+        if (containsAny(message, "跳转", "打开", "进入", "前往")) {
+            String route = inferRoute(message);
+            if (route != null) {
+                return new ActionPlan("正在为你打开对应页面。", "navigate", Map.of("routePath", route));
+            }
+        }
+        ActionPlan searchPlan = buildLocalSearchPlan(message);
+        if (searchPlan != null) {
+            return searchPlan;
+        }
+        return null;
+    }
+
+    private ActionPlan buildLocalSearchPlan(String message) {
+        if (!containsAny(message, "查", "查询", "查找", "搜索", "筛选", "找")) {
+            return null;
+        }
+        if (containsAny(message, "用户")) {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            Integer role = inferUserRole(message);
+            Integer status = inferUserStatus(message);
+            if (role != null) payload.put("userRole", role);
+            if (status != null) payload.put("userStatus", status);
+            String userName = inferKeywordAfter(message, "用户名", "姓名", "叫");
+            if (StringUtils.hasText(userName)) payload.put("userName", userName);
+            return new ActionPlan("正在为你筛选用户列表。", "search_users", payload);
+        }
+        if (containsAny(message, "未支付", "未缴费", "待支付")) {
+            return new ActionPlan("正在为你筛选未支付账单。", "search_my_unpaid_bills", Map.of("billStatus", 1));
+        }
+        if (containsAny(message, "账单", "缴费", "费用")) {
+            Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("billCode", message));
+            Integer status = inferBillStatus(message);
+            if (status != null) payload.put("billStatus", status);
+            return new ActionPlan("正在为你筛选账单列表。", "search_bills", payload);
+        }
+        if (containsAny(message, "车辆", "车牌")) {
+            Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("carNumber", message));
+            Integer status = inferCarStatus(message);
+            if (status != null) payload.put("carStatus", status);
+            return new ActionPlan("正在为你筛选车辆列表。", "search_cars", payload);
+        }
+        if (containsAny(message, "通行", "出入")) {
+            Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("carNumber", message));
+            Integer type = inferCarHistoryType(message);
+            if (type != null) payload.put("carHistoryType", type);
+            return new ActionPlan("正在为你筛选通行记录。", "search_car_history", payload);
+        }
+        if (containsAny(message, "访客")) {
+            return new ActionPlan("正在为你筛选访客列表。", "search_visitors", keywordPayload("visitorName", message));
+        }
+        if (containsAny(message, "设施", "设备")) {
+            Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("facilityName", message));
+            Integer status = inferFacilityStatus(message);
+            if (status != null) payload.put("facilityStatus", status);
+            return new ActionPlan("正在为你筛选设施列表。", "search_facilities", payload);
+        }
+        if (containsAny(message, "房产", "停车位", "资产")) {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            if (containsAny(message, "停车位")) payload.put("assetType", 2);
+            if (containsAny(message, "房产")) payload.put("assetType", 1);
+            Integer status = inferAssetStatus(message);
+            if (status != null) payload.put("assetStatus", status);
+            return new ActionPlan("正在为你筛选资产列表。", "search_assets", payload);
+        }
+        if (containsAny(message, "楼栋", "建筑")) {
+            return new ActionPlan("正在为你筛选楼栋列表。", "search_buildings", keywordPayload("buildingName", message));
+        }
+        if (containsAny(message, "工单", "报修", "投诉")) {
+            Map<String, Object> payload = new LinkedHashMap<>(keywordPayload("taskCode", message));
+            Integer status = inferTaskStatus(message);
+            if (status != null) payload.put("taskStatus", status);
+            return new ActionPlan("正在为你筛选工单列表。", "search_tasks", payload);
+        }
+        return null;
     }
 
     private ActionPlan tryBuildPlanWithSpringAi(AgentChatDTO dto) {
@@ -344,6 +456,86 @@ public class AgentServiceImpl implements AgentService {
         if (containsAny(message, "楼栋", "建筑")) return "/asset/building";
         if (containsAny(message, "工单", "报修", "投诉")) return "/task/list";
         if (containsAny(message, "首页", "主页")) return "/welcome";
+        return null;
+    }
+
+    private Integer inferUserRole(String message) {
+        if (containsAny(message, "系统管理员", "管理员")) return 0;
+        if (containsAny(message, "物业经理", "经理")) return 1;
+        if (containsAny(message, "物业员工", "员工")) return 2;
+        if (containsAny(message, "安保", "保安")) return 3;
+        if (containsAny(message, "业主")) return 4;
+        if (containsAny(message, "租户")) return 5;
+        return null;
+    }
+
+    private Integer inferUserStatus(String message) {
+        if (containsAny(message, "正常")) return 0;
+        if (containsAny(message, "冻结")) return 1;
+        if (containsAny(message, "禁用")) return 2;
+        return null;
+    }
+
+    private Integer inferBillStatus(String message) {
+        if (containsAny(message, "已完成", "已支付", "已缴费")) return 0;
+        if (containsAny(message, "未完成", "未支付", "未缴费", "待支付")) return 1;
+        if (containsAny(message, "部分")) return 2;
+        if (containsAny(message, "逾期")) return 3;
+        if (containsAny(message, "补缴")) return 4;
+        if (containsAny(message, "取消")) return 5;
+        return null;
+    }
+
+    private Integer inferCarStatus(String message) {
+        if (containsAny(message, "入场", "在场")) return 0;
+        if (containsAny(message, "离场")) return 1;
+        return null;
+    }
+
+    private Integer inferCarHistoryType(String message) {
+        if (containsAny(message, "入场", "进入")) return 0;
+        if (containsAny(message, "离场", "出去")) return 1;
+        return null;
+    }
+
+    private Integer inferFacilityStatus(String message) {
+        if (containsAny(message, "正常")) return 0;
+        if (containsAny(message, "故障")) return 1;
+        if (containsAny(message, "损坏")) return 2;
+        if (containsAny(message, "缺失")) return 3;
+        return null;
+    }
+
+    private Integer inferAssetStatus(String message) {
+        if (containsAny(message, "正常")) return 0;
+        if (containsAny(message, "过期")) return 1;
+        if (containsAny(message, "未使用", "空置")) return 2;
+        if (containsAny(message, "冻结")) return 3;
+        return null;
+    }
+
+    private Integer inferTaskStatus(String message) {
+        if (containsAny(message, "已完成", "完成")) return 0;
+        if (containsAny(message, "待处理")) return 1;
+        if (containsAny(message, "受理中", "处理中")) return 2;
+        if (containsAny(message, "驳回")) return 3;
+        if (containsAny(message, "取消")) return 4;
+        return null;
+    }
+
+    private String inferKeywordAfter(String message, String... markers) {
+        for (String marker : markers) {
+            int index = message.indexOf(marker);
+            if (index >= 0) {
+                String keyword = message.substring(index + marker.length())
+                        .replace("的用户", "")
+                        .replace("用户", "")
+                        .trim();
+                if (StringUtils.hasText(keyword) && keyword.length() <= 20) {
+                    return keyword;
+                }
+            }
+        }
         return null;
     }
 

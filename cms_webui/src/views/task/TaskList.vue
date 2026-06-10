@@ -140,6 +140,7 @@ import { useUserStore } from '@/stores/user'
 import { getTaskPage, getTaskTypes, addTask, updateTask, deleteTask, processTask } from '@/api/task'
 import WizardFormDrawer from '@/components/WizardFormDrawer.vue'
 import ConfirmInfoTable from '@/components/ConfirmInfoTable.vue'
+import { useAgentPageControl } from '@/utils/agentControl'
 
 const userStore = useUserStore()
 const route = useRoute()
@@ -155,6 +156,7 @@ const processVisible = ref(false)
 const isEdit = ref(false)
 const processFormRef = ref(null)
 const query = ref({ pageNum: 1, pageSize: 10, taskCode: '', ownerId: '', taskOperatorId: '', taskType: undefined, taskStatus: undefined, timeRange: [] })
+const agentQueryKeys = ['taskCode', 'ownerId', 'taskOperatorId', 'taskType', 'taskStatus']
 const form = ref({})
 const processForm = ref({})
 const wizardSteps = [
@@ -217,6 +219,16 @@ function openProcess(row) { processForm.value = { id: row.id, status: row.taskSt
 async function handleSubmit() { submitLoading.value = true; try { if (isEdit.value) { await updateTask(form.value); ElMessage.success('更新成功') } else { await addTask(form.value); ElMessage.success('提交成功') }; dialogVisible.value = false; fetchData(true) } finally { submitLoading.value = false } }
 async function handleProcess() { processLoading.value = true; try { await processTask({ ...processForm.value, operatorId: userStore.userInfo?.id }); ElMessage.success('处理成功'); processVisible.value = false; fetchData(true) } finally { processLoading.value = false } }
 async function handleDelete(row) { await deleteTask(row.id); ElMessage.success('删除成功'); fetchData(true) }
+
+useAgentPageControl({
+  query,
+  queryKeys: agentQueryKeys,
+  numericKeys: ['ownerId', 'taskOperatorId', 'taskType', 'taskStatus'],
+  onSearch: () => fetchData(true),
+  onRefresh: () => fetchData(true),
+  onOpenAdd: () => openAdd()
+})
+
 onMounted(async () => {
   fetchData()
   await fetchTypes()
