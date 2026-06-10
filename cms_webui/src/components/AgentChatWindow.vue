@@ -25,7 +25,7 @@
           <button type="button" class="icon-button" title="清空" @click.stop="clearMessages">
             <el-icon><Delete /></el-icon>
           </button>
-          <button type="button" class="icon-button" title="折叠" @click.stop="collapsed = true">
+          <button type="button" class="icon-button" title="折叠" @click.stop="collapsePanel">
             <el-icon><Minus /></el-icon>
           </button>
         </div>
@@ -38,42 +38,45 @@
           class="agent-message"
           :class="`agent-message-${message.role}`"
         >
-          <div class="message-bubble">
-            <p v-if="message.content">{{ message.content }}</p>
+          <div class="message-stack">
+            <div class="message-bubble">
+              <p v-if="message.content">{{ message.content }}</p>
 
-            <div v-if="message.action" class="action-card">
-              <div class="action-card-head">
-                <span>{{ message.action.title || '待确认操作' }}</span>
-                <el-tag size="small" type="warning">需确认</el-tag>
+              <div v-if="message.action" class="action-card">
+                <div class="action-card-head">
+                  <span>{{ message.action.title || '待确认操作' }}</span>
+                  <el-tag size="small" type="warning">需确认</el-tag>
+                </div>
+                <p class="action-summary">{{ message.action.summary }}</p>
+                <dl class="action-payload">
+                  <template v-for="item in payloadEntries(message.action.payload)" :key="item.key">
+                    <dt>{{ item.key }}</dt>
+                    <dd>{{ item.value }}</dd>
+                  </template>
+                </dl>
+                <div class="action-card-foot">
+                  <el-button size="small" @click="cancelAction(message)">取消</el-button>
+                  <el-button size="small" type="primary" :loading="message.executing" @click="confirmAction(message)">
+                    确认执行
+                  </el-button>
+                </div>
               </div>
-              <p class="action-summary">{{ message.action.summary }}</p>
-              <dl class="action-payload">
-                <template v-for="item in payloadEntries(message.action.payload)" :key="item.key">
-                  <dt>{{ item.key }}</dt>
-                  <dd>{{ item.value }}</dd>
-                </template>
-              </dl>
-              <div class="action-card-foot">
-                <el-button size="small" @click="cancelAction(message)">取消</el-button>
-                <el-button size="small" type="primary" :loading="message.executing" @click="confirmAction(message)">
-                  确认执行
+
+              <div v-if="message.result" class="result-card">
+                <div class="result-title">{{ message.result.title || '查询结果' }}</div>
+                <pre>{{ formatResult(message.result.data) }}</pre>
+                <el-button
+                  v-if="message.result.routePath"
+                  text
+                  type="primary"
+                  size="small"
+                  @click="router.push(message.result.routePath)"
+                >
+                  打开页面
                 </el-button>
               </div>
             </div>
-
-            <div v-if="message.result" class="result-card">
-              <div class="result-title">{{ message.result.title || '查询结果' }}</div>
-              <pre>{{ formatResult(message.result.data) }}</pre>
-              <el-button
-                v-if="message.result.routePath"
-                text
-                type="primary"
-                size="small"
-                @click="router.push(message.result.routePath)"
-              >
-                打开页面
-              </el-button>
-            </div>
+            <time class="message-time">{{ formatTime(message.createdAt) }}</time>
           </div>
         </div>
       </div>
@@ -84,14 +87,14 @@
           :disabled="loading"
           resize="none"
           type="textarea"
-          :rows="2"
+          :autosize="{ minRows: 1, maxRows: 4 }"
           maxlength="500"
           show-word-limit
           placeholder="输入要查询、跳转或操作的内容"
           @keydown.enter.exact.prevent="sendMessage"
         />
-        <el-button type="primary" :loading="loading" :disabled="!input.trim()" native-type="submit">
-          发送
+        <el-button class="send-button" type="primary" :loading="loading" :disabled="!input.trim()" native-type="submit" circle>
+          <el-icon><Right /></el-icon>
         </el-button>
       </form>
 
@@ -121,7 +124,8 @@ const messages = ref([
   {
     id: crypto.randomUUID(),
     role: 'assistant',
-    content: '你好，我可以帮你查询、跳转页面，或执行确认后的操作。'
+    content: '你好，我可以帮你查询、跳转页面，或执行确认后的操作。',
+    createdAt: Date.now()
   }
 ])
 
@@ -143,6 +147,12 @@ function clearMessages() {
   messages.value = []
 }
 
+function collapsePanel() {
+  state.left = 24
+  state.bottom = 24
+  collapsed.value = true
+}
+
 async function sendMessage() {
   const text = input.value.trim()
   if (!text || loading.value) return
@@ -151,9 +161,10 @@ async function sendMessage() {
   const assistantMessage = {
     id: crypto.randomUUID(),
     role: 'assistant',
-    content: ''
+    content: '',
+    createdAt: Date.now()
   }
-  messages.value.push({ id: crypto.randomUUID(), role: 'user', content: text })
+  messages.value.push({ id: crypto.randomUUID(), role: 'user', content: text, createdAt: Date.now() })
   messages.value.push(assistantMessage)
   await scrollToBottom()
 
@@ -242,6 +253,14 @@ function formatResult(data) {
     return JSON.stringify(data.records.slice(0, 5), null, 2)
   }
   return JSON.stringify(data, null, 2)
+}
+
+function formatTime(value) {
+  const date = value ? new Date(value) : new Date()
+  return date.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 async function scrollToBottom() {
@@ -379,27 +398,52 @@ function clamp(value, min, max) {
 
 .agent-message {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .agent-message-user {
   justify-content: flex-end;
 }
 
-.message-bubble {
+.message-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   max-width: 86%;
+}
+
+.agent-message-user .message-stack {
+  align-items: flex-end;
+}
+
+.message-bubble {
+  width: fit-content;
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
   color: var(--vp-c-text-1);
-  background: var(--vp-c-bg-soft);
+  background: #f2f3f5;
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='dark'] .message-bubble {
+  background: #2f3338;
 }
 
 .agent-message-user .message-bubble {
   color: #fff;
   background: var(--vp-c-brand-1);
+}
+
+.message-time {
+  margin-top: 4px;
+  color: var(--vp-c-text-3);
+  font-size: 11px;
+  line-height: 1;
+  text-align: right;
 }
 
 .message-bubble p {
@@ -461,12 +505,30 @@ function clamp(value, min, max) {
 }
 
 .agent-input {
-  display: grid;
-  grid-template-columns: 1fr 76px;
+  display: flex;
+  align-items: flex-end;
   gap: 8px;
   padding: 12px;
   border-top: 1px solid var(--vp-c-divider);
   background: var(--vp-c-bg-soft);
+}
+
+.agent-input :deep(.el-textarea) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.agent-input :deep(.el-textarea__inner) {
+  min-height: 40px !important;
+  padding-right: 54px;
+}
+
+.send-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0;
+  font-size: 18px;
 }
 
 .resize-handle {
@@ -495,10 +557,6 @@ function clamp(value, min, max) {
     bottom: 8px !important;
     width: calc(100vw - 16px) !important;
     height: min(620px, calc(100vh - 80px)) !important;
-  }
-
-  .agent-input {
-    grid-template-columns: 1fr;
   }
 }
 </style>

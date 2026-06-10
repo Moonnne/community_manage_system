@@ -86,7 +86,7 @@ public class AgentServiceImpl implements AgentService {
                     send(emitter, "error", Map.of("message", e.getMessage() == null ? "AI服务暂时不可用" : e.getMessage()));
                 } catch (IOException ignored) {
                 }
-                emitter.completeWithError(e);
+                emitter.complete();
             } finally {
                 UserContext.clear();
             }
@@ -259,20 +259,38 @@ public class AgentServiceImpl implements AgentService {
     private ActionPlan parsePlan(String text) {
         String json = extractJson(text);
         JSONObject object = JSON.parseObject(json);
+        Map<String, Object> payload = object.getObject("payload", Map.class);
         return new ActionPlan(
-                object.getString("response"),
+                firstText(object, "response", "message", "content"),
                 object.getString("actionName"),
-                object.getObject("payload", Map.class)
+                payload == null ? Map.of() : payload
         );
     }
 
     private String extractJson(String text) {
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
+        String normalized = text == null ? "" : text.trim();
+        if (normalized.startsWith("```")) {
+            normalized = normalized
+                    .replaceFirst("^```[a-zA-Z]*\\s*", "")
+                    .replaceFirst("\\s*```$", "")
+                    .trim();
+        }
+        int start = normalized.indexOf('{');
+        int end = normalized.lastIndexOf('}');
         if (start < 0 || end < start) {
             throw new BusinessException("AI返回格式错误");
         }
-        return text.substring(start, end + 1);
+        return normalized.substring(start, end + 1);
+    }
+
+    private String firstText(JSONObject object, String... keys) {
+        for (String key : keys) {
+            String value = object.getString(key);
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
+        return "我已理解你的请求。";
     }
 
     private ActionPlan buildHeuristicPlan(String message) {

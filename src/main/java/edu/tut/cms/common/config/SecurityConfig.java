@@ -3,6 +3,7 @@ package edu.tut.cms.common.config;
 import com.alibaba.fastjson2.JSON;
 import edu.tut.cms.common.filter.JwtAuthenticationFilter;
 import edu.tut.cms.common.result.Result;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,8 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/user/login", "/api/user/register", "/api/user/captcha").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
