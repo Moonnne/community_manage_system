@@ -58,6 +58,7 @@ public class VisitorServiceImpl implements VisitorService {
     public void updateVisitor(VisitorUpdateDTO dto) {
         Visitor visitor = Visitor.builder()
                 .id(dto.getId())
+                .visitorType(dto.getVisitorType())
                 .visitorStatus(dto.getVisitorStatus())
                 .visitorRemark(dto.getVisitorRemark())
                 .build();

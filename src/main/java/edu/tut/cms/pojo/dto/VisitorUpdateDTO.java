@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 public class VisitorUpdateDTO {
     @NotNull
     private Long id;
+    private Integer visitorType;
     private String visitorStatus;
     private String visitorRemark;
 }
