@@ -1,6 +1,6 @@
 # CommunityManageSystem — 项目索引
 
-> 翻斗花园物业管理系统。Spring Boot 4 + Vue 3 全栈项目，面向社区物业的资产、设施、安防、财务、工单管理平台。
+> 翻斗花园物业管理系统。Spring Boot 4 + Vue 3 全栈项目，面向社区物业的资产、设施、安防、财务、工单管理平台。集成 DeepSeek AI Agent，支持自然语言驱动的页面跳转、数据查询与操作确认。
 
 ---
 
@@ -9,41 +9,43 @@
 | 属性 | 值 |
 |------|-----|
 | 项目名称 | CommunityManageSystem (翻斗花园物业管理系统) |
+| 版本 | 1.1.0-RELEASE |
 | 基础框架 | Spring Boot 4.0.6 (Java 21) |
 | 持久层 | MyBatis + MyBatis-Spring-Boot-Starter 4.0.1 + PageHelper 6.1.1 |
 | 数据库 | MySQL 8.x, 连接池 Druid 1.2.28 |
 | 安全框架 | Spring Security (无状态会话) + JWT (jjwt 0.13.0) + AOP 注解权限 |
+| AI 框架 | Spring AI 2.0.0-RC1 + DeepSeek (deepseek-v4-flash) |
 | 前端 | Vue 3.5 + Vite 8 + Element Plus 2.13 + Pinia 3 + ECharts 6 |
 | 构建工具 | Maven (后端) + Vite (前端) |
-| 关键依赖 | Lombok, FastJSON2, MinIO 9.0, Apache POI 5.5, Hutool 5.8 |
+| 关键依赖 | Lombok, FastJSON2, MinIO 9.0, Apache POI 5.5, Hutool 5.8, Spring AI DeepSeek |
 
 ### 目录结构
 
 ```
 CommunityManageSystem/
-├── pom.xml                    # Maven 父 POM
+├── pom.xml                    # Maven 父 POM (含 Spring AI BOM)
 ├── cms.sql                    # 数据库建表 + 种子数据
 ├── src/main/java/edu/tut/cms/
 │   ├── CommunityManageSystemApplication.java  # 启动类, @MapperScan
 │   ├── common/
 │   │   ├── aop/               # @RequireRole / @RequirePermission 注解 + AuthAspect 切面
-│   │   ├── config/            # SecurityConfig, WebMvcConfig, OssConfig, PageHelperConfig
+│   │   ├── config/            # SecurityConfig, WebMvcConfig, OssConfig, PageHelperConfig, DeepSeekAgentProperties
 │   │   ├── context/           # UserContext (ThreadLocal) + CurrentUser DTO
 │   │   ├── exception/         # GlobalExceptionHandler + BusinessException/ForbiddenException/UnauthorizedException
 │   │   ├── filter/            # JwtAuthenticationFilter (OncePerRequestFilter)
 │   │   ├── result/            # Result<T> (统一响应体) + PageResult<T> (分页响应体)
 │   │   └── utils/             # JwtUtils, PasswordUtils, OssUtils, JsonUtils
 │   ├── pojo/
-│   │   ├── dto/               # 入参 DTO (xxxAddDTO, xxxUpdateDTO, xxxLoginDTO 等)
+│   │   ├── dto/               # 入参 DTO (xxxAddDTO, xxxUpdateDTO, xxxLoginDTO 等, 含 Agent DTO)
 │   │   ├── entity/            # 数据库实体 (Lombok @Builder)
-│   │   └── vo/                # 出参 VO (返回给前端)
+│   │   └── vo/                # 出参 VO (返回给前端, 含 AgentActionVO)
 │   └── server/
-│       ├── controller/        # REST 控制器 (共 11 个)
-│       ├── service/           # 服务接口 (共 10 个)
-│       ├── service/impl/      # 服务实现 (共 10 个)
+│       ├── controller/        # REST 控制器 (共 12 个, 含 AgentController SSE)
+│       ├── service/           # 服务接口 (共 11 个)
+│       ├── service/impl/      # 服务实现 (共 11 个)
 │       └── mapper/            # MyBatis Mapper 接口 (共 17 个)
 ├── src/main/resources/
-│   ├── application.yaml       # 应用配置 (端口 8080, 数据源, MyBatis, JWT)
+│   ├── application.yaml       # 应用配置 (端口 8080, 数据源, MyBatis, JWT, Spring AI DeepSeek, Agent)
 │   └── mapper/                # MyBatis XML 映射文件 (共 11 个)
 ├── src/test/java/edu/tut/cms/ # 测试代码 (WebMvcTest + AOP test config)
 └── cms_webui/                 # Vue 3 前端项目
@@ -52,12 +54,12 @@ CommunityManageSystem/
     └── src/
         ├── main.js            # 入口: 创建 app, 注册 Element Plus / Router / Pinia
         ├── App.vue            # 根组件
-        ├── api/               # 后端 API 调用 (axios, 每个模块一个文件)
+        ├── api/               # 后端 API 调用 (axios, 每个模块一个文件, 含 agent.js SSE 流式调用)
         ├── router/index.js    # Vue Router 路由表 (含导航守卫)
         ├── stores/            # Pinia store (user.js, pageCache.js)
-        ├── layout/            # MainLayout.vue (顶栏 + 侧边栏 + 响应式抽屉)
-        ├── components/        # 通用组件 (WizardFormDrawer, DualSelectV2, AvatarEditor 等)
-        ├── utils/             # request.js (axios 实例+拦截器), validators.js, mobileTableActions.js
+        ├── layout/            # MainLayout.vue (顶栏 + 侧边栏 + 响应式抽屉 + AI 助手挂载)
+        ├── components/        # 通用组件 (WizardFormDrawer, DualSelectV2, AvatarEditor, AgentChatWindow 等)
+        ├── utils/             # request.js (axios 实例+拦截器), validators.js, mobileTableActions.js, agentControl.js
         ├── styles/            # theme.css (CSS 变量), index.css
         └── views/             # 页面组件 (按模块分子目录)
 ```
@@ -157,6 +159,8 @@ Database (MySQL)
    - 无状态会话 (`SessionCreationPolicy.STATELESS`)
    - CSRF 禁用
    - `/api/user/login`, `/api/user/register`, `/api/user/captcha` 白名单放行
+   - `DispatcherType.ASYNC` 和 `DispatcherType.ERROR` 放行 (SSE 支持)
+   - `/error` 端点放行
    - 其他请求需认证
 
 2. **JWT 认证过滤器** (`JwtAuthenticationFilter.java`):
@@ -210,14 +214,122 @@ Database (MySQL)
 | `GateController` | `/api/gate` | 门岗 CRUD/列表 |
 | `TaskController` | `/api/task` | 工单 CRUD/分页/处理/工单类型管理 |
 | `DashboardController` | `/api/dashboard` | 安全面板/设施面板/资产面板/工单面板数据聚合 |
+| `AgentController` | `/api/agent` | AI 助手 SSE 流式聊天 + 动作执行 |
 
 ---
 
-## 4. 业务编码生成规则 (重要!)
+## 4. AI Agent 模块 (v1.1 新增)
+
+DeepSeek AI Agent 是 v1.1 新增的核心功能，允许用户通过自然语言对话来操作物业管理系统。
+
+### 4.1 架构概览
+
+```
+AgentChatWindow.vue (前端浮动面板)
+  ↓ SSE 流式请求 POST /api/agent/chat
+AgentController
+  ↓ 调用
+AgentServiceImpl (980行核心逻辑)
+  ↓ 多级意图解析
+  ├── 1. 危险操作检测 (拒绝删除/密码/导出等)
+  ├── 2. Spring AI DeepSeek ChatClient (LLM 语义理解)
+  ├── 3. 本地关键词规则 (快速匹配, 无网络开销)
+  └── 4. 启发式兜底 (最基础的关键词匹配)
+  ↓ 匹配到 action 后
+  ├── read-only actions → 调用已有 Service 查询 → SSE 流式返回结果摘要
+  ├── page actions (add_*/update_*) → 前端弹层打开
+  └── write actions (需确认) → 返回 pending_action → 用户确认后 POST /api/agent/execute
+```
+
+### 4.2 Agent 能力清单
+
+**只读查询 (read, 自动执行并流式返回结果):**
+
+| actionName | 标题 | 目标页面 | 限制角色 |
+|------------|------|---------|---------|
+| `navigate` | 页面跳转 | (动态, 白名单内) | — |
+| `search_users` | 查询用户 | /user/list | 权限等级 ≥ 2 |
+| `search_assets` | 查询资产 | /asset/property | — |
+| `search_buildings` | 查询楼栋 | /asset/building | — |
+| `search_bills` | 查询账单 | /finance/bill | — |
+| `search_my_unpaid_bills` | 查询未支付账单 | /finance/bill | — |
+| `search_visitors` | 查询访客 | /security/visitor | — |
+| `search_cars` | 查询车辆 | /security/car | — |
+| `search_car_history` | 查询通行记录 | /security/car-history | 角色 0/1/3 |
+| `search_gates` | 查询门岗 | /security/gate | 角色 0/1/3 |
+| `search_facilities` | 查询设施 | /facility/list | 角色 0/1/2 |
+| `search_tasks` | 查询工单 | /task/list | — |
+
+**页面操作 (page, 打开前端弹层, 不写库):**
+
+| actionName | 标题 | 限制角色 | 权限等级 |
+|------------|------|---------|---------|
+| `add_asset` / `update_asset` | 资产弹层 | 0/1/2 | ≥ 1 |
+| `add_building` / `update_building` | 楼栋弹层 | 0/1 | — |
+| `add_bill` / `update_bill` | 账单弹层 | 0/1/2 | ≥ 1 |
+| `add_bill_detail` / `update_bill_detail` | 明细弹层 | 0/1/2 | ≥ 1 |
+| `add_visitor` / `update_visitor` | 访客弹层 | 0/1/3 | — |
+| `add_car` / `update_car` | 车辆弹层 | 0/1/2 | ≥ 1 |
+| `add_car_history` / `update_car_history` | 通行记录弹层 | 0/1/3 | — |
+| `add_facility` / `update_facility` | 设施弹层 | 0/1/2 | ≥ 1 |
+| `add_gate` / `update_gate` | 门岗弹层 | 0/1 | — |
+| `add_task` / `update_task` | 工单弹层 | — | — |
+
+**写操作 (write, 需用户确认后执行):**
+
+| actionName | 标题 | 限制角色 | 权限等级 |
+|------------|------|---------|---------|
+| `update_bill_status` | 更新账单状态 | 0/1/2 | ≥ 1 |
+| `pay_bill` | 支付账单 | — | 0 (无限制) |
+| `pay_bill_detail` | 支付账单明细 | — | 0 |
+| `process_task` | 处理工单 | — | ≥ 1 |
+| `update_user_status` | 更新用户状态 | 0/1 | — |
+
+### 4.3 安全设计
+
+- **三级安全检查**: (1) System Prompt 约束 LLM 行为 (2) 后端 `assertAllowed()` 按角色/权限等级二次校验 (3) `/execute` 端点独立鉴权
+- **危险操作拒绝**: 系统 Prompt + 后端双重拦截删除、密码修改、退出登录、导出、上传
+- **确认机制**: 真实写操作 (`pay_bill`, `process_task` 等) 必须先返回 `pending_action`，用户点击"确认执行"后才调用 `/api/agent/execute`
+- **ASync 放行**: SecurityConfig 放行 `DispatcherType.ASYNC` 以支持 SSE 长连接
+- **安全路由白名单**: `navigate` action 仅允许跳转到预设的 18 个前端路由
+
+### 4.4 前端集成模式
+
+`useAgentPageControl` composable (`agentControl.js`) 是 Agent 与各页面的桥梁:
+
+1. AI 助手生成 `routePath` + `query` 参数 (`__agentAction` 标记)
+2. 前端路由跳转到目标页面
+3. 目标页面的 `useAgentPageControl` 监听 URL query 变化
+4. 根据 `agentType` 执行对应操作: `search` → 填充查询表单并搜索, `open_add` → 打开新增弹层, `open_edit` → 打开编辑弹层, `refresh` → 刷新数据
+5. 10 个列表页面均已集成: UserList, AssetList, BuildingList, FacilityList, BillList, VisitorList, CarList, CarHistory, GateList, TaskList
+
+### 4.5 配置项
+
+```yaml
+# application.yaml
+spring.ai.deepseek:
+  base-url: ${deepseek.base-url:}
+  api-key: ${deepseek.api-key:}
+  chat:
+    model: deepseek-v4-flash
+    options:
+      stream: true
+      reasoning-effort: high
+      thinking.enabled: true
+      response-format.type: json_object
+
+cms.agent:
+  page-size: 5           # 查询返回条数
+  max-history-messages: 8 # 聊天历史保留条数
+```
+
+---
+
+## 5. 业务编码生成规则 (重要!)
 
 不同模块使用**不同的编码生成策略**, 这是理解和修改项目的关键:
 
-### 4.1 时间戳型 (简单, 无冲突检测)
+### 5.1 时间戳型 (简单, 无冲突检测)
 
 | 模块 | 前缀 | 格式 | 代码位置 |
 |------|------|------|---------|
@@ -226,7 +338,7 @@ Database (MySQL)
 
 ⚠️ **风险**: 高并发下同毫秒可能重复, 且无 UNIQUE 约束保护。
 
-### 4.2 随机字符串型 (低冲突概率)
+### 5.2 随机字符串型 (低冲突概率)
 
 | 模块 | 前缀 | 格式 | 代码位置 |
 |------|------|------|---------|
@@ -234,7 +346,7 @@ Database (MySQL)
 
 有冲突检测 (最多重试 20 次后抛异常)。
 
-### 4.3 结构化编码型 (含位置/类型信息, 有冲突检测)
+### 5.3 结构化编码型 (含位置/类型信息, 有冲突检测)
 
 | 模块 | 前缀 | 格式 | 代码位置 |
 |------|------|------|---------|
@@ -244,13 +356,13 @@ Database (MySQL)
 
 示例: 资产编码 `B0001` = 类型B(房产) + 建筑物01 + 楼层01 + 00000000
 
-### 4.4 序列型
+### 5.4 序列型
 
 | 模块 | 格式 | 代码位置 |
 |------|------|---------|
 | **Building** | `B%04d` (B + 4位数字 = 自增 ID) | `BuildingServiceImpl.java:32` |
 
-### 4.5 手动输入型
+### 5.5 手动输入型
 
 | 模块 | 说明 |
 |------|------|
@@ -259,9 +371,9 @@ Database (MySQL)
 
 ---
 
-## 5. 前端架构
+## 6. 前端架构
 
-### 5.1 技术栈
+### 6.1 技术栈
 
 | 依赖 | 版本 | 用途 |
 |------|------|------|
@@ -273,7 +385,7 @@ Database (MySQL)
 | axios | ^1.16.0 | HTTP 请求 |
 | echarts + vue-echarts | ^6.1.0 / ^8.0.1 | 图表 |
 
-### 5.2 路由结构
+### 6.2 路由结构
 
 ```
 /login                    → Login.vue (公开)
@@ -305,13 +417,13 @@ Database (MySQL)
   /settings               → UserSettings.vue (个人设置)
 ```
 
-### 5.3 导航守卫
+### 6.3 导航守卫
 
 - `to.path` 不是 `/login` 或 `/register` 且未登录 → 重定向到 `/login`
 - 已登录用户访问公开页 → 重定向到 `/welcome`
 - 前端角色可见性控制: `MainLayout.vue` 中的 `allNavItems` 和 `sidebarConfig` 均定义了 `roles` 数组, 根据 `userStore.userRole` 过滤
 
-### 5.4 Axios 拦截器 (request.js)
+### 6.4 Axios 拦截器 (request.js)
 
 **请求拦截器:**
 - 自动附加 `Authorization: Bearer <token>` 头
@@ -325,7 +437,7 @@ Database (MySQL)
 - `code === 403` (含"冻结") → 更新本地用户状态为冻结
 - 写请求成功后清除缓存, GET 请求结果写入缓存
 
-### 5.5 Pinia Store
+### 6.5 Pinia Store
 
 **useUserStore** (`stores/user.js`):
 - `token` / `userInfo` 持久化到 localStorage
@@ -336,7 +448,7 @@ Database (MySQL)
 - 内存级 GET 请求缓存 (Map)
 - 写操作触发全部清空
 
-### 5.6 通用组件
+### 6.6 通用组件
 
 | 组件 | 用途 |
 |------|------|
@@ -347,17 +459,18 @@ Database (MySQL)
 | `AccountInitializationDialog.vue` | 新用户首次登录的初始化弹窗 |
 | `InputOtpCompat.vue` | OTP 验证码输入 |
 | `TechBackground.vue` | 登录/注册页科技感背景 |
+| `AgentChatWindow.vue` | AI 助手浮动面板 (可拖拽/缩放, SSE 流式对话, 动作确认) |
 
-### 5.7 前端 API 文件
+### 6.7 前端 API 文件
 
 `cms_webui/src/api/` 下每个文件对应一个后端 Controller:
-`asset.js`, `bill.js`, `building.js`, `car.js`, `dashboard.js`, `facility.js`, `gate.js`, `task.js`, `user.js`, `visitor.js`
+`agent.js`, `asset.js`, `bill.js`, `building.js`, `car.js`, `dashboard.js`, `facility.js`, `gate.js`, `task.js`, `user.js`, `visitor.js`
 
 ---
 
-## 6. 关键设计模式与约定
+## 7. 关键设计模式与约定
 
-### 6.1 代码风格
+### 7.1 代码风格
 
 - **Lombok**: 所有 Entity/DTO/VO 使用 `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`
 - **构造器注入**: 使用 `@RequiredArgsConstructor` (Lombok) 代替 `@Autowired`
@@ -366,13 +479,13 @@ Database (MySQL)
 - **参数校验**: DTO 使用 `@Valid` + Jakarta Validation 注解 (如 `@NotBlank`, `@NotNull`)
 - **Controller**: `@RestController` + `@RequestMapping` + `@RequiredArgsConstructor`
 
-### 6.2 MyBatis 模式
+### 7.2 MyBatis 模式
 
 两种 SQL 编写方式共存:
 - **注解 SQL**: 简单 CRUD (insert/deleteById/selectById/selectAll) 直接在 Mapper 接口上用 `@Insert/@Delete/@Select`
 - **XML SQL**: 复杂查询 (分页查询 `selectPage`, 动态更新 `updateById`, 聚合查询) 在 `resources/mapper/*.xml` 中
 
-### 6.3 分页模式
+### 7.3 分页模式
 
 所有分页查询遵循统一流程:
 1. `PageHelper.startPage(pageNum, pageSize)` 启动分页
@@ -382,17 +495,19 @@ Database (MySQL)
 
 ⚠️ **注意**: 部分 ServiceImpl 手动设置 PageResult 字段而不是使用 `PageResult.of()`。
 
-### 6.4 配置管理
+### 7.4 配置管理
 
-- `application.yaml` 中敏感值 (数据源/JWT) 使用 `${}` 占位符, 实际值来自 `classpath:env.yaml` (未提交到 Git)
+- `application.yaml` 中敏感值 (数据源/JWT/DeepSeek) 使用 `${}` 占位符, 实际值来自 `classpath:env.yaml` (未提交到 Git)
 - OSS 配置在 `OssConfig.java` / `OssProperties.java` 中
+- Agent 配置在 `DeepSeekAgentProperties.java` 中 (prefix: `cms.agent`)
 
 ---
 
-## 7. 模块依赖关系 (业务功能角度)
+## 8. 模块依赖关系 (业务功能角度)
 
 ```
 用户管理 (User) ─── 所有模块的基础 (用户作为 owner/creater/chief/operator)
+  ├── AI Agent (Agent) ─── 自然语言入口, 编排调度所有模块
   ├── 资产管理 (Asset + Building + AssetType)
   │     ├── 财务/账单 (Bill + BillDetail + BillType)
   │     └── 车辆 (Car)  [车辆可关联车位资产]
@@ -407,7 +522,7 @@ Database (MySQL)
 
 ---
 
-## 8. 仪表盘 API (DashboardController)
+## 9. 仪表盘 API (DashboardController)
 
 四个面板端点, 用于首页数据聚合:
 
@@ -420,14 +535,14 @@ Database (MySQL)
 
 ---
 
-## 9. 文件上传
+## 10. 文件上传
 
 - 头像上传: `POST /api/user/upload-avatar` → MinIO (OSS)
 - OSS 配置通过 `OssConfig` / `OssProperties` 注入
 
 ---
 
-## 10. 已知问题与注意事项
+## 11. 已知问题与注意事项
 
 1. **Visitor 编码并发安全**: `V + System.currentTimeMillis()` 无冲突检测/无 UNIQUE 约束, 并发下可能重复
 2. **CarHistory 编码同上**: `CH + System.currentTimeMillis()` 同样问题
@@ -437,3 +552,5 @@ Database (MySQL)
 6. **building.id** 手动赋值 (`selectMaxId + 1`) 而非自增, 有并发问题
 7. **Car.code 和 Gate.code** 无后端生成逻辑, 完全依赖前端/调用方传入
 8. **Bill 编码变更**: 旧数据用 `B00000001` 格式, 新数据用 `B-` + 16位随机字符 (`B-fkvdyvxplxyr5fzj`)
+9. **Agent Spring AI 依赖可选**: `tryBuildPlanWithSpringAi` 内部 catch 异常后降级到本地规则, 即使 DeepSeek 不可用也能基本工作
+10. **Agent SSE 超时**: 120 秒超时, 超时后连接关闭但不影响已返回的结果
