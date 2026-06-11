@@ -140,7 +140,7 @@ CommunityManageSystem
 └── pom.xml
 ```
 
-> 详细架构说明见 [INDEX.md](INDEX.md)，模块文件清单见 [MODLE.md](MODLE.md)。
+> 详细架构说明见 [INDEX.md](INDEX.md)，模块文件清单见 [MODLE.md](MODULE.md)。
 
 ## API 约定
 
